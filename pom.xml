@@ -2,6 +2,12 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<parent>
+		<groupId>com.symantec.cpe.volta</groupId>
+		<artifactId>aa</artifactId>
+		<version>2.0.0</version>
+	</parent>
+
 	<groupId>io.symcpe.hendrix</groupId>
 	<artifactId>hendrix-parent</artifactId>
 	<version>0.0.3-SNAPSHOT</version>
@@ -22,20 +28,12 @@
 		<module>hendrix-api</module>
 	</modules>
 
-	<scm>
-		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
-		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
-		<url>https://github.com/Symantec/hendrix.git</url>
-		<tag>HEAD</tag>
-	</scm>
-
 	<licenses>
 		<license>
 			<name>The Apache Software License, Version 2.0</name>
 			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
 		</license>
 	</licenses>
-
 	<developers>
 		<developer>
 			<id>asharma</id>
@@ -43,6 +41,12 @@
 			<organization>Symantec</organization>
 		</developer>
 	</developers>
+	<scm>
+		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
+		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
+		<url>https://github.com/Symantec/hendrix.git</url>
+		<tag>HEAD</tag>
+	</scm>
 
 	<build>
 		<plugins>

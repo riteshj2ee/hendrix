@@ -196,7 +196,7 @@ public class TestSerialization {
 		System.out.println(regexCondition.getValue()+"\t"+jsonRule);
 		rule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
 		Event event = new TestFactory().buildEvent();
-		event.getHeaders().put("host", "test.symcpe.io");
+		event.getHeaders().put("host", "testoneserver.test.symcpe.com");
 		assertTrue(rule.getCondition().matches(event));
 	}
 	
