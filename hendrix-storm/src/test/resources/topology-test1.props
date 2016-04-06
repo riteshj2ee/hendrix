@@ -1,0 +1,25 @@
+local=true
+rstore.type=io.symcpe.hendrix.storm.TopologyTestRulesStore
+rstore.username=root
+rstore.password=root
+spooling.file.path=/tmp/rule-updates.txt
+rule.group.active=true
+
+### Validator properties
+lmm.es.date.field.pattern=.{1,}_date|@timestamp
+lmm.es.int.field.pattern=.{1,}_int
+lmm.es.double.field.pattern=.{1,}_double
+lmm.es.boolean.field.pattern=.{1,}_boolean
+lmm.es.ip.field.pattern=.{1,}_ip
+#
+lmm.validation.required.string.fields=message,apikey,tenant_id
+lmm.validation.required.date.fields=@timestamp
+lmm.validation.reserved.fields=*,_index,_source,_id,_type,@version,@rawMessage
+lmm.validation.json.array.of.strings.fields=tags
+lmm.validation.fallback.field.name=@rawMessage
+
+lmm.topology.metric.storage.string.fields=name,value
+
+lmm.validation.metric.required.string.fields=apikey,tenant_id,name,host
+lmm.validation.metric.required.date.fields=@timestamp
+lmm.validation.metric.reserved.fields=id,time,sequence_number

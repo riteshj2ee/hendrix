@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:p="http://primefaces.org/ui" xmlns:b="http://bootsfaces.net/ui">
+<ui:composition template="/templates/main.xhtml">
+	<ui:define name="title"></ui:define>
+	<ui:define name="body">
+		<h:form style="width: 100%; max-height: 90%; float:left">
+			<p:panelGrid columns="2" style="width:100%">
+				<p:panel header="Alert Statistics">
+					<p:chart type="line" style="height:300px;padding:5px" responsive="true" model="#{dash.alertStats}"></p:chart>
+				</p:panel>
+				<p:panel header="Top Rules">
+					<p:chart type="pie" style="height:300px;padding:5px" responsive="true" model="#{dash.topRules}"></p:chart>
+				</p:panel>
+			</p:panelGrid>
+			<p:panelGrid columns="2" style="width:100%">
+				<p:panel header="Event Flow Rate">
+					<p:chart type="line" style="height:300px;padding:5px" responsive="true" model="#{dash.alertStats}"></p:chart>
+				</p:panel>
+				<p:panel header="Rule Efficiency">
+					<p:chart type="pie" style="height:300px;padding:5px" responsive="true" model="#{dash.topRules}"></p:chart>
+				</p:panel>
+			</p:panelGrid>
+		</h:form>
+	</ui:define>
+</ui:composition>
+</html>
