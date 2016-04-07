@@ -1,20 +1,13 @@
 # hendrix
 
 ## Project Description
-Real-time alert generation system
+Hendrix is a Real-time alert generation system for the Cloud. We currently support Rule based definition of alerts and provide a platform / design pattern for high performance
+execution of rule based event matching.
 
-## Prerequisites
-Java
-Apache Storm
-MySQL
+Note: The hendrix-ui project is purely for demo purposes as we currently do not have a rich client user interface.
 
-## Installation (install commands)
-
-## Running project
-
-## Configuration (config commands)
-
-## List important functions with example commands
+## Documentation
+Please checkout out wiki for more details: https://github.com/Symantec/hendrix/wiki
 
 ## Download
 
@@ -28,10 +21,6 @@ Legal Department
 Attention:  Product Legal Support Team
 350 Ellis Street
 Mountain View, CA 94043
- 
- 
- Please be sure to keep a signed copy for your records.  
-
 
 ## LICENSE
 
@@ -42,7 +31,6 @@ Licensed under the Apache License, Version 2.0 (the “License”); you may not 
 You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an “AS IS” BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-
 
 
 ## How is project different?
