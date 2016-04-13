@@ -39,16 +39,16 @@ import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.conditions.ConditionSerializer;
 
 /**
- * JSON serializer/deserializer for the Actions, naming 
- * convention can be supplied via configurable conventions file.
+ * JSON serializer/deserializer for the Actions, naming convention can be
+ * supplied via configurable conventions file.
  * 
  * @author ambud_sharma
  */
 public class ActionSerializer implements JsonSerializer<Action>, JsonDeserializer<Action> {
-	
+
 	public static final String TYPE = "type";
 	public static final String PROPS = "props";
-	
+
 	public static final String PROP_NAMING_MAP = "naming.map";
 	private static final Map<String, String> CLASSNAME_FORWARD_MAP = new HashMap<>();
 	private static final Map<String, String> CLASSNAME_REVERSE_MAP = new HashMap<>();
@@ -71,25 +71,28 @@ public class ActionSerializer implements JsonSerializer<Action>, JsonDeserialize
 					CLASSNAME_FORWARD_MAP.put(entry[0], entry[1]);
 					CLASSNAME_REVERSE_MAP.put(entry[1], entry[0]);
 				}
-			}else {
+			} else {
 				System.out.println("Couldn't load the default naming resource");
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public Action deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 			throws JsonParseException {
 		JsonObject jsonObject = json.getAsJsonObject();
+		if(jsonObject.entrySet().isEmpty()) {
+			throw new JsonParseException("Empty action are not allowed");
+		}
 		String type = jsonObject.get(TYPE).getAsString();
 		if (Utils.CLASSNAME_REVERSE_MAP.containsKey(type)) {
 			type = Utils.CLASSNAME_REVERSE_MAP.get(type);
 		}
-        JsonElement element = jsonObject.get(PROPS);
-        try {
-        	Action pojo = context.deserialize(element, Class.forName(type));
-        	Field[] fields = pojo.getClass().getDeclaredFields();
+		JsonElement element = jsonObject.get(PROPS);
+		try {
+			Action pojo = context.deserialize(element, Class.forName(type));
+			Field[] fields = pojo.getClass().getDeclaredFields();
 			for (Field f : fields) {
 				if (f.getAnnotation(Required.class) != null) {
 					try {
@@ -102,9 +105,11 @@ public class ActionSerializer implements JsonSerializer<Action>, JsonDeserialize
 				}
 			}
 			return pojo;
-        } catch (ClassNotFoundException cnfe) {
-            throw new JsonParseException("Unknown action type: " + type, cnfe);
-        }
+		} catch (ClassNotFoundException cnfe) {
+			throw new JsonParseException("Unknown action type: " + type, cnfe);
+		} catch (NumberFormatException e) {
+			throw new JsonParseException("Type must be a number:"+e.getLocalizedMessage());
+		}
 	}
 
 	public JsonElement serialize(Action src, Type typeOfSrc, JsonSerializationContext context) {
@@ -114,8 +119,8 @@ public class ActionSerializer implements JsonSerializer<Action>, JsonDeserialize
 			type = Utils.CLASSNAME_FORWARD_MAP.get(src.getClass().getCanonicalName());
 		}
 		result.add(TYPE, new JsonPrimitive(type));
-        result.add(PROPS, context.serialize(src, src.getClass()));
-        return result;
+		result.add(PROPS, context.serialize(src, src.getClass()));
+		return result;
 	}
 
 }

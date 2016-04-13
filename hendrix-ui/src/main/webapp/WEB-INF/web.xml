@@ -20,16 +20,10 @@
     <init-param>
       <param-name>jersey.config.server.provider.packages</param-name>
       <param-value>
-				io.swagger.jaxrs.listing,
 				io.symcpe.hendrix.ui.alerts.rest
 			</param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
-  </servlet>
-  <servlet>
-    <servlet-name>SwaggerBootstrap</servlet-name>
-    <servlet-class>io.symcpe.hendrix.ui.alerts.rest.SwaggerConfig</servlet-class>
-    <load-on-startup>2</load-on-startup>
   </servlet>
   <servlet-mapping>
     <servlet-name>rest</servlet-name>

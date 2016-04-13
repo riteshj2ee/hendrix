@@ -33,7 +33,6 @@ import javax.validation.constraints.Size;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.symcpe.hendrix.ui.Queries;
-import io.symcpe.hendrix.ui.alerts.rest.RulesEndpoint;
 
 /**
  * The persistent class for the tenant database table.
@@ -53,14 +52,14 @@ public class Tenant implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Id
-	@Column(name = "tenant_id", length = RulesEndpoint.TENANT_ID_MAX_SIZE)
-	@NotNull
-	@Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE)
+	@Column(name = "tenant_id", length = 100)
+	@NotNull(message="Tenant ID can't be empty")
+	@Size(min = 1, max = 100, message="Tenant ID must be under 100 characters")
 	private String tenantId;
 
 	@Column(name = "tenant_name", length = 100)
-	@NotNull
-	@Size(min = 1, max = 100)
+	@NotNull(message="Tenant name can't be empty")
+	@Size(min = 1, max = 100, message="Tenant name must be under 100 characters")
 	private String tenantName;
 
 	// bi-directional many-to-one association to RulesTable

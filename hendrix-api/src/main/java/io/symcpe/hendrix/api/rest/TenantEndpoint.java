@@ -18,6 +18,7 @@ package io.symcpe.hendrix.api.rest;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.persistence.EntityExistsException;
 import javax.persistence.NoResultException;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -33,8 +34,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
-import io.swagger.annotations.ApiParam;
 import io.symcpe.hendrix.api.rules.TenantManager;
 import io.symcpe.hendrix.api.storage.Tenant;
 
@@ -69,11 +70,12 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Tenant getTenant(@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId) {
+	public Tenant getTenant(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
 		try {
 			return TenantManager.getInstance().getTenant(tenantId);
 		} catch (Exception e) {
-			throw new NotFoundException("No Tenants found");
+			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Tenants found").build());
 		}
 	}
 
@@ -83,15 +85,25 @@ public class TenantEndpoint {
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	public void createTenant(@NotNull @ApiParam(required = true) Tenant tenant) {
+	public void createTenant(@NotNull(message="Tenant information can't be empty") Tenant tenant) {
 		// TODO validate tenant
-		if (tenant == null || tenant.getTenantId() == null || tenant.getTenantName() == null
-				|| tenant.getTenantId().isEmpty()) {
-			throw new BadRequestException("Tenant info can't be empty");
+		if(!validateTenant(tenant)) {
+			throw new BadRequestException("Tenant info is invalid");
+		}
+		try {
+			if (TenantManager.getInstance().getTenant(tenant.getTenantId()) != null) {
+				throw new BadRequestException(Response.status(400)
+						.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
+			}
+		} catch (NoResultException e) {
+		} catch (Exception e) {
 		}
 		try {
 			TenantManager.getInstance().createTenant(tenant);
 			logger.info("Created new tenant:" + tenant);
+		} catch (EntityExistsException e) {
+			throw new BadRequestException(Response.status(400)
+					.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
 		} catch (Exception e) {
 			throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
 		}
@@ -102,7 +114,9 @@ public class TenantEndpoint {
 	 */
 	@Path("/{" + TENANT_ID + "}")
 	@DELETE
-	public void deleteTenant(@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId) {
+	@Produces({ MediaType.APPLICATION_JSON })
+	public void deleteTenant(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId) {
 		try {
 			Tenant tenant = TenantManager.getInstance().deleteTenant(tenantId);
 			logger.info("Deleted tenant:" + tenant);
@@ -118,22 +132,34 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
-	public void updateTenant(@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId,
-			@NotNull @ApiParam(required = true) Tenant tenant) {
-		if (tenant == null || tenant.getTenantId() == null || tenant.getTenantName() == null
-				|| tenant.getTenantId().isEmpty()) {
-			throw new BadRequestException("Tenant info can't be empty");
+	@Produces({ MediaType.APPLICATION_JSON })
+	public void updateTenant(
+			@NotNull(message="Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull(message="Tenant information can't be empty") Tenant tenant) {
+		if(!validateTenant(tenant)) {
+			throw new BadRequestException("Tenant info is invalid");
 		}
 		try {
 			tenant = TenantManager.getInstance().updateTenant(tenantId, tenant.getTenantName());
 			logger.info("Updated tenant:" + tenant);
 		} catch (Exception e) {
 			if (e instanceof NoResultException) {
-				throw new NotFoundException();
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Tenants found").build());
 			} else {
 				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
 			}
 		}
 	}
 
+	public static boolean validateTenant(Tenant tenant) {
+		if (tenant == null || tenant.getTenantId() == null || tenant.getTenantName() == null
+				|| tenant.getTenantId().isEmpty() || tenant.getTenantName().isEmpty()) {
+			return false;
+		}
+		if(tenant.getTenantId().length()>RulesEndpoint.TENANT_ID_MAX_SIZE) {
+			return false;
+		}
+		return true;
+	}
+	
 }

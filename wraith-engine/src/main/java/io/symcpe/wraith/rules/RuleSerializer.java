@@ -15,6 +15,8 @@
  */
 package io.symcpe.wraith.rules;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -86,7 +88,13 @@ public class RuleSerializer {
 		gsonBuilder.registerTypeAdapter(Action.class, new ActionSerializer());
 		gsonBuilder.disableHtmlEscaping();
 		Gson gson = gsonBuilder.create();
-		return gson.fromJson(jsonRule, SimpleRule[].class);
+		SimpleRule[] rules = gson.fromJson(jsonRule, SimpleRule[].class);
+		if(rules!=null) {
+			for(SimpleRule rule:rules) {
+				sortActionsById(rule);
+			}
+		}
+		return rules;
 	}
 
 	/**
@@ -101,7 +109,29 @@ public class RuleSerializer {
 		gsonBuilder.registerTypeAdapter(Action.class, new ActionSerializer());
 		gsonBuilder.disableHtmlEscaping();
 		Gson gson = gsonBuilder.create();
-		return gson.fromJson(jsonRule, SimpleRule.class);
+		SimpleRule rule = gson.fromJson(jsonRule, SimpleRule.class);
+		sortActionsById(rule);
+		return rule;
+	}
+	
+	/**
+	 * Autosort actions by their Id
+	 * @param rule
+	 */
+	public static void sortActionsById(SimpleRule rule) {
+		if(rule!=null && rule.getActions()!=null && rule.getActions().size()>0) {
+			Collections.sort(rule.getActions(), new Comparator<Action>() {
+
+				@Override
+				public int compare(Action o1, Action o2) {
+					return Integer.compare(o1.getActionId(), o2.getActionId());
+				}
+			});
+			for (short i = 0; i < rule.getActions().size(); i++) {
+				Action action = rule.getActions().get(i);
+				action.setActionId(i);
+			}
+		}
 	}
 
 }

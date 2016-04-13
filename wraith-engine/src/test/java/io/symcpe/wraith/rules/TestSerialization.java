@@ -156,7 +156,7 @@ public class TestSerialization {
 		assertEquals(cmd.getRuleGroup(), fromJson.getRuleGroup());
 		rule = RuleSerializer.deserializeJSONStringToRule(fromJson.getRuleContent());
 		System.out.println("Command rule:" + rule);
-		assertEquals(action.getActionId(), rule.getActions().get(0).getActionId());
+		assertEquals(0, rule.getActions().get(0).getActionId());
 	}
 	
 	@Test

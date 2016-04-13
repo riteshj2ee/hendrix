@@ -32,7 +32,6 @@ import javax.persistence.Persistence;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.PartitionInfo;
 
-import io.symcpe.hendrix.ui.alerts.AlertReceiver;
 import io.symcpe.hendrix.ui.rules.RulesManager;
 import io.symcpe.hendrix.ui.rules.TenantManager;
 import io.symcpe.hendrix.ui.validations.VelocityValidator;
@@ -87,7 +86,7 @@ public class ApplicationManager implements Serializable {
 		}
 		config.setProperty("javax.persistence.jdbc.url", config.getProperty("javax.persistence.jdbc.url")
 				+ config.getProperty("javax.persistence.jdbc.db", "hendrix"));
-		AlertReceiver.getInstance();
+//		AlertReceiver.getInstance();
 		factory = Persistence.createEntityManagerFactory("hendrix", config);
 		EntityManager em = factory.createEntityManager();
 		System.out.println("Rules stats" + em.createNamedQuery("Rules.stats").getResultList());

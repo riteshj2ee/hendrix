@@ -15,6 +15,10 @@
  */
 package io.symcpe.hendrix.api;
 
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import io.dropwizard.Configuration;
 
 /**
@@ -23,5 +27,23 @@ import io.dropwizard.Configuration;
  * @author ambud_sharma
  */
 public class AppConfig extends Configuration {
+
+	@JsonProperty
+	@NotNull
+	private String name;
+
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @param name the name to set
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
 
 }

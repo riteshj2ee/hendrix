@@ -129,7 +129,6 @@ public class RulesManager {
 			logger.info("Completed Transaction for rule " + dbRule.getRuleId() + ":" + dbRule.getRuleContent() + "");
 			return dbRule.getRuleId();
 		} catch (Exception e) {
-			e.printStackTrace();
 			if (em.getTransaction().isActive()) {
 				em.getTransaction().rollback();
 			}
@@ -214,10 +213,11 @@ public class RulesManager {
 			}
 			if (e instanceof NoResultException) {
 				logger.log(Level.SEVERE, "Rule " + ruleId + " not found");
+				throw new NotFoundException();
 			} else {
 				logger.log(Level.SEVERE, "Failed to delete rule", e);
+				throw e;
 			}
-			throw e;
 		}
 	}
 

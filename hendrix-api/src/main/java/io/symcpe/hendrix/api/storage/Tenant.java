@@ -27,8 +27,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -45,20 +43,16 @@ import io.symcpe.hendrix.api.rest.RulesEndpoint;
 		@NamedQuery(name = Queries.TENANT_FIND_BY_IDS, query = "SELECT t FROM Tenant t where t.tenantId in :tenantIds"),
 		@NamedQuery(name = Queries.TENANT_FIND_BY_NAMES, query = "SELECT t FROM Tenant t where t.tenantName in :tenantNames"),
 		@NamedQuery(name = Queries.TENANT_FIND_BY_NAME, query = "SELECT t FROM Tenant t where t.tenantName like :tenantName"),
-		@NamedQuery(name = Queries.TENANT_DELETE_BY_ID, query = "DELETE FROM Tenant t where t.tenantId=:tenantId")})
+		@NamedQuery(name = Queries.TENANT_DELETE_BY_ID, query = "DELETE FROM Tenant t where t.tenantId=:tenantId") })
 public class Tenant implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	@Id
 	@Column(name = "tenant_id", length = RulesEndpoint.TENANT_ID_MAX_SIZE)
-	@NotNull
-	@Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE)
 	private String tenantId;
 
 	@Column(name = "tenant_name", length = 100)
-	@NotNull
-	@Size(min = 1, max = 100)
 	private String tenantName;
 
 	// bi-directional many-to-one association to RulesTable

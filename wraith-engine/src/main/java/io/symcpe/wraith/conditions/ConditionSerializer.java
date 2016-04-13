@@ -74,6 +74,9 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 	public Condition deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 			throws JsonParseException {
 		JsonObject jsonObject = json.getAsJsonObject();
+		if(jsonObject.entrySet().isEmpty()) {
+			throw new JsonParseException("Empty conditions are not allowed");
+		}
 		String type = jsonObject.get(TYPE).getAsString();
 		if (Utils.CLASSNAME_REVERSE_MAP.containsKey(type)) {
 			type = Utils.CLASSNAME_REVERSE_MAP.get(type);

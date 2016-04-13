@@ -64,7 +64,7 @@ public class TenantManager {
 			if (t.isActive()) {
 				t.rollback();
 			}
-			logger.log(Level.SEVERE, "Failed to create tenant:" + tenant, e);
+			logger.log(Level.SEVERE, "Failed to create tenant:" + tenant + "\t" + e.getMessage());
 			throw e;
 		}
 	}
