@@ -103,7 +103,7 @@ public class TestAlertingEngineBolt {
 			}));
 			when(input.getValueByField(Constants.FIELD_EVENT)).thenReturn(TestUtils.stringToEvent(event));
 			when(input.getShortByField(Constants.FIELD_RULE_ID)).thenReturn((short) 1123);
-			when(input.getShortByField(Constants.FIELD_ACTION_ID)).thenReturn((short) 1);
+			when(input.getShortByField(Constants.FIELD_ACTION_ID)).thenReturn((short) 0);
 			when(input.getStringByField(Constants.FIELD_ALERT_TARGET)).thenReturn("dlp");
 			when(input.getStringByField(Constants.FIELD_ALERT_MEDIA)).thenReturn("mail");
 			bolt.execute(input);
