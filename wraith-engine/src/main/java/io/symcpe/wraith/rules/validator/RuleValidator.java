@@ -44,13 +44,16 @@ public class RuleValidator implements Validator<Rule> {
 	}
 	
 	public void validate(Rule rule) throws ValidationException {
-		if(rule.getCondition()==null || rule.getActions()==null || rule.getActions().size()==0) {
+		if(rule.getCondition()==null) {
 			throw new ValidationException("Rule can't have empty condition");
 		}
 		if(rule.getName()==null || rule.getName().trim().isEmpty()) {
 			throw new ValidationException("Rule name can't be empty");
 		}
 		conditionValidator.validate(rule.getCondition());
+		if(rule.getActions()==null || rule.getActions().size()==0) {
+			throw new ValidationException("Rule can't have 0 Actions");
+		}
 		for(Action action:rule.getActions()) {
 			actionValidator.validate(action);
 		}

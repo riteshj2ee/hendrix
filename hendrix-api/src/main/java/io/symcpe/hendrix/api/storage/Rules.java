@@ -41,12 +41,14 @@ public class Rules implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
+	public static final int MAX_RULE_LENGTH = 32000;
+
 	@Id
 	@Column(name = "rule_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private short ruleId;
 
-	@Column(name = "rule_content", length = 40960)
+	@Column(name = "rule_content", length = Rules.MAX_RULE_LENGTH)
 	private String ruleContent;
 
 	// bi-directional many-to-one association to Tenant

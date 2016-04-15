@@ -71,7 +71,7 @@ public class TenantEndpoint {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Tenant getTenant(
-			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
 		try {
 			return TenantManager.getInstance().getTenant(tenantId);
 		} catch (Exception e) {
@@ -116,7 +116,7 @@ public class TenantEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void deleteTenant(
-			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		try {
 			Tenant tenant = TenantManager.getInstance().deleteTenant(tenantId);
 			logger.info("Deleted tenant:" + tenant);
@@ -134,7 +134,7 @@ public class TenantEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void updateTenant(
-			@NotNull(message="Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = RulesEndpoint.TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull(message="Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull(message="Tenant information can't be empty") Tenant tenant) {
 		if(!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
@@ -156,7 +156,10 @@ public class TenantEndpoint {
 				|| tenant.getTenantId().isEmpty() || tenant.getTenantName().isEmpty()) {
 			return false;
 		}
-		if(tenant.getTenantId().length()>RulesEndpoint.TENANT_ID_MAX_SIZE) {
+		if(tenant.getTenantId().length()>Tenant.TENANT_ID_MAX_SIZE) {
+			return false;
+		}
+		if(tenant.getTenantName().length()>Tenant.TENANT_NAME_MAX_SIZE) {
 			return false;
 		}
 		return true;

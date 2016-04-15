@@ -38,12 +38,8 @@ import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.ConditionSerializer;
 import io.symcpe.wraith.conditions.logical.AndCondition;
 import io.symcpe.wraith.conditions.logical.OrCondition;
-import io.symcpe.wraith.conditions.relational.BricsRegexCondition;
 import io.symcpe.wraith.conditions.relational.EqualsCondition;
 import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
-import io.symcpe.wraith.rules.RuleCommand;
-import io.symcpe.wraith.rules.RuleSerializer;
-import io.symcpe.wraith.rules.SimpleRule;
 
 /**
  * Serialization deserialization unit tests
@@ -200,17 +196,4 @@ public class TestSerialization {
 		assertTrue(rule.getCondition().matches(event));
 	}
 	
-	@Test
-	public void testBricksRegexSerialization() {
-		Condition regexCondition = new BricsRegexCondition("host", "boost*.symcpe.io");
-		
-		SimpleRule rule = new SimpleRule((short) 1, "test", true, regexCondition, new Action[]{ new AlertAction((short)0, "test", "email", "test") });
-		String jsonRule = RuleSerializer.serializeRuleToJSONString(rule, false);
-		
-		rule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
-		Event event = new TestFactory().buildEvent();
-		event.getHeaders().put("host", "boost.symcpe.io");
-		assertTrue(rule.getCondition().matches(event));
-	}
-
 }

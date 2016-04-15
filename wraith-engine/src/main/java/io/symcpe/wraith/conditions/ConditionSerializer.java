@@ -36,7 +36,6 @@ import io.symcpe.wraith.Required;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.conditions.logical.AndCondition;
 import io.symcpe.wraith.conditions.logical.OrCondition;
-import io.symcpe.wraith.conditions.relational.BricsRegexCondition;
 import io.symcpe.wraith.conditions.relational.EqualsCondition;
 import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
 import io.symcpe.wraith.rules.RuleSerializer;
@@ -84,13 +83,13 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 		JsonElement element = jsonObject.get(PROPS);
 		try {
 			Condition pojo = context.deserialize(element, Class.forName(type));
-			if(pojo instanceof BricsRegexCondition) {
-				BricsRegexCondition regex = ((BricsRegexCondition)pojo);
-				regex.setRegex(regex.getRegex());
-			}
 			if(pojo instanceof JavaRegexCondition) {
 				JavaRegexCondition regex = ((JavaRegexCondition)pojo);
-				regex.setValue(regex.getValue());
+				if(regex.getValue()==null) {
+					throw new JsonParseException("Regex can't be empty");
+				}else {
+					regex.setValue(regex.getValue());
+				}
 			}
 			List<Field> fields = new ArrayList<>();
 			Utils.addDeclaredAndInheritedFields(Class.forName(type), fields);

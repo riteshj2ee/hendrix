@@ -1,5 +1,4 @@
 io.symcpe.wraith.conditions.relational.JavaRegexCondition=REGEX
-io.symcpe.wraith.conditions.relational.BricksRegexCondition=BREGEX
 io.symcpe.wraith.conditions.relational.EqualsCondition=EQUALS
 io.symcpe.wraith.conditions.relational.GreaterThanCondition=GREATER THAN
 io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition=GREAT THAN EQUALS

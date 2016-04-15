@@ -58,7 +58,7 @@ public class TestRuleValidator {
 			validator.validate(ruleObj);
 		}
 	}
-
+	
 	@Test
 	public void testInvalidRules() {
 		RuleValidator validator = RuleValidator.getInstance();
@@ -68,6 +68,7 @@ public class TestRuleValidator {
 				validator.validate(ruleObj);
 				Assert.fail("Invalid rule shouldn't pass validation: "+rule);
 			} catch (Exception e) {
+				System.out.println(e.getMessage());
 			}
 		}
 	}

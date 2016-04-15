@@ -29,10 +29,10 @@ import io.symcpe.wraith.Event;
 import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.logical.AndCondition;
 import io.symcpe.wraith.conditions.logical.OrCondition;
-import io.symcpe.wraith.conditions.relational.BricsRegexCondition;
 import io.symcpe.wraith.conditions.relational.EqualsCondition;
 import io.symcpe.wraith.conditions.relational.GreaterThanCondition;
 import io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition;
+import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
 import io.symcpe.wraith.conditions.relational.LessThanCondition;
 import io.symcpe.wraith.conditions.relational.LessThanEqualToCondition;
 import io.symcpe.wraith.rules.RuleSerializer;
@@ -56,7 +56,7 @@ public class Utils {
 		SIMPLE_CONDITIONS.put(LessThanEqualToCondition.class, "lte");
 		SIMPLE_CONDITIONS.put(GreaterThanCondition.class, "gt");
 		SIMPLE_CONDITIONS.put(LessThanCondition.class, "lt");
-		SIMPLE_CONDITIONS.put(BricsRegexCondition.class, "matches");
+		SIMPLE_CONDITIONS.put(JavaRegexCondition.class, "matches");
 
 		COMPLEX_CONDITIONS.put(AndCondition.class, "and");
 		COMPLEX_CONDITIONS.put(OrCondition.class, "or");

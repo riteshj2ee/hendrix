@@ -26,15 +26,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import io.symcpe.wraith.Event;
-import io.symcpe.wraith.conditions.Condition;
-import io.symcpe.wraith.conditions.logical.AndCondition;
-import io.symcpe.wraith.conditions.logical.OrCondition;
-import io.symcpe.wraith.conditions.relational.BricsRegexCondition;
-import io.symcpe.wraith.conditions.relational.EqualsCondition;
-import io.symcpe.wraith.conditions.relational.GreaterThanCondition;
-import io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition;
-import io.symcpe.wraith.conditions.relational.LessThanCondition;
-import io.symcpe.wraith.conditions.relational.LessThanEqualToCondition;
 import io.symcpe.wraith.rules.RuleSerializer;
 
 /**
@@ -44,27 +35,12 @@ import io.symcpe.wraith.rules.RuleSerializer;
  */
 public class Utils {
 
-	public static final Map<Class<? extends Condition>, String> SIMPLE_CONDITIONS = new HashMap<>();
-	public static final Map<Class<? extends Condition>, String> COMPLEX_CONDITIONS = new HashMap<>();
-
 	private Utils() {
-	}
-
-	static {
-		SIMPLE_CONDITIONS.put(EqualsCondition.class, "eq");
-		SIMPLE_CONDITIONS.put(GreaterThanEqualToCondition.class, "gte");
-		SIMPLE_CONDITIONS.put(LessThanEqualToCondition.class, "lte");
-		SIMPLE_CONDITIONS.put(GreaterThanCondition.class, "gt");
-		SIMPLE_CONDITIONS.put(LessThanCondition.class, "lt");
-		SIMPLE_CONDITIONS.put(BricsRegexCondition.class, "matches");
-
-		COMPLEX_CONDITIONS.put(AndCondition.class, "and");
-		COMPLEX_CONDITIONS.put(OrCondition.class, "or");
 	}
 
 	@SuppressWarnings("unchecked")
 	public static Event stringToEvent(String eventJson) {
-		Event event = new UIEvent();
+		Event event = new WebEvent();
 		Gson gson = new Gson();
 		event.getHeaders()
 				.putAll((Map<String, Object>) gson.fromJson(eventJson, new TypeToken<HashMap<String, Object>>() {
@@ -72,12 +48,12 @@ public class Utils {
 		return event;
 	}
 
-	public static class UIEvent implements Event {
+	public static class WebEvent implements Event {
 
 		private static final long serialVersionUID = 1L;
 		private Map<String, Object> headers;
 
-		public UIEvent() {
+		public WebEvent() {
 			headers = new HashMap<>();
 		}
 

@@ -31,7 +31,6 @@ import javax.persistence.Table;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.symcpe.hendrix.api.Queries;
-import io.symcpe.hendrix.api.rest.RulesEndpoint;
 
 /**
  * The persistent class for the tenant database table.
@@ -47,12 +46,14 @@ import io.symcpe.hendrix.api.rest.RulesEndpoint;
 public class Tenant implements Serializable {
 
 	private static final long serialVersionUID = 1L;
+	public static final int TENANT_ID_MAX_SIZE = 32;
+	public static final int TENANT_NAME_MAX_SIZE = 100;
 
 	@Id
-	@Column(name = "tenant_id", length = RulesEndpoint.TENANT_ID_MAX_SIZE)
+	@Column(name = "tenant_id", length = TENANT_ID_MAX_SIZE)
 	private String tenantId;
 
-	@Column(name = "tenant_name", length = 100)
+	@Column(name = "tenant_name", length = TENANT_NAME_MAX_SIZE)
 	private String tenantName;
 
 	// bi-directional many-to-one association to RulesTable

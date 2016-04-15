@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import static org.mockito.Mockito.*;
 
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Event;
@@ -132,7 +133,7 @@ public class TestStatelessRulesEngine {
 	}
 
 	@Test
-	public void testEvaluateEventTag() throws Exception {
+	public void testEvaluateEventAlert() throws Exception {
 		new StatelessRulesEngine<>(caller, testFactory, testFactory);
 		engine.initializeRules(new HashMap<>());
 		Event event = testFactory.buildEvent();
@@ -143,6 +144,76 @@ public class TestStatelessRulesEngine {
 						false),
 				false);
 		engine.evaluateEventAgainstAllRules(null, null, event);
+		verify(caller).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
+	}
+	
+	@Test
+	public void testEvaluateEventAlertRuleUpdate() throws Exception {
+		new StatelessRulesEngine<>(caller, testFactory, testFactory);
+		Map<String, String> conf = new HashMap<>();
+		conf.put(TestFactory.RULES_CONTENT,
+				RuleSerializer.serializeRulesToJSONString(Arrays.asList(new SimpleRule((short) 1123, "test1", true,
+						new EqualsCondition("host", "abcd"), new AlertAction((short) 2, "test", "test1", "test"))),
+						false));
+		engine.initializeRules(conf);
+		Map<Short, Rule> map = engine.getRuleMap();
+		assertEquals(1, map.size());
+		Event event = testFactory.buildEvent();
+		event.getHeaders().put("host", "abcd");
+		engine.evaluateEventAgainstAllRules(null, null, event);
+		verify(caller).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test1");
+		engine.updateRule(null,
+				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
+						new EqualsCondition("host", "abcd"), new AlertAction((short) 2, "test", "test", "test")),
+						false),
+				false);
+		engine.evaluateEventAgainstAllRules(null, null, event);
+		verify(caller).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
+	}
+	
+	@Test
+	public void testEvaluateEventAlertRuleNoMatch() throws Exception {
+		new StatelessRulesEngine<>(caller, testFactory, testFactory);
+		Map<String, String> conf = new HashMap<>();
+		conf.put(TestFactory.RULES_CONTENT,
+				RuleSerializer.serializeRulesToJSONString(Arrays.asList(new SimpleRule((short) 1123, "test1", true,
+						new EqualsCondition("host", "abc"), new AlertAction((short) 2, "test", "test1", "test"))),
+						false));
+		engine.initializeRules(conf);
+		Map<Short, Rule> map = engine.getRuleMap();
+		assertEquals(1, map.size());
+		Event event = testFactory.buildEvent();
+		event.getHeaders().put("host", "abcd");
+		engine.evaluateEventAgainstAllRules(null, null, event);
+		verify(caller).handleRuleNoMatch(null, null, event, engine.getRuleMap().values().iterator().next());
+		engine.updateRule(null,
+				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
+						new EqualsCondition("host", "abcd"), new AlertAction((short) 2, "test", "test", "test")),
+						false),
+				false);
+		engine.evaluateEventAgainstAllRules(null, null, event);
+		verify(caller).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
+	}
+	
+	@Test
+	public void testEvaluateEventRuleGroup() throws Exception {
+		new StatelessRulesEngine<>(caller, testFactory, testFactory);
+		HashMap<String, String> conf = new HashMap<>();
+		conf.put(Constants.RULE_GROUP_ACTIVE, "true");
+		engine.initializeRules(conf);
+		Event event = testFactory.buildEvent();
+		event.getHeaders().put("host", "abcd");
+		event.getHeaders().put(Constants.FIELD_RULE_GROUP, "rg1");
+		engine.updateRule("rg1",
+				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
+						new EqualsCondition("host", "abcd"), new AlertAction((short) 2, "test", "test", "test")),
+						false),
+				false);
+		engine.evaluateEventAgainstGroupedRules(null, null, event);
+		verify(caller, times(1)).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
+		event.getHeaders().put(Constants.FIELD_RULE_GROUP, "rg2");
+		engine.evaluateEventAgainstGroupedRules(null, null, event);
+		verify(caller, times(1)).emitAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
 	}
 
 }

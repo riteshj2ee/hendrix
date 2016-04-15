@@ -22,6 +22,7 @@ import io.symcpe.wraith.conditions.AbstractSimpleCondition;
 import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.logical.ComplexCondition;
 import io.symcpe.wraith.conditions.relational.EqualsCondition;
+import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
 import io.symcpe.wraith.conditions.relational.NumericCondition;
 import io.symcpe.wraith.rules.Rule;
 
@@ -61,10 +62,21 @@ public class ConditionValidator implements Validator<Condition> {
 					if (((NumericCondition) castedConditon).getValue() == Double.MIN_VALUE) {
 						throw new ValidationException("Numeric conditions must have a value");
 					}
-				}
-				if (castedConditon instanceof EqualsCondition) {
-					if (((EqualsCondition) castedConditon).getValue() == null) {
+				} else if (castedConditon instanceof EqualsCondition) {
+					Object value = ((EqualsCondition) castedConditon).getValue();
+					if (value == null) {
 						throw new ValidationException("Equals condition must have a value");
+					}
+					if ((value instanceof String) && ((String) (value)).isEmpty()) {
+						throw new ValidationException("Equals condition value can't be empty");
+					}
+				} else if (castedConditon instanceof JavaRegexCondition) {
+					String regex = ((JavaRegexCondition)castedConditon).getValue();
+					if(regex.isEmpty()) {
+						throw new ValidationException("Regex value can't be empty");
+					}
+					if(regex.length()>200) {
+						throw new ValidationException("Regex value too large");
 					}
 				}
 			} else {

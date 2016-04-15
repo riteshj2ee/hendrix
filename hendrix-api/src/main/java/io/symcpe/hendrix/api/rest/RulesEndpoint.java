@@ -57,7 +57,6 @@ import io.symcpe.wraith.rules.validator.ValidationException;
 @Path("/rules")
 public class RulesEndpoint {
 
-	public static final int TENANT_ID_MAX_SIZE = 32;
 	private static final String RULE_ID = "ruleId";
 	private static String BUILD_NUMBER;
 	private static String VERSION;
@@ -81,7 +80,7 @@ public class RulesEndpoint {
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public List<String> listRules(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty,
 			@DefaultValue("0") @QueryParam("filter") int filter) {
 		// TODO ACL
@@ -99,7 +98,7 @@ public class RulesEndpoint {
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	public short createRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		// TODO ACL
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
@@ -120,10 +119,14 @@ public class RulesEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public short putRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
 			@NotNull(message = "Rule JSON can't be empty") String ruleJson) {
 		// TODO ACL
+		if(ruleJson!=null && ruleJson.length()>Rules.MAX_RULE_LENGTH) {
+			throw new BadRequestException(
+					Response.status(Status.BAD_REQUEST).entity("Rule is too big").build());
+		}
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		try {
@@ -153,6 +156,8 @@ public class RulesEndpoint {
 								.build());
 			} else if (e.getLocalizedMessage().contains("Malformed")) {
 				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
+			} else if (e.getLocalizedMessage().contains("IllegalStateException")) {
+				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Expecting a singel rule object not an array").build());
 			} else {
 				throw new BadRequestException(
 						Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());
@@ -184,7 +189,7 @@ public class RulesEndpoint {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	public String enableRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		// TODO ACL
 		try {
@@ -217,7 +222,7 @@ public class RulesEndpoint {
 	@GET
 	@Produces({ MediaType.TEXT_HTML })
 	public String getRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId, @DefaultValue("false") @QueryParam("pretty") boolean pretty) {
 		// TODO ACL
 		Rules rule = null;
@@ -246,7 +251,7 @@ public class RulesEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void deleteRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		// TODO authorize get tenantId
 		try {
@@ -263,7 +268,7 @@ public class RulesEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void deleteAllRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		// TODO authorize get tenantId
 		try {
 			RulesManager.getInstance().deleteRules(tenantId);
@@ -279,7 +284,7 @@ public class RulesEndpoint {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void disableAllRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		// TODO authorize get tenantId
 		try {
 			RulesManager.getInstance().disableAllRules(tenantId);

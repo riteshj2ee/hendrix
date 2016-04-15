@@ -147,7 +147,6 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	public void run(AppConfig configuration, Environment environment) throws Exception {
 		init(configuration);
 		environment.jersey().property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, false);
-		environment.jersey().register(ConstraintViolationExceptionMapper.class);
 		environment.jersey().register(ValidationFeature.class);
 		environment.jersey().register(new RulesEndpoint());
 		environment.jersey().register(new TenantEndpoint());
