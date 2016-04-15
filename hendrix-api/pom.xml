@@ -106,6 +106,72 @@
 			<version>2.22.1</version>
 		</dependency>
 	</dependencies>
+	<profiles>
+		<profile>
+			<id>docker</id>
+			<activation>
+				<property>
+					<name>env.DOCKER_REGISTRY</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.spotify</groupId>
+						<artifactId>docker-maven-plugin</artifactId>
+						<version>0.4.5</version>
+						<executions>
+							<execution>
+								<id>build-image</id>
+								<phase>package</phase>
+								<goals>
+									<goal>build</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>tag-image</id>
+								<phase>package</phase>
+								<goals>
+									<goal>tag</goal>
+								</goals>
+								<configuration>
+									<image>${project.name}:${project.version}</image>
+									<newName>${env.DOCKER_REGISTRY}/${project.name}:${project.version}</newName>
+								</configuration>
+							</execution>
+							<execution>
+								<id>push-image</id>
+								<phase>deploy</phase>
+								<goals>
+									<goal>push</goal>
+								</goals>
+								<configuration>
+									<imageName>${env.DOCKER_REGISTRY}/${project.name}:${project.version}</imageName>
+								</configuration>
+							</execution>
+						</executions>
+						<configuration>
+							<serverId>paas</serverId>
+							<registryUrl>https://${env.DOCKER_REGISTRY}/</registryUrl>
+							<imageName>${project.name}</imageName>
+							<imageTags>
+								<imageTag>${project.version}</imageTag>
+							</imageTags>
+							<dockerDirectory>${project.name}/src/main/docker</dockerDirectory>
+							<forceTags>true</forceTags>
+							<resources>
+								<resource>
+									<targetPath>/</targetPath>
+									<directory>${project.build.directory}</directory>
+									<include>${project.build.finalName}.jar</include>
+								</resource>
+							</resources>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 	<build>
 		<finalName>api</finalName>
 		<sourceDirectory>src/main/java</sourceDirectory>
@@ -159,58 +225,6 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>com.spotify</groupId>
-				<artifactId>docker-maven-plugin</artifactId>
-				<version>0.4.5</version>
-				<executions>
-					<execution>
-						<id>build-image</id>
-						<phase>package</phase>
-						<goals>
-							<goal>build</goal>
-						</goals>
-					</execution>
-					<execution>
-						<id>tag-image</id>
-						<phase>package</phase>
-						<goals>
-							<goal>tag</goal>
-						</goals>
-						<configuration>
-							<image>${project.name}:${project.version}</image>
-							<newName>${env.DOCKER_REGISTRY}/${project.name}:${project.version}</newName>
-						</configuration>
-					</execution>
-					<execution>
-						<id>push-image</id>
-						<phase>deploy</phase>
-						<goals>
-							<goal>push</goal>
-						</goals>
-						<configuration>
-							<imageName>${env.DOCKER_REGISTRY}/${project.name}:${project.version}</imageName>
-						</configuration>
-					</execution>
-				</executions>
-				<configuration>
-					<serverId>paas</serverId>
-					<registryUrl>https://${env.DOCKER_REGISTRY}/</registryUrl>
-					<imageName>${project.name}</imageName>
-					<imageTags>
-						<imageTag>${project.version}</imageTag>
-					</imageTags>
-					<dockerDirectory>${project.name}/src/main/docker</dockerDirectory>
-					<forceTags>true</forceTags>
-					<resources>
-						<resource>
-							<targetPath>/</targetPath>
-							<directory>${project.build.directory}</directory>
-							<include>${project.build.finalName}.jar</include>
-						</resource>
-					</resources>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
