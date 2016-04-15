@@ -21,13 +21,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.symantec.cpe.volta.storm.base.util.StormContextUtil;
-
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
 

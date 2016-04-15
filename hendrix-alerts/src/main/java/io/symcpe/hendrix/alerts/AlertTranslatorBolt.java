@@ -18,7 +18,6 @@ package io.symcpe.hendrix.alerts;
 import java.util.Map;
 
 import com.google.gson.Gson;
-import com.symantec.cpe.volta.storm.base.util.StormContextUtil;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -27,6 +26,7 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
 
