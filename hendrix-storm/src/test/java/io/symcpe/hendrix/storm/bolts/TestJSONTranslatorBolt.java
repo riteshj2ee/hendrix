@@ -17,6 +17,8 @@ package io.symcpe.hendrix.storm.bolts;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -37,6 +39,7 @@ import org.mockito.stubbing.Answer;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.HendrixEvent;
 import io.symcpe.hendrix.storm.MockTupleHelpers;
 import io.symcpe.hendrix.storm.TestUtils;
@@ -94,7 +97,33 @@ public class TestJSONTranslatorBolt {
 			assertTrue(processedEventContainer.get().size()>0);
 			HendrixEvent processedEvent = (HendrixEvent) processedEventContainer.get().get(0);
 			assertTrue(processedEvent.getHeaders().size() > 0);
-			assertTrue(processedEvent.getHeaders().containsKey("@timestamp"));
+			// validate timestamp exists
+			assertTrue(processedEvent.getHeaders().containsKey(Constants.FIELD_TIMESTAMP));
+			// validate timestamp was copied
+			assertEquals(((Double)processedEvent.getHeaders().get("@timestamp")).longValue(), processedEvent.getHeaders().get(Constants.FIELD_TIMESTAMP));
+			// validate event was successfully translated to a hashmap
+			verify(collector, times(1)).ack(input);
+		}
+	}
+	
+	@Test
+	public void testExecuteNegative() {
+		JSONTranslatorBolt bolt = new JSONTranslatorBolt();
+		for (String event : events) {
+			final AtomicReference<Values> processedEventContainer = new AtomicReference<Values>(null);
+			OutputCollector collector = MockTupleHelpers.mockCollector(new Answer<Object>() {
+
+				@Override
+				public Object answer(InvocationOnMock invocation) throws Throwable {
+					Object newEvent = invocation.getArguments()[2];
+					processedEventContainer.set((Values) newEvent);
+					return new ArrayList<>();
+				}
+			});
+			bolt.prepare(new HashMap<>(), null, collector);
+			when(input.getString(0)).thenReturn(event+"}");
+			bolt.execute(input);
+			verify(collector, times(1)).emit(eq(Constants.ERROR_STREAM), eq(input), any());
 			verify(collector, times(1)).ack(input);
 		}
 	}

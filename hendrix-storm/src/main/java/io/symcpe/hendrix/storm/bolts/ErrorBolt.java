@@ -40,7 +40,7 @@ import io.symcpe.hendrix.storm.Constants;
  */
 public class ErrorBolt extends BaseRichBolt {
 
-	public static final String FILE_LOG_LOCATION = "/tmp/lmm_errors.log";
+	public static final String FILE_LOG_LOCATION = "/tmp/hendrix_errors.log";
 	private static final String DEFAULT_ERROR_DEBUG = "false";
 	private static final String CONF_ERROR_BOLT_DEBUG = "error.bolt.debug";
 	private static final long serialVersionUID = 1L;

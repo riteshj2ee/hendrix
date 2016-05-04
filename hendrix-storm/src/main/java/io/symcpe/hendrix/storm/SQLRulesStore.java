@@ -30,12 +30,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleSerializer;
 import io.symcpe.wraith.rules.SimpleRule;
+import io.symcpe.wraith.rules.validator.AlertTemplateValidator;
 import io.symcpe.wraith.rules.validator.RuleValidator;
 import io.symcpe.wraith.rules.validator.ValidationException;
 import io.symcpe.wraith.store.RulesStore;
+import io.symcpe.wraith.store.TemplateStore;
 
 /**
  * SQL Database based {@link RulesStore} so that transactional support for Rules
@@ -43,11 +47,14 @@ import io.symcpe.wraith.store.RulesStore;
  * 
  * @author ambud_sharma
  */
-public class SQLRulesStore implements RulesStore {
+public class SQLRulesStore implements RulesStore, TemplateStore {
 
-	public static final String RSTORE_SQL_URL = "rstore.sql.url";
-	public static final String RSTORE_SQL_DB = "rstore.sql.db";
+	public static final String STORE_SQL_URL = "store.sql.url";
+	public static final String STORE_SQL_DB = "store.sql.db";
+	public static final String TSTORE_SQL_TABLE = "tstore.sql.table";
 	public static final String RSTORE_SQL_TABLE = "rstore.sql.table";
+	public static final String COLUMN_TEMPLATE_ID = "template_id";
+	public static final String COLUMN_TEMPLATE_CONTENT = "template_content";
 	public static final String COLUMN_RULE_ID = "rule_id";
 	public static final String COLUMN_RULE_CONTENT = "rule_content";
 	private static final String COLUMN_TENANT_ID = "tenant_id";
@@ -58,19 +65,21 @@ public class SQLRulesStore implements RulesStore {
 	private String dbName;
 	private String username;
 	private String password;
-	private String table;
+	private String rulesTable;
 	private String[] tenants;
+	private String templateTable;
 
 	public SQLRulesStore() {
 	}
 
 	@Override
 	public void initialize(Map<String, String> conf) {
-		this.url = conf.get(RSTORE_SQL_URL);
-		this.dbName = conf.get(RSTORE_SQL_DB);
-		this.table = conf.get(RSTORE_SQL_TABLE);
-		this.username = conf.get(Constants.RSTORE_USERNAME);
-		this.password = conf.get(Constants.RSTORE_PASSWORD);
+		this.url = conf.get(STORE_SQL_URL);
+		this.dbName = conf.get(STORE_SQL_DB);
+		this.rulesTable = conf.get(RSTORE_SQL_TABLE);
+		this.templateTable = conf.get(TSTORE_SQL_TABLE);
+		this.username = conf.get(Constants.STORE_USERNAME);
+		this.password = conf.get(Constants.STORE_PASSWORD);
 		if (conf.get(RSTORE_TENANT_FILTER) != null) {
 			this.tenants = conf.get(RSTORE_TENANT_FILTER).toString().split(",");
 		}
@@ -92,27 +101,33 @@ public class SQLRulesStore implements RulesStore {
 		try {
 			PreparedStatement st = null;
 			if (this.tenants == null) {
-				st = conn.prepareStatement("select * from " + dbName + "." + table + "");
+				st = conn.prepareStatement("select * from " + dbName + "." + rulesTable + "");
 			} else {
-				st = conn.prepareStatement("select * from " + dbName + "." + table + " where tenant_id in (?)");
+				st = conn.prepareStatement("select * from " + dbName + "." + rulesTable + " where tenant_id in (?)");
 				st.setString(1, StringUtils.join(tenants));
 			}
 			ResultSet resultSet = st.executeQuery();
 			int counter = 0;
 			while (resultSet.next()) {
-				SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(resultSet.getString(COLUMN_RULE_CONTENT));
-				short ruleId = resultSet.getShort(COLUMN_RULE_ID);
-				if (rule != null && ruleId == rule.getRuleId()) {
-					try {
-						RuleValidator.getInstance().validate(rule);
-					} catch (ValidationException e) {
-						// TODO ignore rules that don't pass validation
+				try {
+					SimpleRule rule = RuleSerializer
+							.deserializeJSONStringToRule(resultSet.getString(COLUMN_RULE_CONTENT));
+					short ruleId = resultSet.getShort(COLUMN_RULE_ID);
+					if (rule != null && ruleId == rule.getRuleId()) {
+						try {
+							RuleValidator.getInstance().validate(rule);
+						} catch (ValidationException e) {
+							logger.error("Dropping rule:" + rule.getRuleId() + " reason:" + e.getMessage());
+							continue;
+						}
+						rules.put(ruleId, rule);
+						counter++;
+						logger.debug("Adding rule:" + rule.getRuleId() + "/" + rule.getName());
+					} else {
+						logger.error("Dropping rule, RuleId(PK) mismatch with Rule content RuleId");
 					}
-					rules.put(ruleId, rule);
-					counter++;
-					logger.debug("Adding rule:" + rule.getRuleId() + "/" + rule.getName());
-				} else {
-					logger.error("Dropping rule, RuleId(PK) mismatch with Rule content RuleId");
+				} catch (Exception e) {
+					logger.error("Dropping rule, json parse exception:" + e.getMessage());
 				}
 			}
 			logger.info("Loaded " + counter + " rules from the database");
@@ -141,36 +156,41 @@ public class SQLRulesStore implements RulesStore {
 		try {
 			PreparedStatement st = null;
 			if (this.tenants == null) {
-				st = conn.prepareStatement("select * from " + dbName + "." + table + "");
+				st = conn.prepareStatement("select * from " + dbName + "." + rulesTable + "");
 			} else {
-				st = conn.prepareStatement("select * from " + dbName + "." + table + " where tenant_id in (?)");
+				st = conn.prepareStatement("select * from " + dbName + "." + rulesTable + " where tenant_id in (?)");
 				st.setString(1, StringUtils.join(tenants));
 			}
 			ResultSet resultSet = st.executeQuery();
 			int counter = 0;
 			while (resultSet.next()) {
-				SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(resultSet.getString(COLUMN_RULE_CONTENT));
-				short ruleId = resultSet.getShort(COLUMN_RULE_ID);
-				String tenantId = resultSet.getString(COLUMN_TENANT_ID);
-				if (tenantId == null) {
-					// rules with tenantIds are not allowed
-					continue;
-				}
-				if (rule != null && ruleId == rule.getRuleId()) {
-					try {
-						RuleValidator.getInstance().validate(rule);
-					} catch (ValidationException e) {
-						// TODO ignore rules that don't pass validation
+				try {
+					SimpleRule rule = RuleSerializer
+							.deserializeJSONStringToRule(resultSet.getString(COLUMN_RULE_CONTENT));
+					short ruleId = resultSet.getShort(COLUMN_RULE_ID);
+					String tenantId = resultSet.getString(COLUMN_TENANT_ID);
+					if (tenantId == null) {
+						// rules with tenantIds are not allowed
 						continue;
 					}
-					if (!rules.containsKey(tenantId)) {
-						rules.put(tenantId, new LinkedHashMap<>());
+					if (rule != null && ruleId == rule.getRuleId()) {
+						try {
+							RuleValidator.getInstance().validate(rule);
+						} catch (ValidationException e) {
+							logger.error("Dropping rule:" + rule.getRuleId() + " reason:" + e.getMessage());
+							continue;
+						}
+						if (!rules.containsKey(tenantId)) {
+							rules.put(tenantId, new LinkedHashMap<>());
+						}
+						rules.get(tenantId).put(ruleId, rule);
+						counter++;
+						logger.debug("Adding rule:" + rule.getRuleId() + "/" + rule.getName());
+					} else {
+						logger.error("Dropping rule, RuleId(PK) mismatch with Rule content RuleId");
 					}
-					rules.get(tenantId).put(ruleId, rule);
-					counter++;
-					logger.debug("Adding rule:" + rule.getRuleId() + "/" + rule.getName());
-				} else {
-					logger.error("Dropping rule, RuleId(PK) mismatch with Rule content RuleId");
+				} catch (Exception e) {
+					logger.error("Dropping rule, json parse exception:" + e.getMessage());
 				}
 			}
 			logger.info("Loaded " + counter + " rules from the database");
@@ -180,6 +200,51 @@ public class SQLRulesStore implements RulesStore {
 			throw new IOException(e);
 		}
 		return rules;
+	}
+
+	@Override
+	public Map<Short, AlertTemplate> getAllTemplates() throws IOException {
+		Map<Short, AlertTemplate> templateMap = new HashMap<>();
+		AlertTemplateValidator validator = new AlertTemplateValidator();
+		try {
+			PreparedStatement st = null;
+			if (this.tenants == null) {
+				st = conn.prepareStatement("select * from " + dbName + "." + templateTable + "");
+			} else {
+				st = conn.prepareStatement("select * from " + dbName + "." + templateTable + " where tenant_id in (?)");
+				st.setString(1, StringUtils.join(tenants));
+			}
+			ResultSet resultSet = st.executeQuery();
+			int counter = 0;
+			while (resultSet.next()) {
+				try {
+					AlertTemplate template = AlertTemplateSerializer
+							.deserialize(resultSet.getString(COLUMN_TEMPLATE_CONTENT));
+					short templateId = resultSet.getShort(COLUMN_TEMPLATE_ID);
+					if (template != null && templateId == template.getTemplateId()) {
+						try{
+						validator.validate(template);
+						} catch (ValidationException e) {
+							logger.error("Dropping template:" + template.getTemplateId() + " reason:" + e.getMessage());
+							continue;
+						}
+						templateMap.put(templateId, template);
+						counter++;
+						logger.debug("Adding template:" + template.getTemplateId() + "/" + template.getTemplateName());
+					} else {
+						logger.error("Dropping template, TemplateId(PK) mismatch with Template content templateId");
+					}
+				} catch (Exception e) {
+					logger.error("Dropping template, json parse exception:" + e.getMessage());
+				}
+			}
+			logger.info("Loaded " + counter + " templates from the database");
+			resultSet.close();
+			st.close();
+		} catch (SQLException e) {
+			throw new IOException(e);
+		}
+		return templateMap;
 	}
 
 }

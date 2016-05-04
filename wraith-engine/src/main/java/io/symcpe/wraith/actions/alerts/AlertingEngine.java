@@ -59,5 +59,5 @@ public interface AlertingEngine {
 	 * @return
 	 */
 	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String target, String media, long timestamp);
-
+	
 }

@@ -55,6 +55,7 @@ import io.symcpe.wraith.rules.SimpleRule;
 public class TestAlertingEngineBolt {
 
 	public static final String RULES_CONTENT = "rstore.rules.content";
+	public static final String TEMPLATE_CONTENT = "tstore.template.content";
 	private List<String> events = new ArrayList<>();
 	@Mock
 	private OutputCollector collector;
@@ -73,7 +74,7 @@ public class TestAlertingEngineBolt {
 				new AlertAction((short) 1, "test2@symantec.com", "mail", "Hello $value!"));
 		List<Rule> rules = Arrays.asList(new Rule[] { hostRule, valueRule });
 		stormConf.put(RULES_CONTENT, RuleSerializer.serializeRulesToJSONString(rules, false));
-		stormConf.put(Constants.RSTORE_TYPE, TestRulesStore.class.getName());
+		stormConf.put(Constants.RSTORE_TYPE, TestStore.class.getName());
 	}
 
 	@Test

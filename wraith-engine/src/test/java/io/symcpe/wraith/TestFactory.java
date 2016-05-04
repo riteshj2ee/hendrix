@@ -25,6 +25,7 @@ import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleSerializer;
 import io.symcpe.wraith.store.RulesStore;
 import io.symcpe.wraith.store.StoreFactory;
+import io.symcpe.wraith.store.TemplateStore;
 
 /**
  * TestFactory implementing Event and Store Factory
@@ -86,6 +87,12 @@ public class TestFactory implements EventFactory, StoreFactory {
 			return ruleGroups;
 		}
 		
+	}
+
+	@Override
+	public TemplateStore getTemplateStoreStore(String type, Map<String, String> conf) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

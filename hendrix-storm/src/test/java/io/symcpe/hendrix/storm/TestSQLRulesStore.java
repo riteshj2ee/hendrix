@@ -32,9 +32,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import io.symcpe.hendrix.storm.SQLRulesStore;
 import io.symcpe.wraith.actions.Action;
-import io.symcpe.wraith.actions.alerts.AlertAction;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
 import io.symcpe.wraith.rules.Rule;
@@ -59,8 +58,8 @@ public class TestSQLRulesStore {
 
 	public TestSQLRulesStore() {
 		Map<String, String> conf = new HashMap<>();
-		conf.put(SQLRulesStore.RSTORE_SQL_URL, CONNECTION_NC_STRING);
-		conf.put(SQLRulesStore.RSTORE_SQL_DB, SCHEMA);
+		conf.put(SQLRulesStore.STORE_SQL_URL, CONNECTION_NC_STRING);
+		conf.put(SQLRulesStore.STORE_SQL_DB, SCHEMA);
 		conf.put(SQLRulesStore.RSTORE_SQL_TABLE, TEST_RULE_TABLE);
 		store.initialize(conf);
 	}
@@ -78,7 +77,7 @@ public class TestSQLRulesStore {
 		runSQL(CONNECTION_STRING, createTable);
 
 		Condition condition = new JavaRegexCondition("tst", "\\d+");
-		Action action = new AlertAction((short) 2, "test", "test", "test");
+		Action action = new TemplatedAlertAction((short) 2, (short) 2);
 		Rule testRule = new SimpleRule((short) 1233, "testRule", true, condition, action);
 
 		Connection conn = DriverManager.getConnection(CONNECTION_STRING);
@@ -112,7 +111,7 @@ public class TestSQLRulesStore {
 	@Test
 	public void testRuleUpdateLoading() throws IOException, SQLException {
 		Condition condition = new JavaRegexCondition("tst", "\\d+");
-		Action action = new AlertAction((short) 2, "test", "test", "test");
+		Action action = new TemplatedAlertAction((short) 2, (short) 2);
 		Rule testRule = new SimpleRule((short) 1234, "testRule", true, condition, action);
 		String ruleUpdate = RuleSerializer.serializeRuleToJSONString(testRule, false);
 		String updateRule = "update " + TEST_RULE_TABLE + " set " + SQLRulesStore.COLUMN_RULE_ID + "=1234, "

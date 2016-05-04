@@ -27,7 +27,13 @@ import io.symcpe.wraith.Event;
 public interface Action extends Serializable {
 	
 	public static enum ACTION_TYPE {
-		ALERT
+		AGGREGATION,
+		TAG,
+		NEW,
+		RAW_ALERT,
+		TEMPLATED_ALERT,
+		OMEGA,
+		ANOMD
 	}
 
 	/**

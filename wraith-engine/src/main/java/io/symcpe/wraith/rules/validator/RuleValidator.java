@@ -27,6 +27,8 @@ import io.symcpe.wraith.rules.Rule;
  */
 public class RuleValidator implements Validator<Rule> {
 	
+	private static final int MAX_LENGTH_RULE_NAME = 100;
+	private static final int MAX_LENGTH_RULE_DESCRIPTION = 500;
 	private static final RuleValidator INSTANCE = new RuleValidator();
 	private ActionValidator actionValidator = new ActionValidator();
 	private ConditionValidator conditionValidator = new ConditionValidator();
@@ -49,6 +51,12 @@ public class RuleValidator implements Validator<Rule> {
 		}
 		if(rule.getName()==null || rule.getName().trim().isEmpty()) {
 			throw new ValidationException("Rule name can't be empty");
+		}
+		if(rule.getName().length()>MAX_LENGTH_RULE_NAME) {
+			throw new ValidationException("Rule name must be less than "+MAX_LENGTH_RULE_NAME+" characters");
+		}
+		if(rule.getDescription()!=null && rule.getDescription().length()>MAX_LENGTH_RULE_DESCRIPTION) {
+			throw new ValidationException("Rule description must be less than "+MAX_LENGTH_RULE_DESCRIPTION+" characters");
 		}
 		conditionValidator.validate(rule.getCondition());
 		if(rule.getActions()==null || rule.getActions().size()==0) {

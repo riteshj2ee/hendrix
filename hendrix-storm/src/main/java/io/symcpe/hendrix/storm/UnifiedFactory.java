@@ -22,6 +22,7 @@ import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.store.RulesStore;
 import io.symcpe.wraith.store.StoreFactory;
+import io.symcpe.wraith.store.TemplateStore;
 
 /**
  * Unified factory implementation for Hendrix
@@ -34,7 +35,7 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 	public RulesStore getRulesStore(String type, Map<String, String> stormConf) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Map<String, String> conf = new HashMap<>();
 		for(Object key:stormConf.keySet()) {
-			if(key.toString().startsWith("rstore.")) {
+			if(key.toString().contains("store.")) {
 				conf.put(key.toString(), stormConf.get(key).toString());
 			}
 		}
@@ -46,6 +47,19 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 	@Override
 	public Event buildEvent() {
 		return new HendrixEvent();
+	}
+
+	@Override
+	public TemplateStore getTemplateStoreStore(String type, Map<String, String> stormConf) throws Exception {
+		Map<String, String> conf = new HashMap<>();
+		for(Object key:stormConf.keySet()) {
+			if(key.toString().contains("store.")) {
+				conf.put(key.toString(), stormConf.get(key).toString());
+			}
+		}
+		TemplateStore store = (TemplateStore) Class.forName(type).newInstance();
+		store.initialize(conf);
+		return store;
 	}
 
 }

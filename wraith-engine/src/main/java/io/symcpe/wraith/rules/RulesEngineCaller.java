@@ -47,7 +47,19 @@ public interface RulesEngineCaller<K, C> {
 	 * @param target
 	 * @param mediaType
 	 */
-	public void emitAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, String target, String mediaType);
+	public void emitRawAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, String target, String mediaType);
+	
+	/**
+	 * Handle alert {@link Action}s
+	 * 
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param outputEvent
+	 * @param ruleId
+	 * @param actionId
+	 * @param templateId
+	 */
+	public void emitTemplatedAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, short templateId);
 	
 	/**
 	 * Handle if rule doesn't match for an event
@@ -88,4 +100,57 @@ public interface RulesEngineCaller<K, C> {
 	 */
 	public void reportConditionEfficiency(Short ruleId, long executeTime);
 
+	/**
+	 * Handle emission of an aggregation event
+	 * 
+	 * @param action
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param originalEvent
+	 * @param timestamp
+	 * @param windowSize
+	 * @param ruleActionId
+	 * @param aggregationKey
+	 * @param aggregationValue
+	 */
+	public void emitAggregationEvent(Class<? extends Action> action, C eventCollector, K eventContainer,
+			Event originalEvent, long timestamp, int windowSize, String ruleActionId, String aggregationKey, Object aggregationValue);
+
+	/**
+	 * Build new event and emit that
+	 * 
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param originalEvent
+	 * @param outputEvent
+	 */
+	public void emitNewEvent(C eventCollector, K eventContainer, Event originalEvent, Event outputEvent);
+
+	/**
+	 * Handle emission of a tagged {@link Event}
+	 * 
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param outputEvent
+	 */
+	public void emitTaggedEvent(C eventCollector, K eventContainer, Event outputEvent);
+	
+	/**
+	 * Handle Omegas 
+	 * 
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param outputEvent
+	 */
+	public void emitOmegaActions(C eventCollector, K eventContainer, Event outputEvent);
+
+	/**
+	 * BETA Code
+	 * 
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param seriesName
+	 * @param value
+	 */
+	public void emitAnomalyAction(C eventCollector, K eventContainer, String seriesName, Number value);
 }

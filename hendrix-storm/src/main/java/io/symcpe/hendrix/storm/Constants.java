@@ -28,36 +28,34 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String DEFAULT_ZOOKEEPER = "localhost:2181";
 	public static final String DEFAULT_RULES_TOPIC = "rulesTopic";
 	public static final String FIELD_TIMESTAMP = "_ts";
+
 	private Constants() {
 	}
-	
-	public static final String RULE_ENGINE_STREAM_ID = "reStream";
-	public static final String WRAITH_COMPONENT = "wr_c";
-	public static final String SYNC_STREAM_ID = "sy_st";
-	public static final String RULE_STREAM_ID = "ru_st";
-	public static final Object TICK_STREAM_ID = "ch_st";
-	public static final String STORE_STREAM_ID = "st_st";
-	public static final String EVENT_STREAM_ID = "ev_st";
-	public static final String LOOPBACK_STREAM_ID = "lo_st";
-	public static final String ALERT_STREAM_ID = "al_st";
+
+//	public static final String RULE_ENGINE_STREAM_ID = "reStream";
+	public static final String RULE_SYNC_COMPONENT = "ruleComponent";
+	public static final String TEMPLATE_SYNC_COMPONENT = "templateComponent";
+	public static final String SYNC_STREAM_ID = "syncStream";
+	public static final Object TICK_STREAM_ID = "tickStream";
+	public static final String STORE_STREAM_ID = "storeStream";
+	public static final String EVENT_STREAM_ID = "eventStream";
+	public static final String LOOPBACK_STREAM_ID = "loopbackStream";
+	public static final String ALERT_STREAM_ID = "alertStream";
 
 	public static final String TOPOLOGY_RULES_BOLT = "ruleBolt";
 	public static final String TOPOLOGY_EVENT_BOLT = "eventBolt";
-	public static final String TOPOLOGY_KAFKA_SPOUT = "kafkaSpout";
+	public static final String TOPOLOGY_KAFKA_SPOUT = "kafkaSpout_";
 	public static final String TOPOLOGY_RULE_SYNC_SPOUT = "rsync";
+	public static final String TOPOLOGY_TEMPLATE_SYNC_SPOUT = "tsync";
 	public static final String TOPOLOGY_VALIDATION_BOLT = "validationBolt";
 	public static final String TOPOLOGY_ALERT_BOLT = "alertBolt";
 	public static final String TOPOLOGY_ALERT_KAFKA_BOLT = "kafkaBolt";
 	public static final String RULES_BOLT_PARALLELISM_HINT = "rules.parallelism";
 	public static final String ALERT_BOLT_PARALLELISM_HINT = "alerts.parallelism";
 	public static final String KAFKA_BOLT_PARALLELISM_HINT = "kafka.parallelism";
-	public static final String TOPOLOGY_NAME = "topology.name";
-	public static final String KAFKA_TOPIC_NAME = "source.topic.name";
-	public static final String KAFKA_ZK_CONNECTION = "kafka.zk.connstr";
 	public static final String TOPOLOGY_TRANSLATOR_BOLT = "translatorBolt";
 	public static final String TRANSLATOR_BOLT_PARALLELISM_HINT = "translator.parallelism";
 	public static final String RULE_TRANSLATOR_BOLT_PARALLELISM_HINT = "rule.translator.parallelism";
-	public static final String KAFKA_ALERT_TOPIC = "destination.topic.name";
 	public static final String ENABLE_ALERT_VIEWER = "enable.alert.viewer";
 	public static final String KAFKA_RULES_TOPIC_NAME = "rule.topic.name";
 	public static final String FIELD_RULE_ACTION = "_ra";
@@ -74,7 +72,11 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String KAFKA_ERROR_STREAM = "kafkaErrorStream";
 	public static final String FIELD_ERROR_VALUE = "eValue";
 	public static final String FIELD_ERROR_KEY = "eKey";
-	public static final String DEFAULT_LMM_KAFKA_ERROR = "false";
+	public static final String DEFAULT_KAFKA_ERROR = "false";
 	public static final String ERROR_TIMESTAMP = "errorTs";
+	public static final String VALIDATION_BOLT_PARALLELISM_HINT = "validation.parallelism";
+
+	public static final String TOPOLOGY_NAME = "topology.name";
+	public static final String KAFKA_ALERT_TOPIC = null;
 
 }

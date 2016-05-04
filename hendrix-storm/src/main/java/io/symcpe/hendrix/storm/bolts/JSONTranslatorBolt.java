@@ -37,7 +37,7 @@ import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.wraith.Event;
 
 /**
- * Bolt to translate data from LMM Json to {@link Event} format
+ * Bolt to translate data from Logstash Json to {@link Event} format
  * 
  * @author ambud_sharma
  */
@@ -65,13 +65,13 @@ public class JSONTranslatorBolt extends BaseRichBolt {
 		factory = new UnifiedFactory();
 		if (stormConf.get(TRANSLATOR_TIMESTAMP_KEY) != null) {
 			this.timestampKey = stormConf.get(TRANSLATOR_TIMESTAMP_KEY).toString();
-		}else {
-			 timestampKey = "@timestamp";
+		} else {
+			timestampKey = "@timestamp";
 		}
 		if (stormConf.get(TRANSLATOR_TENAN_ID_KEY) != null) {
 			this.timestampKey = stormConf.get(TRANSLATOR_TENAN_ID_KEY).toString();
-		}else {
-			 tenantIdKey = "tenant_id";
+		} else {
+			tenantIdKey = "tenant_id";
 		}
 		logger.info("Translator bolt initialized");
 	}
@@ -85,10 +85,10 @@ public class JSONTranslatorBolt extends BaseRichBolt {
 			Map<String, Object> map = (Map<String, Object>) gson.fromJson(eventLine, type);
 			if (map != null) {
 				event.getHeaders().putAll(map);
-				event.getHeaders().put(Constants.FIELD_TIMESTAMP, event.getHeaders().get(timestampKey));
+				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ((Double)event.getHeaders().get(timestampKey)).longValue());
 				event.getHeaders().put(Constants.FIELD_RULE_GROUP, event.getHeaders().get(tenantIdKey));
 				collector.emit(input, new Values(event));
-			}else {
+			} else {
 				throw new Exception("Invalid JSON");
 			}
 		} catch (Exception e) {

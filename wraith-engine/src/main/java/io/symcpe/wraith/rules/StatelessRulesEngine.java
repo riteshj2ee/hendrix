@@ -29,6 +29,7 @@ import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.actions.Action;
+import io.symcpe.wraith.actions.aggregations.AggregationAction;
 import io.symcpe.wraith.rules.validator.RuleValidator;
 import io.symcpe.wraith.rules.validator.ValidationException;
 import io.symcpe.wraith.store.RulesStore;
@@ -232,11 +233,37 @@ public class StatelessRulesEngine<K, C> {
 		}
 
 		switch (action.getActionType()) {
-		case ALERT:
-			caller.emitAlert(eventCollector, eventContainer, outputEvent, ruleId, action.getActionId(),
+		case RAW_ALERT:
+			caller.emitRawAlert(eventCollector, eventContainer, outputEvent, ruleId, action.getActionId(),
 					outputEvent.getHeaders().get(Constants.FIELD_ALERT_TARGET).toString(),
 					outputEvent.getHeaders().get(Constants.FIELD_ALERT_MEDIA).toString());
 			break;
+		case TEMPLATED_ALERT:
+			caller.emitTemplatedAlert(eventCollector, eventContainer, outputEvent, ruleId, action.getActionId(),
+					(short) outputEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
+			break;
+		case AGGREGATION:
+			// find the correct stream id based on the aggregation action class
+			String ruleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
+			caller.emitAggregationEvent(action.getClass(), eventCollector, eventContainer, event,
+					(long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
+					((AggregationAction) action).getAggregationWindow(), ruleActionId,
+					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString(),
+					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			break;
+		case NEW:
+			outputEvent.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);
+			caller.emitNewEvent(eventCollector, eventContainer, event, outputEvent);
+			break;
+		case TAG:
+			caller.emitTaggedEvent(eventCollector, eventContainer, outputEvent);
+			break;
+		case OMEGA:
+			caller.emitOmegaActions(eventCollector, eventContainer, outputEvent);
+		case ANOMD:
+			caller.emitAnomalyAction(eventCollector, eventContainer,
+					outputEvent.getHeaders().get(Constants.FIELD_ANOMALY_SERIES).toString(),
+					(Number) outputEvent.getHeaders().get(Constants.FIELD_ANOMALY_VALUE));
 		default:
 			break;
 		}

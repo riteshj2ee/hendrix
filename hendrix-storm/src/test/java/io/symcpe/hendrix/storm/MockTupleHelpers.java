@@ -27,6 +27,7 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.wraith.Event;
+import io.symcpe.wraith.actions.alerts.templated.TemplateCommand;
 import io.symcpe.wraith.rules.RuleCommand;
 
 /**
@@ -41,14 +42,27 @@ public class MockTupleHelpers {
 
 	public static Tuple mockRuleTuple(boolean deleteRule, String tenantId, String rule) {
 		Tuple tuple = mock(Tuple.class);
-		when(tuple.getSourceComponent()).thenReturn(Constants.WRAITH_COMPONENT);
-		when(tuple.getSourceStreamId()).thenReturn(Constants.RULE_STREAM_ID);
+		when(tuple.getSourceComponent()).thenReturn(Constants.RULE_SYNC_COMPONENT);
+		when(tuple.getSourceStreamId()).thenReturn(Constants.SYNC_STREAM_ID);
 		RuleCommand command = new RuleCommand();
 		command.setDelete(deleteRule);
 		command.setRuleContent(rule);
 		command.setRuleGroup(tenantId);
 		when(tuple.getValue(0)).thenReturn(command);
 		when(tuple.getValueByField(Constants.FIELD_RULE_CONTENT)).thenReturn(command);
+		return tuple;
+	}
+	
+	public static Tuple mockTemplateTuple(boolean deleteRule, String tenantId, String template) {
+		Tuple tuple = mock(Tuple.class);
+		when(tuple.getSourceComponent()).thenReturn(Constants.TEMPLATE_SYNC_COMPONENT);
+		when(tuple.getSourceStreamId()).thenReturn(Constants.SYNC_STREAM_ID);
+		TemplateCommand command = new TemplateCommand();
+		command.setDelete(deleteRule);
+		command.setTemplate(template);
+		command.setRuleGroup(tenantId);
+		when(tuple.getValue(0)).thenReturn(command);
+		when(tuple.getValueByField(Constants.FIELD_TEMPLATE_CONTENT)).thenReturn(command);
 		return tuple;
 	}
 
@@ -62,7 +76,7 @@ public class MockTupleHelpers {
 	
 	public static Tuple mockEventTuple(Event event) {
 		Tuple tuple = mock(Tuple.class);
-		when(tuple.getSourceComponent()).thenReturn(Constants.WRAITH_COMPONENT);
+		when(tuple.getSourceComponent()).thenReturn(Constants.RULE_SYNC_COMPONENT);
 		when(tuple.getSourceStreamId()).thenReturn(Constants.STORE_STREAM_ID);
 		when(tuple.getValueByField(io.symcpe.wraith.Constants.FIELD_EVENT)).thenReturn(event);
 		return tuple;

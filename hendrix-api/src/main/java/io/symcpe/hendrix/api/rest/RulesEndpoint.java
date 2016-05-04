@@ -15,8 +15,7 @@
  */
 package io.symcpe.hendrix.api.rest;
 
-import java.util.List;
-
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -24,7 +23,9 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
+import javax.ws.rs.Encoded;
 import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
@@ -39,8 +40,10 @@ import javax.ws.rs.core.Response.Status;
 
 import com.google.gson.JsonParseException;
 
+import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Utils;
-import io.symcpe.hendrix.api.rules.RulesManager;
+import io.symcpe.hendrix.api.dao.RulesManager;
+import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.storage.Rules;
 import io.symcpe.hendrix.api.storage.Tenant;
 import io.symcpe.wraith.actions.Action;
@@ -60,6 +63,11 @@ public class RulesEndpoint {
 	private static final String RULE_ID = "ruleId";
 	private static String BUILD_NUMBER;
 	private static String VERSION;
+	private ApplicationManager am;
+	
+	public RulesEndpoint(ApplicationManager am) {
+		this.am = am;
+	}
 
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
@@ -79,18 +87,21 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public List<String> listRules(
+	public String listRules(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty,
 			@DefaultValue("0") @QueryParam("filter") int filter) {
 		// TODO ACL
+		EntityManager em = am.getEM();
 		try {
-			return RulesManager.getInstance().getRuleContents(tenantId, pretty, filter);
+			return RulesManager.getInstance().getRuleContents(em, tenantId, pretty, filter);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error fetching rules:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -102,15 +113,19 @@ public class RulesEndpoint {
 		// TODO ACL
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
+		EntityManager em = am.getEM();
 		try {
-			tenant = mgr.getTenant(tenantId);
+			tenant = mgr.getTenant(em, tenantId);
 		} catch (Exception e) {
+			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
 		try {
-			return mgr.createNewRule(new Rules(), tenant);
+			return mgr.createNewRule(em, new Rules(), tenant);
 		} catch (Exception e) {
 			throw new InternalServerErrorException();
+		} finally {
+			em.close();
 		}
 	}
 
@@ -121,17 +136,25 @@ public class RulesEndpoint {
 	public short putRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
-			@NotNull(message = "Rule JSON can't be empty") String ruleJson) {
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
+			@NotNull(message = "Rule JSON can't be empty") @Encoded String ruleJson) {
+		EntityManager em = am.getEM();
 		// TODO ACL
-		if(ruleJson!=null && ruleJson.length()>Rules.MAX_RULE_LENGTH) {
-			throw new BadRequestException(
-					Response.status(Status.BAD_REQUEST).entity("Rule is too big").build());
+		if (ruleJson != null && ruleJson.length() > Rules.MAX_RULE_LENGTH) {
+			throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Rule is too big").build());
 		}
+
+		if (!Utils.isCharsetMisInterpreted(ruleJson, encoding)) {
+			throw new BadRequestException(
+					Response.status(Status.BAD_REQUEST).entity("Rule JSON must be UTF-8 compliant").build());
+		}
+
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		try {
-			tenant = mgr.getTenant(tenantId);
+			tenant = mgr.getTenant(em, tenantId);
 		} catch (Exception e) {
+			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
 		SimpleRule rule = null;
@@ -147,17 +170,19 @@ public class RulesEndpoint {
 			}
 		} catch (BadRequestException e) {
 			throw e;
-		} catch (JsonParseException | IllegalStateException e) {
-			if (e.getLocalizedMessage().contains("NumberFormat")) {
+		} catch (JsonParseException | IllegalStateException | NumberFormatException e) {
+			em.close();
+			if (e.getMessage().contains("NumberFormat") || (e instanceof NumberFormatException)) {
 				throw new BadRequestException(
 						Response.status(Status.BAD_REQUEST)
-								.entity("Invalid number"
+								.entity("Invalid number "
 										+ e.getLocalizedMessage().replace("java.lang.NumberFormatException", ""))
 								.build());
-			} else if (e.getLocalizedMessage().contains("Malformed")) {
+			} else if (e.getMessage().contains("Malformed")) {
 				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
-			} else if (e.getLocalizedMessage().contains("IllegalStateException")) {
-				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Expecting a singel rule object not an array").build());
+			} else if (e.getMessage().contains("IllegalStateException")) {
+				throw new BadRequestException(Response.status(Status.BAD_REQUEST)
+						.entity("Expecting a singel rule object not an array").build());
 			} else {
 				throw new BadRequestException(
 						Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());
@@ -167,7 +192,7 @@ public class RulesEndpoint {
 			Rules ruleContainer = new Rules();
 			if (rule.getRuleId() > 0) {
 				try {
-					Rules temp = mgr.getRule(tenant.getTenantId(), rule.getRuleId());
+					Rules temp = mgr.getRule(em, tenant.getTenantId(), rule.getRuleId());
 					if (temp != null) {
 						ruleContainer = temp;
 					}
@@ -175,13 +200,15 @@ public class RulesEndpoint {
 					// rule doesn't exit, will save it as a new rule
 				}
 			}
-			return mgr.saveRule(ruleContainer, tenant, rule);
+			return mgr.saveRule(em, ruleContainer, tenant, rule, am);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (ValidationException e) {
 			throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(Response.serverError().entity(e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -192,13 +219,16 @@ public class RulesEndpoint {
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		// TODO ACL
+		EntityManager em = am.getEM();
 		try {
-			return RulesManager.getInstance().enableDisableRule(true, tenantId, ruleId).getRuleContent();
+			return RulesManager.getInstance().enableDisableRule(em, true, tenantId, ruleId, am).getRuleContent();
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error enabling rule:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -208,13 +238,16 @@ public class RulesEndpoint {
 	public String disableRule(@NotNull @PathParam(TenantEndpoint.TENANT_ID) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		// TODO ACL
+		EntityManager em = am.getEM();
 		try {
-			return RulesManager.getInstance().enableDisableRule(false, tenantId, ruleId).getRuleContent();
+			return RulesManager.getInstance().enableDisableRule(em, false, tenantId, ruleId, am).getRuleContent();
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error disabling rule:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -226,14 +259,17 @@ public class RulesEndpoint {
 			@NotNull @PathParam(RULE_ID) short ruleId, @DefaultValue("false") @QueryParam("pretty") boolean pretty) {
 		// TODO ACL
 		Rules rule = null;
+		EntityManager em = am.getEM();
 		try {
-			rule = RulesManager.getInstance().getRule(tenantId, ruleId);
+			rule = RulesManager.getInstance().getRule(em, tenantId, ruleId);
 		} catch (Exception e) {
 			if (e instanceof NoResultException) {
 				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 			} else {
 				throw new BadRequestException();
 			}
+		} finally {
+			em.close();
 		}
 		if (rule.getRuleContent() != null) {
 			if (pretty) {
@@ -254,13 +290,16 @@ public class RulesEndpoint {
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		// TODO authorize get tenantId
+		EntityManager em = am.getEM();
 		try {
-			RulesManager.getInstance().deleteRule(tenantId, ruleId);
+			RulesManager.getInstance().deleteRule(em, tenantId, ruleId, am);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error deleting rule:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -270,13 +309,17 @@ public class RulesEndpoint {
 	public void deleteAllRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		// TODO authorize get tenantId
+		EntityManager em = am.getEM();
 		try {
-			RulesManager.getInstance().deleteRules(tenantId);
+			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);
+			RulesManager.getInstance().deleteRules(em, tenant, am);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error deleting all rules for tenant:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 
@@ -286,13 +329,16 @@ public class RulesEndpoint {
 	public void disableAllRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		// TODO authorize get tenantId
+		EntityManager em = am.getEM();
 		try {
-			RulesManager.getInstance().disableAllRules(tenantId);
+			RulesManager.getInstance().disableAllRules(em, tenantId, am);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (Exception e) {
 			throw new InternalServerErrorException(
 					Response.serverError().entity("Error disabling all rules for tenant:" + e.getMessage()).build());
+		} finally {
+			em.close();
 		}
 	}
 

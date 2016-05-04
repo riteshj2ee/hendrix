@@ -25,8 +25,7 @@ import io.symcpe.hendrix.api.Queries;
  */
 @Entity
 @Table(name = "rules_table")
-@NamedQueries({ 
-		@NamedQuery(name = Queries.RULES_FIND_ALL, query = "SELECT r FROM Rules r"),
+@NamedQueries({ @NamedQuery(name = Queries.RULES_FIND_ALL, query = "SELECT r FROM Rules r"),
 		@NamedQuery(name = Queries.RULES_STATS, query = "SELECT r.tenant.tenantName,count(r) FROM Rules r group by r.tenant.tenantName"),
 		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_ID, query = "SELECT r FROM Rules r where r.tenant.tenantId=:tenantId"),
 		@NamedQuery(name = Queries.RULES_FIND_BY_ID, query = "SELECT r FROM Rules r where r.ruleId=:ruleId"),
@@ -35,8 +34,7 @@ import io.symcpe.hendrix.api.Queries;
 		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_NAME, query = "SELECT r FROM Rules r where r.tenant.tenantName=:tenantName"),
 		@NamedQuery(name = Queries.RULES_DELETE_BY_ID, query = "DELETE FROM Rules r where r.ruleId=:ruleId"),
 		@NamedQuery(name = Queries.RULES_LATEST_RULE_ID, query = "SELECT r.ruleId from Rules r order by r.ruleId desc"),
-		@NamedQuery(name = Queries.RULES_ENABLE_DISABLE_RULE, query = "UPDATE Rules r set r.ruleContent=:ruleContent where r.ruleId=:ruleId")
-})
+		@NamedQuery(name = Queries.RULES_ENABLE_DISABLE_RULE, query = "UPDATE Rules r set r.ruleContent=:ruleContent where r.ruleId=:ruleId") })
 public class Rules implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -45,42 +43,59 @@ public class Rules implements Serializable {
 
 	@Id
 	@Column(name = "rule_id")
-	@GeneratedValue(strategy=GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.AUTO)
 	private short ruleId;
 
 	@Column(name = "rule_content", length = Rules.MAX_RULE_LENGTH)
 	private String ruleContent;
 
 	// bi-directional many-to-one association to Tenant
-	@ManyToOne(cascade=CascadeType.ALL)
+	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "tenant_id")
 	private Tenant tenant;
 
 	public Rules() {
 	}
 
+	/**
+	 * @return the ruleId
+	 */
 	public short getRuleId() {
-		return this.ruleId;
+		return ruleId;
 	}
 
+	/**
+	 * @param ruleId the ruleId to set
+	 */
 	public void setRuleId(short ruleId) {
 		this.ruleId = ruleId;
 	}
 
+	/**
+	 * @return the ruleContent
+	 */
 	public String getRuleContent() {
-		return this.ruleContent;
+		return ruleContent;
 	}
 
+	/**
+	 * @param ruleContent the ruleContent to set
+	 */
 	public void setRuleContent(String ruleContent) {
 		this.ruleContent = ruleContent;
 	}
 
+	/**
+	 * @return the tenant
+	 */
 	public Tenant getTenant() {
-		return this.tenant;
+		return tenant;
 	}
 
+	/**
+	 * @param tenant the tenant to set
+	 */
 	public void setTenant(Tenant tenant) {
 		this.tenant = tenant;
 	}
-
 }

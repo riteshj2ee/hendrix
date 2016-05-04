@@ -23,19 +23,27 @@ import java.util.Map.Entry;
 import com.google.gson.Gson;
 
 import io.symcpe.hendrix.storm.bolts.TestAlertingEngineBolt;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleCommand;
 import io.symcpe.wraith.rules.RuleSerializer;
 import io.symcpe.wraith.rules.SimpleRule;
 import io.symcpe.wraith.store.RulesStore;
+import io.symcpe.wraith.store.TemplateStore;
 
-public class TopologyTestRulesStore implements RulesStore {
+/**
+ * @author ambud_sharma
+ */
+public class TopologyTestRulesStore implements RulesStore, TemplateStore {
 
 
 	private Map<String, Map<Short, Rule>> rules;
+	private Map<Short, AlertTemplate> templates;
 	
 	public TopologyTestRulesStore() {
 		rules = new HashMap<>();
+		templates = new HashMap<>();
 	}
 	
 	@Override
@@ -53,6 +61,15 @@ public class TopologyTestRulesStore implements RulesStore {
 				for(SimpleRule rule:rulesArray) {
 					rules.get(command.getRuleGroup()).put(rule.getRuleId(), rule);
 				}
+			}
+		}
+		String templateJson = conf.get(TestAlertingEngineBolt.TEMPLATE_CONTENT);
+		if (templateJson != null) {
+			System.out.println("Templates:"+templateJson);
+			AlertTemplate[] alertTemplates = AlertTemplateSerializer.deserializeArray(templateJson);
+			for (AlertTemplate template : alertTemplates) {
+				System.out.println("Template content:" + template + "\t" + alertTemplates.length);
+				templates.put(template.getTemplateId(), template);
 			}
 		}
 	}
@@ -77,6 +94,11 @@ public class TopologyTestRulesStore implements RulesStore {
 	@Override
 	public Map<String, Map<Short, Rule>> listGroupedRules() throws IOException {
 		return rules;
+	}
+
+	@Override
+	public Map<Short, AlertTemplate> getAllTemplates() throws IOException {
+		return templates;
 	}
 
 }

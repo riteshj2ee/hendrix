@@ -29,6 +29,7 @@ import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
+import io.symcpe.wraith.rules.validator.AlertValidator;
 
 /**
  * @author ambud_sharma
@@ -38,19 +39,22 @@ public class AlertTranslatorBolt extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
 	private transient Gson gson;
+	private transient AlertValidator validator;
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
 		this.gson = new Gson();
+		this.validator = new AlertValidator();
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
 		try {
 			Alert alert = gson.fromJson(tuple.getString(0), Alert.class);
-			collector.emit(tuple, new Values(alert));
+			validator.validate(alert);
+			collector.emit(tuple, new Values(alert.getId(), alert));
 		} catch (Exception e) {
 			StormContextUtil.emitErrorTuple(collector, tuple, AlertTranslatorBolt.class, tuple.getString(0),
 					"Failed to parse alert json:", e);
@@ -60,8 +64,15 @@ public class AlertTranslatorBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declare(new Fields(Constants.FIELD_ALERT));
+		declarer.declare(new Fields(Constants.FIELD_ID, Constants.FIELD_ALERT));
 		StormContextUtil.declareErrorStream(declarer);
+	}
+
+	/**
+	 * @return the collector
+	 */
+	protected OutputCollector getCollector() {
+		return collector;
 	}
 
 }

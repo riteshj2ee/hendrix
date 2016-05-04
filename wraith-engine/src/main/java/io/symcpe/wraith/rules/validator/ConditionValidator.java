@@ -33,6 +33,7 @@ import io.symcpe.wraith.rules.Rule;
  */
 public class ConditionValidator implements Validator<Condition> {
 
+	private static final int MAX_LENGTH_REGEX = 200;
 	private List<Validator<Condition>> conditionValidators = new ArrayList<>();
 
 	@SuppressWarnings("unchecked")
@@ -75,8 +76,8 @@ public class ConditionValidator implements Validator<Condition> {
 					if(regex.isEmpty()) {
 						throw new ValidationException("Regex value can't be empty");
 					}
-					if(regex.length()>200) {
-						throw new ValidationException("Regex value too large");
+					if(regex.length()>MAX_LENGTH_REGEX) {
+						throw new ValidationException("Regex value must be smaller than "+MAX_LENGTH_REGEX+" characters");
 					}
 				}
 			} else {

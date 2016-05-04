@@ -20,6 +20,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -88,7 +89,11 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 				if(regex.getValue()==null) {
 					throw new JsonParseException("Regex can't be empty");
 				}else {
-					regex.setValue(regex.getValue());
+					try{
+						regex.setValue(regex.getValue());
+					}catch(PatternSyntaxException e) {
+						throw new JsonParseException("Regex "+regex.getValue()+" is not a valid Java regex");
+					}
 				}
 			}
 			List<Field> fields = new ArrayList<>();

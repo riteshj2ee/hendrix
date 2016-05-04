@@ -27,10 +27,19 @@ public interface StoreFactory {
 	/**
 	 * Build a rule store object
 	 * @param type
-	 * @param stormConf
+	 * @param conf
 	 * @return rulesStore object
 	 * @throws Exception
 	 */
-	public RulesStore getRulesStore(String type, Map<String, String> stormConf) throws Exception;
+	public RulesStore getRulesStore(String type, Map<String, String> conf) throws Exception;
+	
+	/**
+	 * Build a template store object
+	 * @param type
+	 * @param conf
+	 * @return templateStore object
+	 * @throws Exception
+	 */
+	public TemplateStore getTemplateStoreStore(String type, Map<String, String> conf) throws Exception;
 
 }

@@ -37,10 +37,9 @@ import org.glassfish.jersey.server.validation.ValidationFeature;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.symcpe.hendrix.api.rest.TemplateEndpoint;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
-import io.symcpe.hendrix.api.rules.RulesManager;
-import io.symcpe.hendrix.api.rules.TenantManager;
 import io.symcpe.hendrix.api.validations.VelocityValidator;
 import io.symcpe.wraith.rules.validator.RuleValidator;
 import io.symcpe.wraith.rules.validator.Validator;
@@ -56,8 +55,8 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private static final String PROP_CONFIG_FILE = "hendrixConfig";
 	private Properties config;
 	private EntityManagerFactory factory;
-	private EntityManager em;
 	private String ruleTopicName;
+	private String templateTopicName;
 	private KafkaProducer<String, String> producer;
 	private String[] args;
 
@@ -91,8 +90,6 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		EntityManager em = factory.createEntityManager();
 		System.out.println("Rules stats" + em.createNamedQuery("Rules.stats").getResultList());
 		em.close();
-		RulesManager.getInstance().init(this);
-		TenantManager.getInstance().init(this);
 		if (!LOCAL) {
 			initKafkaConnection();
 		}
@@ -105,6 +102,8 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	}
 
 	public void initKafkaConnection() {
+		ruleTopicName = config.getProperty("rule.topic.name", "ruleTopic");
+		ruleTopicName = config.getProperty("template.topic.name", "templateTopic");
 		producer = new KafkaProducer<>(config);
 		System.out.println("Validating kafka connectivity");
 		List<PartitionInfo> partitions = producer.partitionsFor(ruleTopicName);
@@ -114,10 +113,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	}
 
 	public EntityManager getEM() {
-		if (em == null) {
-			em = factory.createEntityManager();
-		}
-		return em;
+		return factory.createEntityManager();
 	}
 
 	/**
@@ -132,6 +128,10 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	 */
 	public String getRuleTopicName() {
 		return ruleTopicName;
+	}
+	
+	public String getTemplateTopicName() {
+		return templateTopicName;
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -148,8 +148,9 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		init(configuration);
 		environment.jersey().property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, false);
 		environment.jersey().register(ValidationFeature.class);
-		environment.jersey().register(new RulesEndpoint());
-		environment.jersey().register(new TenantEndpoint());
+		environment.jersey().register(new RulesEndpoint(this));
+		environment.jersey().register(new TenantEndpoint(this));
+		environment.jersey().register(new TemplateEndpoint(this));
 	}
 
 	@Override

@@ -64,7 +64,7 @@ public class RuleTranslatorBolt extends BaseRichBolt {
 			logger.info("Translating rule command:"+input.getString(0));
 			RuleCommand ruleCommandJson = gson.fromJson(input.getString(0), type);
 			if (ruleCommandJson != null) {
-				collector.emit(Constants.RULE_STREAM_ID, new Values(ruleCommandJson));
+				collector.emit(Constants.SYNC_STREAM_ID, new Values(ruleCommandJson));
 			} else {
 				throw new NullPointerException("Rule command is null, unable to parse:" + input.getString(0));
 			}
@@ -78,7 +78,7 @@ public class RuleTranslatorBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(Constants.RULE_STREAM_ID, new Fields(Constants.FIELD_RULE_CONTENT));
+		declarer.declareStream(Constants.SYNC_STREAM_ID, new Fields(Constants.FIELD_RULE_CONTENT));
 		StormContextUtil.declareErrorStream(declarer);
 	}
 

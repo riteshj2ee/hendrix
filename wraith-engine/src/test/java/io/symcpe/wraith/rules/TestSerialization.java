@@ -34,6 +34,7 @@ import io.symcpe.wraith.TestFactory;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.actions.Action;
 import io.symcpe.wraith.actions.alerts.AlertAction;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.ConditionSerializer;
 import io.symcpe.wraith.conditions.logical.AndCondition;
@@ -55,7 +56,7 @@ public class TestSerialization {
 		Condition two = new EqualsCondition("header2", "val2");
 		Condition condition = new AndCondition(Arrays.asList(one, two));
 
-		Action action = new AlertAction((short) 2, "test", "test", "test");
+		Action action = new TemplatedAlertAction((short) 2, (short) 2);
 		SimpleRule rule = new SimpleRule((short) 123, "hello", true, condition, action);
 		String jsonRule = RuleSerializer.serializeRuleToJSONString(rule, false);
 		SimpleRule deserializedRule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
@@ -101,7 +102,7 @@ public class TestSerialization {
 		Condition two = new EqualsCondition("header2", "val2");
 		Condition condition = new AndCondition(Arrays.asList(one, two));
 
-		Action action = new AlertAction((short) 2, "test", "test", "test");
+		Action action = new TemplatedAlertAction((short) 2, (short) 2);
 		SimpleRule rule = new SimpleRule((short) 123, "hello", true, condition, action);
 		String jsonRule = RuleSerializer.serializeRuleToJSONString(rule, false);
 
@@ -109,7 +110,7 @@ public class TestSerialization {
 		assertEquals(123, object.get("ruleId").getAsShort());
 		assertEquals("hello", object.get("name").getAsString());
 		JsonObject actionArray = object.get("actions").getAsJsonArray().get(0).getAsJsonObject();
-		assertEquals(Utils.CLASSNAME_FORWARD_MAP.get(AlertAction.class.getCanonicalName()),
+		assertEquals(Utils.CLASSNAME_FORWARD_MAP.get(TemplatedAlertAction.class.getCanonicalName()),
 				actionArray.get("type").getAsString());
 	}
 
@@ -154,7 +155,7 @@ public class TestSerialization {
 		System.out.println("Command rule:" + rule);
 		assertEquals(0, rule.getActions().get(0).getActionId());
 	}
-	
+
 	@Test
 	public void testBadRuleValidation() {
 		Condition condition = new AndCondition(null);
@@ -164,36 +165,39 @@ public class TestSerialization {
 		System.err.println(jsonRule);
 		try {
 			rule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
-			System.out.println("AndConditions:"+((AndCondition)rule.getCondition()).getConditions());
+			System.out.println("AndConditions:" + ((AndCondition) rule.getCondition()).getConditions());
 			Assert.fail("Should have thrown an exception");
 		} catch (JsonParseException e) {
 		}
 	}
-	
+
 	@Test
 	public void testRegexSerialization() {
 		Condition regexCondition = new JavaRegexCondition("host", ".*check_rtsock_rc.*");
-		
-		SimpleRule rule = new SimpleRule((short) 1, "test", true, regexCondition, new Action[]{ new AlertAction((short)0, "test", "email", "test") });
+
+		SimpleRule rule = new SimpleRule((short) 1, "test", true, regexCondition,
+				new Action[] { new AlertAction((short) 0, "test", "email", "test") });
 		String jsonRule = RuleSerializer.serializeRuleToJSONString(rule, false);
-		
+
 		rule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
 		Event event = new TestFactory().buildEvent();
-		event.getHeaders().put("host", "MIB2D_RTSLIB_READ_FAILURE: check_rtsock_rc: failed in reading mac_db: 0 (Invalid argument)");
+		event.getHeaders().put("host",
+				"MIB2D_RTSLIB_READ_FAILURE: check_rtsock_rc: failed in reading mac_db: 0 (Invalid argument)");
 		assertTrue(rule.getCondition().matches(event));
 	}
-	
+
 	@Test
 	public void testRegexSerialization1() {
 		JavaRegexCondition regexCondition = new JavaRegexCondition("host", "\\b\\w{13}\\.\\w{4}\\.\\w{6}\\.\\w{3}\\b");
-		
-		SimpleRule rule = new SimpleRule((short) 1, "test", true, regexCondition, new Action[]{ new AlertAction((short)0, "test", "email", "test") });
+
+		SimpleRule rule = new SimpleRule((short) 1, "test", true, regexCondition,
+				new Action[] { new AlertAction((short) 0, "test", "email", "test") });
 		String jsonRule = RuleSerializer.serializeRuleToJSONString(rule, false);
-		System.out.println(regexCondition.getValue()+"\t"+jsonRule);
+		System.out.println(regexCondition.getValue() + "\t" + jsonRule);
 		rule = RuleSerializer.deserializeJSONStringToRule(jsonRule);
 		Event event = new TestFactory().buildEvent();
 		event.getHeaders().put("host", "testoneserver.test.symcpe.com");
 		assertTrue(rule.getCondition().matches(event));
 	}
-	
+
 }

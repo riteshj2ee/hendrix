@@ -30,7 +30,7 @@ public class Alert implements Serializable {
 	private String media;
 	private String body;
 	private String ruleGroup;
-	private short ruleId;
+	private short id;
 	private long timestamp;
 	
 	public Alert() {
@@ -107,17 +107,17 @@ public class Alert implements Serializable {
 	}
 
 	/**
-	 * @return the ruleId
+	 * @return the id
 	 */
-	public short getRuleId() {
-		return ruleId;
+	public short getId() {
+		return id;
 	}
 
 	/**
-	 * @param ruleId the ruleId to set
+	 * @param id the id to set
 	 */
-	public void setRuleId(short ruleId) {
-		this.ruleId = ruleId;
+	public void setId(short id) {
+		this.id = id;
 	}
 
 	/**
@@ -132,6 +132,15 @@ public class Alert implements Serializable {
 	 */
 	public void setTimestamp(long timestamp) {
 		this.timestamp = timestamp;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Alert [target=" + target + ", subject=" + subject + ", media=" + media + ", body=" + body
+				+ ", ruleGroup=" + ruleGroup + ", id=" + id + ", timestamp=" + timestamp + "]";
 	}
 
 }

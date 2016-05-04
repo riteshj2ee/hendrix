@@ -15,12 +15,14 @@
  */
 package io.symcpe.wraith.rules.validator;
 
+import io.symcpe.wraith.PerformantException;
+
 /**
  * Exception thrown by a {@link Validator}
  * 
  * @author ambud_sharma
  */
-public class ValidationException extends Exception {
+public class ValidationException extends PerformantException {
 
 	private static final long serialVersionUID = 1L;
 

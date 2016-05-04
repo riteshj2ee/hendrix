@@ -17,10 +17,9 @@ package io.symcpe.wraith.rules.validator;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import io.symcpe.wraith.actions.Action;
-import io.symcpe.wraith.actions.alerts.AlertAction;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.rules.Rule;
 
 /**
@@ -31,8 +30,6 @@ import io.symcpe.wraith.rules.Rule;
 public class ActionValidator implements Validator<Action> {
 
 	private List<Validator<Action>> conditionValidators = new ArrayList<>();
-	private static final Pattern EMAIL_PATTERN = Pattern
-			.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$");
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -40,31 +37,17 @@ public class ActionValidator implements Validator<Action> {
 		for (Validator<?> validator : validators) {
 			try {
 				conditionValidators.add((Validator<Action>) validator);
-			} catch (Exception e) {
+			} catch (Exception e) { // ignore incompatible validators
 			}
 		}
 	}
 
 	@Override
 	public void validate(Action action) throws ValidationException {
-		if (action instanceof AlertAction) {
-			AlertAction alertAction = (AlertAction) action;
-			if (alertAction.getTarget() == null || alertAction.getTarget().trim().isEmpty()) {
-				throw new ValidationException("Alert target can't be empty");
-			}
-			if (alertAction.getMedia() == null || alertAction.getMedia().trim().isEmpty()) {
-				throw new ValidationException("Alert media can't be empty");
-			}
-			if (alertAction.getBody() == null || alertAction.getBody().trim().isEmpty()) {
-				throw new ValidationException("Alert body can't be empty");
-			}
-			if (alertAction.getMedia().contains("mail")) {
-				String[] emails = alertAction.getTarget().split("\\s{0,1},");
-				for (String email : emails) {
-					if (!EMAIL_PATTERN.matcher(email).matches()) {
-						throw new ValidationException("Not a valid email address:"+email);
-					}
-				}
+		if (action instanceof TemplatedAlertAction) {
+			TemplatedAlertAction alertAction = (TemplatedAlertAction)action;
+			if(alertAction.getTemplateId()<0) {
+				throw new ValidationException("Template ids always start from 0 ");
 			}
 		} else {
 			// unsupported action
@@ -74,5 +57,34 @@ public class ActionValidator implements Validator<Action> {
 			validator.validate(action);
 		}
 	}
+	
+	/*
+	 * AlertAction alertAction = (AlertAction) action;
+			if (alertAction.getTarget() == null || alertAction.getTarget().trim().isEmpty()) {
+				throw new ValidationException("Alert target can't be empty");
+			}
+			if (alertAction.getTarget().length() > MAX_LENGTH_ALERT_TARGET) {
+				throw new ValidationException(
+						"Alert target must be less than " + MAX_LENGTH_ALERT_TARGET + " characters");
+			}
+			if (alertAction.getMedia() == null || alertAction.getMedia().trim().isEmpty()) {
+				throw new ValidationException("Alert media can't be empty");
+			}
+			if (alertAction.getMedia().length() > MAX_LENGTH_ALERT_MEDIA) {
+				throw new ValidationException(
+						"Alert target must be less than " + MAX_LENGTH_ALERT_MEDIA + " characters");
+			}
+			if (alertAction.getBody() == null || alertAction.getBody().trim().isEmpty()) {
+				throw new ValidationException("Alert body can't be empty");
+			}
+			if (alertAction.getMedia().contains("mail")) {
+				String[] emails = alertAction.getTarget().split("\\s{0,1},");
+				for (String email : emails) {
+					if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
+						throw new ValidationException("Not a valid email address:" + email);
+					}
+				}
+			}
+	 */
 
 }

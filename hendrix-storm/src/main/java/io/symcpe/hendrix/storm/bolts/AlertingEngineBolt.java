@@ -111,7 +111,7 @@ public class AlertingEngineBolt extends BaseRichBolt implements AlertingEngine {
 				// failed to update rule
 				System.err.println("Failed to apply rule update:" + e.getMessage() + "\t"
 						+ tuple.getValueByField(Constants.FIELD_RULE_CONTENT));
-				StormContextUtil.emitErrorTuple(collector, tuple, RulesEngineBolt.class, tuple.toString(),
+				StormContextUtil.emitErrorTuple(collector, tuple, AlertingEngineBolt.class, tuple.toString(),
 						"Failed to apply rule update", e);
 			}
 		} else {
@@ -182,7 +182,7 @@ public class AlertingEngineBolt extends BaseRichBolt implements AlertingEngine {
 				alert.setSubject(rule);
 				alert.setTarget(target);
 				alert.setMedia(media);
-				alert.setRuleId(ruleId);
+				alert.setId(ruleId);
 				alert.setTimestamp(timestamp);
 				return alert;
 			} else {
@@ -285,4 +285,5 @@ public class AlertingEngineBolt extends BaseRichBolt implements AlertingEngine {
 	protected StoreFactory getStoreFactory() {
 		return storeFactory;
 	}
+
 }

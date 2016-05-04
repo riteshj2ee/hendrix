@@ -26,6 +26,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 
 import backtype.storm.tuple.Tuple;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.rules.Rule;
 
 /**
@@ -40,25 +41,41 @@ public final class Utils extends io.symcpe.wraith.Utils {
 
 	/**
 	 * Checks if the supplied tuple is a {@link Rule} sync i.e. update tuple
+	 * 
 	 * @param tuple
 	 * @return true if it's a {@link Rule} sync tuple
 	 */
 	public static boolean isRuleSyncTuple(Tuple tuple) {
-		return tuple.getSourceStreamId().equals(Constants.RULE_STREAM_ID)
-				&& tuple.getSourceComponent().equals(Constants.WRAITH_COMPONENT);
+		return tuple.getSourceStreamId().equals(Constants.SYNC_STREAM_ID)
+				&& tuple.getSourceComponent().equals(Constants.RULE_SYNC_COMPONENT);
+	}
+	
+	/**
+	 * Checks if the supplied tuple is a {@link TemplatedAlertAction} sync i.e.
+	 * update tuple
+	 * 
+	 * @param tuple
+	 * @return true if it's a {@link TemplatedAlertAction} sync tuple
+	 */
+	public static boolean isTemplateSyncTuple(Tuple tuple) {
+		return tuple.getSourceStreamId().equals(Constants.SYNC_STREAM_ID)
+				&& tuple.getSourceComponent().equals(Constants.TEMPLATE_SYNC_COMPONENT);
 	}
 
 	/**
 	 * Check if the supplied tuple is a tick {@link Tuple}
+	 * 
 	 * @param tuple
 	 * @return true if it's a tick tuple
 	 */
 	public static boolean isTickTuple(Tuple tuple) {
-		return tuple.getSourceStreamId().equals(Constants.TICK_STREAM_ID);
+		return tuple.getSourceComponent().equals(backtype.storm.Constants.SYSTEM_COMPONENT_ID)
+				&& tuple.getSourceStreamId().equals(backtype.storm.Constants.SYSTEM_TICK_STREAM_ID);
 	}
 
 	/**
 	 * Normalize and format Zookeeper connection string
+	 * 
 	 * @param zkHosts
 	 * @param zkPort
 	 * @return zookeeper connection string
@@ -78,6 +95,7 @@ public final class Utils extends io.symcpe.wraith.Utils {
 
 	/**
 	 * Build a {@link CloseableHttpClient}
+	 * 
 	 * @param baseURL
 	 * @param connectTimeout
 	 * @param requestTimeout
@@ -97,6 +115,7 @@ public final class Utils extends io.symcpe.wraith.Utils {
 
 	/**
 	 * Get client
+	 * 
 	 * @param baseURL
 	 * @param connectTimeout
 	 * @param requestTimeout

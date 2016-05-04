@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.persistence.EntityExistsException;
+import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
@@ -36,7 +37,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import io.symcpe.hendrix.api.rules.TenantManager;
+import io.symcpe.hendrix.api.ApplicationManager;
+import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.storage.Tenant;
 
 /**
@@ -49,17 +51,25 @@ public class TenantEndpoint {
 
 	public static final String TENANT_ID = "tenantId";
 	private static final Logger logger = Logger.getLogger(TenantEndpoint.class.getName());
-
+	private ApplicationManager am;
+	
+	public TenantEndpoint(ApplicationManager am) {
+		this.am = am;
+	}
+	
 	/**
 	 * @return
 	 */
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public List<Tenant> listTenants() {
+		EntityManager em = am.getEM();
 		try {
-			return TenantManager.getInstance().getTenants();
+			return TenantManager.getInstance().getTenants(em);
 		} catch (Exception e) {
 			throw new NotFoundException("No Tenants found");
+		}finally{
+			em.close();
 		}
 	}
 
@@ -72,10 +82,13 @@ public class TenantEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Tenant getTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
+		EntityManager em = am.getEM();
 		try {
-			return TenantManager.getInstance().getTenant(tenantId);
+			return TenantManager.getInstance().getTenant(em, tenantId);
 		} catch (Exception e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Tenants found").build());
+		}finally{
+			em.close();
 		}
 	}
 
@@ -86,12 +99,12 @@ public class TenantEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void createTenant(@NotNull(message="Tenant information can't be empty") Tenant tenant) {
-		// TODO validate tenant
 		if(!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
 		}
+		EntityManager em = am.getEM();
 		try {
-			if (TenantManager.getInstance().getTenant(tenant.getTenantId()) != null) {
+			if (TenantManager.getInstance().getTenant(em, tenant.getTenantId()) != null) {
 				throw new BadRequestException(Response.status(400)
 						.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
 			}
@@ -99,13 +112,15 @@ public class TenantEndpoint {
 		} catch (Exception e) {
 		}
 		try {
-			TenantManager.getInstance().createTenant(tenant);
+			TenantManager.getInstance().createTenant(em, tenant);
 			logger.info("Created new tenant:" + tenant);
 		} catch (EntityExistsException e) {
 			throw new BadRequestException(Response.status(400)
 					.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
 		} catch (Exception e) {
 			throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+		}finally{
+			em.close();
 		}
 	}
 
@@ -117,11 +132,14 @@ public class TenantEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public void deleteTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+		EntityManager em = am.getEM();
 		try {
-			Tenant tenant = TenantManager.getInstance().deleteTenant(tenantId);
+			Tenant tenant = TenantManager.getInstance().deleteTenant(em, tenantId, am);
 			logger.info("Deleted tenant:" + tenant);
 		} catch (Exception e) {
 			throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+		}finally{
+			em.close();
 		}
 	}
 
@@ -139,8 +157,9 @@ public class TenantEndpoint {
 		if(!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
 		}
+		EntityManager em = am.getEM();
 		try {
-			tenant = TenantManager.getInstance().updateTenant(tenantId, tenant.getTenantName());
+			tenant = TenantManager.getInstance().updateTenant(em, tenantId, tenant.getTenantName());
 			logger.info("Updated tenant:" + tenant);
 		} catch (Exception e) {
 			if (e instanceof NoResultException) {
@@ -148,6 +167,8 @@ public class TenantEndpoint {
 			} else {
 				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
 			}
+		}finally{
+			em.close();
 		}
 	}
 

@@ -16,14 +16,20 @@
 package io.symcpe.hendrix.storm;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.storm.flux.FluxBuilder;
+import org.apache.storm.flux.model.ExecutionContext;
+import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.parser.FluxParser;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,9 +41,6 @@ import backtype.storm.testing.MkClusterParam;
 import backtype.storm.testing.MockedSources;
 import backtype.storm.testing.TestJob;
 import backtype.storm.tuple.Values;
-import io.symcpe.hendrix.storm.HendrixTopology;
-import io.symcpe.hendrix.storm.Constants;
-import io.symcpe.hendrix.storm.Utils;
 import io.symcpe.hendrix.storm.bolts.TestAlertingEngineBolt;
 
 /**
@@ -56,19 +59,27 @@ public class TestHendrixTopologyRuleGroups {
 
 	@Test
 	public void testHendrixTopology() throws Exception {
-		for (String file : new String[]{"topology-test1"}) {
+		for (String file : new String[] { "topology-test1" }) {
 
-			List<String> rules = Utils.readAllLinesFromStream(TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file+".rules"));
+			List<String> rules = Utils.readAllLinesFromStream(
+					TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".rules"));
+			
 			StringBuilder builder = new StringBuilder();
-			for(String rule:rules) {
+			for (String rule : rules) {
 				builder.append(rule);
 			}
 			MkClusterParam mkClusterParam = new MkClusterParam();
-			properties.load(
-					TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file+".props"));
+			properties.load(TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".props"));
 			properties.put("rule.group.active", "true");
 			properties.put(TestAlertingEngineBolt.RULES_CONTENT, builder.toString());
-			
+			List<String> templates = Utils.readAllLinesFromStream(
+					TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".template"));
+			builder = new StringBuilder();
+			for (String template : templates) {
+				builder.append(template);
+			}
+			properties.put(TestAlertingEngineBolt.TEMPLATE_CONTENT, builder.toString());
+
 			mkClusterParam.setSupervisors(1);
 			Config daemonConf = new Config();
 			daemonConf.put(Config.STORM_LOCAL_MODE_ZMQ, false);
@@ -90,19 +101,22 @@ public class TestHendrixTopologyRuleGroups {
 
 					List<Values> test1 = new ArrayList<>();
 
-					List<String> lines = Utils.readAllLinesFromStream(TestHendrixTopologyRuleGroups.class
-							.getClassLoader().getResourceAsStream(file+".json"));
+					List<String> lines = Utils.readAllLinesFromStream(
+							TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".json"));
 					for (int i = 0; i < lines.size(); i++) {
 						String line = lines.get(i);
 						test1.add(new Values(line, String.valueOf(i)));
 					}
 
-					mockedSources.addMockData(Constants.TOPOLOGY_KAFKA_SPOUT, test1.toArray(new Values[1]));
+					mockedSources.addMockData(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME,
+							test1.toArray(new Values[1]));
 					mockedSources.addMockData(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new Values(""));
+					mockedSources.addMockData(Constants.TOPOLOGY_TEMPLATE_SYNC_SPOUT, new Values(""));
 
 					// prepare the config
 					Config conf = new Config();
 					conf.setNumWorkers(2);
+					conf.setDebug(false);
 					for (Entry<Object, Object> entry : properties.entrySet()) {
 						conf.put((String) entry.getKey(), entry.getValue());
 					}
@@ -114,18 +128,27 @@ public class TestHendrixTopologyRuleGroups {
 					Map result = Testing.completeTopology(cluster, hendrix.getTopology(), completeTopologyParam);
 
 					for (Object object : result.entrySet()) {
-						System.err.println("Result:"+object);
+						System.err.println("Result:" + object);
 					}
-					
+
 					// check whether the result is right
 					assertEquals(test1.size(), Testing.readTuples(result, Constants.TOPOLOGY_TRANSLATOR_BOLT).size());
-
-					assertEquals(test1.size(), Testing.readTuples(result, Constants.TOPOLOGY_TRANSLATOR_BOLT).size());
-					assertEquals(2, Testing.readTuples(result, Constants.TOPOLOGY_RULES_BOLT, Constants.ALERT_STREAM_ID).size());
-					assertEquals(2, Testing.readTuples(result, Constants.TOPOLOGY_ALERT_BOLT, Constants.ALERT_STREAM_ID).size());
+					assertEquals(2, Testing.readTuples(result, Constants.TOPOLOGY_RULES_BOLT, Constants.ALERT_STREAM_ID)
+							.size());
+					assertEquals(2, Testing.readTuples(result, Constants.TOPOLOGY_ALERT_BOLT, Constants.ALERT_STREAM_ID)
+							.size());
 				}
 			});
 		}
 	}
 
+	@Test
+	public void testFluxTopology() throws IOException, IllegalAccessException, InstantiationException,
+			ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+		TopologyDef topologyDef = FluxParser.parseResource("/default-flux.yml", true, true, null, true);
+		assertNotNull(topologyDef);
+		Config conf = FluxBuilder.buildConfig(topologyDef);
+		ExecutionContext context = new ExecutionContext(topologyDef, conf);
+		FluxBuilder.buildTopology(context);
+	}
 }

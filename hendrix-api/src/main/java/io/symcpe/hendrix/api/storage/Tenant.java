@@ -57,8 +57,11 @@ public class Tenant implements Serializable {
 	private String tenantName;
 
 	// bi-directional many-to-one association to RulesTable
-	@OneToMany(mappedBy = "tenant", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) 
 	private List<Rules> rulesTables;
+	
+	@OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private List<AlertTemplates> templates;
 
 	public Tenant() {
 	}
@@ -88,6 +91,21 @@ public class Tenant implements Serializable {
 		this.rulesTables = rulesTables;
 	}
 
+	/**
+	 * @return the templates
+	 */
+	@JsonIgnore
+	public List<AlertTemplates> getTemplates() {
+		return templates;
+	}
+
+	/**
+	 * @param templates the templates to set
+	 */
+	public void setTemplates(List<AlertTemplates> templates) {
+		this.templates = templates;
+	}
+
 	public Rules addRulesTable(Rules rulesTable) {
 		getRulesTables().add(rulesTable);
 		rulesTable.setTenant(this);
@@ -100,6 +118,18 @@ public class Tenant implements Serializable {
 		rulesTable.setTenant(null);
 
 		return rulesTable;
+	}
+	
+	public AlertTemplates addTemplates(AlertTemplates alertTemplates) {
+		getTemplates().add(alertTemplates);
+		alertTemplates.setTenant(this);
+		return alertTemplates;
+	}
+
+	public AlertTemplates removeTemplates(AlertTemplates alertTemplates) {
+		getTemplates().remove(alertTemplates);
+		alertTemplates.setTenant(null);
+		return alertTemplates;
 	}
 
 	/*

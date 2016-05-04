@@ -53,7 +53,7 @@ public class AlertAction implements Action {
 	
 	@Override
 	public ACTION_TYPE getActionType() {
-		return ACTION_TYPE.ALERT;
+		return ACTION_TYPE.RAW_ALERT;
 	}
 
 	@Override

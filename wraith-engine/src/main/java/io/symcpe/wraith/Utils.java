@@ -24,13 +24,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import io.symcpe.wraith.conditions.ConditionSerializer;
 
@@ -110,5 +114,104 @@ public class Utils {
 	    if (superClass != null) { 
 	        addDeclaredAndInheritedFields(superClass, fields); 
 	    }       
+	}
+	
+	/**
+	 * @param timestamp
+	 * @param aggregationWindow
+	 * @param ruleActionId
+	 * @param aggregationKey
+	 * @return
+	 */
+	public static String createMapKey(long timestamp, int aggregationWindow, String ruleActionId,
+			String aggregationKey) {
+		String ts = intToString((int) (timestamp / (1000 * aggregationWindow)) * aggregationWindow);
+		return new StringBuilder(ruleActionId.length() + 1 + ts.length() + 1 + aggregationKey.length())
+				.append(ruleActionId).append(Constants.KEY_SEPARATOR).append(ts).append(Constants.KEY_SEPARATOR)
+				.append(aggregationKey).toString();
+	}
+	
+	public static short bytesToShort(byte[] data) {
+		return (short) (((data[0] << 8)) | ((data[1] & 0xFF)));
+	}
+
+	public static byte[] shortToBytes(short s) {
+		return new byte[] { (byte) ((s & 0xFF00) >> 8), (byte) (s & 0x00FF) };
+	}
+
+	public static byte[] combineRuleAction(short ruleId, short actionId) {
+		return ByteBuffer.allocate(4).putShort(ruleId).putShort(actionId).array();
+	}
+
+	public static Entry<Short, Short> separateRuleAction(byte[] ruleAction) {
+		ByteBuffer wrap = ByteBuffer.wrap(ruleAction);
+		return new AbstractMap.SimpleEntry<Short, Short>(wrap.getShort(), wrap.getShort());
+	}
+
+	public static byte[] combineRuleActionTs(short ruleId, short actionId, int ts) {
+		return ByteBuffer.allocate(8).putShort(ruleId).putShort(actionId).putInt(ts).array();
+	}
+
+	public static Entry<short[], Integer> separateRuleActionTs(byte[] data) {
+		ByteBuffer wrap = ByteBuffer.wrap(data);
+		return new AbstractMap.SimpleEntry<short[], Integer>(new short[] { wrap.getShort(), wrap.getShort() },
+				wrap.getInt());
+	}
+
+	public static String combineRuleActionIdTs(short ruleId, short actionId, int ts) {
+		return Base64.getEncoder().encodeToString(combineRuleActionTs(ruleId, actionId, ts));
+	}
+
+	public static Entry<short[], Integer> separateRuleActionIdTs(String data) {
+		return separateRuleActionTs(Base64.getDecoder().decode(data));
+	}
+
+	public static byte[] intToBytes(int val) {
+		return ByteBuffer.allocate(4).putInt(val).array();
+	}
+
+	public static int byteToInt(byte[] val) {
+		return ByteBuffer.wrap(val).getInt();
+	}
+
+	public static String intToString(int val) {
+		return Integer.toHexString(val);
+	}
+
+	public static int stringToInt(String val) {
+		return Integer.parseInt(val, 16);
+	}
+
+	public static String combineRuleActionId(short ruleId, short actionId) {
+		String str = Base64.getEncoder().encodeToString(combineRuleAction(ruleId, actionId));
+		return str;
+	}
+
+	public static Entry<Short, Short> separateRuleActionId(String ruleActionId) {
+		return separateRuleAction(Base64.getDecoder().decode(ruleActionId));
+	}
+
+	/**
+	 * @param key
+	 * @return
+	 */
+	public static String[] splitMapKey(String key) {
+		return key.split("\\" + Constants.KEY_SEPARATOR);
+	}
+
+	/**
+	 * @param v
+	 * @return
+	 */
+	public static String concat(String... v) {
+		int size = 0;
+		for (String vx : v) {
+			size += vx.length();
+		}
+		StringBuilder builder = new StringBuilder(size);
+		for (String vx : v) {
+			builder.append(vx);
+		}
+		return builder.toString();
 	}
 }

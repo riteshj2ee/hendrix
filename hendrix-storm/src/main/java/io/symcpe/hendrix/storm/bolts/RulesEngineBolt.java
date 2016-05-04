@@ -36,6 +36,7 @@ import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.hendrix.storm.Utils;
 import io.symcpe.wraith.Event;
+import io.symcpe.wraith.actions.Action;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleCommand;
 import io.symcpe.wraith.rules.RulesEngineCaller;
@@ -121,13 +122,15 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+//		declarer.declareStream(Constants.ALERT_STREAM_ID, new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID,
+//				Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TARGET, Constants.FIELD_ALERT_MEDIA, Constants.FIELD_RULE_GROUP, Constants.FIELD_TIMESTAMP));
 		declarer.declareStream(Constants.ALERT_STREAM_ID, new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID,
-				Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TARGET, Constants.FIELD_ALERT_MEDIA, Constants.FIELD_RULE_GROUP, Constants.FIELD_TIMESTAMP));
+				Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TEMPLATE_ID, Constants.FIELD_RULE_GROUP, Constants.FIELD_TIMESTAMP));
 		StormContextUtil.declareErrorStream(declarer);
 	}
 
 	@Override
-	public void emitAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent, short ruleId,
+	public void emitRawAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent, short ruleId,
 			short actionId, String target, String mediaType) {
 		if(multiTenancyActive) {
 			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
@@ -140,7 +143,6 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void handleRuleNoMatch(OutputCollector eventCollector, Tuple eventContainer, Event inputEvent, Rule rule) {
-		// TODO support type 2 alerts
 	}
 
 	@Override
@@ -169,6 +171,46 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	 */
 	public StatelessRulesEngine<Tuple, OutputCollector> getRulesEngine() {
 		return rulesEngine;
+	}
+
+	@Override
+	public void emitAggregationEvent(Class<? extends Action> action, OutputCollector eventCollector,
+			Tuple eventContainer, Event originalEvent, long timestamp, int windowSize, String ruleActionId,
+			String aggregationKey, Object aggregationValue) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void emitNewEvent(OutputCollector eventCollector, Tuple eventContainer, Event originalEvent,
+			Event outputEvent) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void emitTaggedEvent(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void emitOmegaActions(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void emitAnomalyAction(OutputCollector eventCollector, Tuple eventContainer, String seriesName, Number value) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public void emitTemplatedAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent,
+			short ruleId, short actionId, short templateId) {
+		if(multiTenancyActive) {
+			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
+					new Values(outputEvent, ruleId, actionId, templateId, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), 0L));
+		}else {
+			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
+					new Values(outputEvent, ruleId, actionId, templateId, null, 0L));
+		}
 	}
 
 }

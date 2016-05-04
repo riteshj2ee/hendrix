@@ -15,6 +15,12 @@
  */
 package io.symcpe.hendrix.api;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -26,6 +32,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import io.symcpe.wraith.Event;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
 import io.symcpe.wraith.rules.RuleSerializer;
 
 /**
@@ -46,6 +53,24 @@ public class Utils {
 				.putAll((Map<String, Object>) gson.fromJson(eventJson, new TypeToken<HashMap<String, Object>>() {
 				}.getType()));
 		return event;
+	}
+
+	public static boolean isCharsetMisInterpreted(String input, String encoding) {
+		CharsetDecoder decoder = Charset.forName("ascii").newDecoder();
+		CharsetEncoder encoder = Charset.forName(encoding).newEncoder();
+		ByteBuffer tmp;
+		try {
+			tmp = encoder.encode(CharBuffer.wrap(input));
+		} catch (CharacterCodingException e) {
+			return false;
+		}
+
+		try {
+			decoder.decode(tmp);
+			return true;
+		} catch (CharacterCodingException e) {
+			return false;
+		}
 	}
 
 	public static class WebEvent implements Event {
@@ -77,13 +102,17 @@ public class Utils {
 		}
 
 	}
-	
+
 	public static String getPrettyRuleJson(String ruleJson) {
-		return RuleSerializer.serializeRuleToJSONString(
-				RuleSerializer.deserializeJSONStringToRule(ruleJson), true);
+		return RuleSerializer.serializeRuleToJSONString(RuleSerializer.deserializeJSONStringToRule(ruleJson), true);
+	}
+	
+	public static String getPrettyTemplateJson(String templateJson) {
+		return AlertTemplateSerializer.serialize(AlertTemplateSerializer.deserialize(templateJson), true);
 	}
 
-	public static void createDatabase(String dbConnectionString, String dbName, String user, String pass, String driver) throws Exception {
+	public static void createDatabase(String dbConnectionString, String dbName, String user, String pass, String driver)
+			throws Exception {
 		Connection conn = null;
 		Statement stmt = null;
 		try {
@@ -98,7 +127,7 @@ public class Utils {
 			System.out.println("Creating database...");
 			stmt = conn.createStatement();
 
-			String sql = "CREATE DATABASE IF NOT EXISTS "+dbName;
+			String sql = "CREATE DATABASE IF NOT EXISTS " + dbName;
 			stmt.executeUpdate(sql);
 			System.out.println("Database created successfully...");
 		} finally {

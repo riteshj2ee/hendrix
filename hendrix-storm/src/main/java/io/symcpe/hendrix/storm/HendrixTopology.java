@@ -18,10 +18,12 @@ package io.symcpe.hendrix.storm;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.AlreadyAliveException;
@@ -30,17 +32,17 @@ import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
-import io.symcpe.hendrix.storm.bolts.AlertViewerBolt;
-import io.symcpe.hendrix.storm.bolts.AlertingEngineBolt;
 import io.symcpe.hendrix.storm.bolts.ErrorBolt;
-import io.symcpe.hendrix.storm.bolts.FileWriterBolt;
 import io.symcpe.hendrix.storm.bolts.JSONTranslatorBolt;
-import io.symcpe.hendrix.storm.bolts.PrinterBolt;
 import io.symcpe.hendrix.storm.bolts.RuleTranslatorBolt;
 import io.symcpe.hendrix.storm.bolts.RulesEngineBolt;
-import storm.kafka.KafkaSpout;
-import storm.kafka.SpoutConfig;
-import storm.kafka.ZkHosts;
+import io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt;
+import io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt;
+import io.symcpe.hendrix.storm.bolts.helpers.AlertViewerBolt;
+import io.symcpe.hendrix.storm.bolts.helpers.FileLogReaderSpout;
+import io.symcpe.hendrix.storm.bolts.helpers.FileWriterBolt;
+import io.symcpe.hendrix.storm.bolts.helpers.SpoolingFileSpout;
+import io.symcpe.hendrix.storm.bolts.InterceptionBolt;
 import storm.kafka.bolt.KafkaBolt;
 import storm.kafka.bolt.selector.DefaultTopicSelector;
 
@@ -62,42 +64,44 @@ public class HendrixTopology {
 	 * Attach and configure Kafka Spouts
 	 */
 	public void attachAndConfigureKafkaSpouts() {
-		String id = topologyName;
-		String zkRoot = "/";
-		String topicName = config.getProperty(Constants.KAFKA_TOPIC_NAME, Constants.DEFAULT_TOPIC_NAME);
-		String zkConnectionStr = config.getProperty(Constants.KAFKA_ZK_CONNECTION, Constants.DEFAULT_ZOOKEEPER);
-		SpoutConfig spoutConf = new SpoutConfig(new ZkHosts(zkConnectionStr), topicName, zkRoot, id);
-		builder.setSpout(Constants.TOPOLOGY_KAFKA_SPOUT, new KafkaSpout(spoutConf));
-
-		topicName = config.getProperty(Constants.KAFKA_RULES_TOPIC_NAME, Constants.DEFAULT_RULES_TOPIC);
-		spoutConf = new SpoutConfig(new ZkHosts(zkConnectionStr), topicName, zkRoot, id);
-		builder.setSpout(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new KafkaSpout(spoutConf)).setMaxTaskParallelism(
-				Integer.parseInt(config.getProperty(Constants.KAFKA_SPOUT_PARALLELISM, Constants.PARALLELISM_ONE)));
 	}
 
 	/**
 	 * Attach and configure File Spouts for local testing
 	 */
 	public void attachAndConfigureFileSpouts() {
-		builder.setSpout(Constants.TOPOLOGY_KAFKA_SPOUT, new FileLogReaderSpout()).setMaxTaskParallelism(1);
-		builder.setSpout(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new SpoolingFileSpout()).setMaxTaskParallelism(1);
+		logger.info("Running in local mode");
+		builder.setSpout(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME, new FileLogReaderSpout("~/hendrix/test-data"))
+				.setMaxTaskParallelism(1);
+		builder.setSpout(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/rule-updates.txt")).setMaxTaskParallelism(1);
+		builder.setSpout(Constants.TOPOLOGY_TEMPLATE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/template-updates.txt")).setMaxTaskParallelism(1);
 	}
 
 	/**
 	 * Attach and configure bolts
 	 */
 	public void attachAndConfigureBolts() {
+		BoltDeclarer validationBolt = builder.setBolt(Constants.TOPOLOGY_VALIDATION_BOLT, new InterceptionBolt())
+				.setMaxTaskParallelism(Integer.parseInt(
+						config.getProperty(Constants.VALIDATION_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
+
+		validationBolt.shuffleGrouping(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME);
+
 		builder.setBolt(Constants.TOPOLOGY_TRANSLATOR_BOLT, new JSONTranslatorBolt())
-				.shuffleGrouping(Constants.TOPOLOGY_KAFKA_SPOUT).setMaxTaskParallelism(Integer.parseInt(
+				.shuffleGrouping(Constants.TOPOLOGY_VALIDATION_BOLT).setMaxTaskParallelism(Integer.parseInt(
 						config.getProperty(Constants.TRANSLATOR_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
-		builder.setBolt(Constants.WRAITH_COMPONENT, new RuleTranslatorBolt())
+		builder.setBolt(Constants.RULE_SYNC_COMPONENT, new RuleTranslatorBolt())
+				.shuffleGrouping(Constants.TOPOLOGY_RULE_SYNC_SPOUT).setMaxTaskParallelism(Integer.parseInt(config
+						.getProperty(Constants.RULE_TRANSLATOR_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
+
+		builder.setBolt(Constants.TEMPLATE_SYNC_COMPONENT, new TemplateTranslatorBolt())
 				.shuffleGrouping(Constants.TOPOLOGY_RULE_SYNC_SPOUT).setMaxTaskParallelism(Integer.parseInt(config
 						.getProperty(Constants.RULE_TRANSLATOR_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
 		builder.setBolt(Constants.TOPOLOGY_RULES_BOLT, new RulesEngineBolt())
 				.shuffleGrouping(Constants.TOPOLOGY_TRANSLATOR_BOLT)
-				.allGrouping(Constants.WRAITH_COMPONENT, Constants.RULE_STREAM_ID)
+				.allGrouping(Constants.RULE_SYNC_COMPONENT, Constants.SYNC_STREAM_ID)
 				.setMaxTaskParallelism(Integer.parseInt(
 						config.getProperty(Constants.RULES_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
@@ -108,15 +112,15 @@ public class HendrixTopology {
 							config.getProperty(Constants.TRANSLATOR_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 		}
 
-		builder.setBolt(Constants.TOPOLOGY_ALERT_BOLT, new AlertingEngineBolt())
+		builder.setBolt(Constants.TOPOLOGY_ALERT_BOLT, new TemplatedAlertingEngineBolt())
+				.allGrouping(Constants.TEMPLATE_SYNC_COMPONENT, Constants.SYNC_STREAM_ID)
 				.shuffleGrouping(Constants.TOPOLOGY_RULES_BOLT, Constants.ALERT_STREAM_ID)
-				.allGrouping(Constants.WRAITH_COMPONENT, Constants.RULE_STREAM_ID)
 				.setMaxTaskParallelism(Integer.parseInt(
 						config.getProperty(Constants.ALERT_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
 		builder.setBolt(Constants.ERROR_BOLT, new ErrorBolt())
 				.shuffleGrouping(Constants.TOPOLOGY_TRANSLATOR_BOLT, Constants.ERROR_STREAM)
-				.shuffleGrouping(Constants.WRAITH_COMPONENT, Constants.ERROR_STREAM)
+				.shuffleGrouping(Constants.RULE_SYNC_COMPONENT, Constants.ERROR_STREAM)
 				.shuffleGrouping(Constants.TOPOLOGY_RULES_BOLT, Constants.ERROR_STREAM)
 				.shuffleGrouping(Constants.TOPOLOGY_ALERT_BOLT, Constants.ERROR_STREAM);
 
@@ -137,32 +141,6 @@ public class HendrixTopology {
 					.shuffleGrouping(Constants.TOPOLOGY_ALERT_BOLT, Constants.ALERT_STREAM_ID)
 					.setMaxTaskParallelism(Integer.parseInt(
 							config.getProperty(Constants.KAFKA_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
-
-			BoltDeclarer printerBolt = builder.setBolt(Constants.KAFKA_ERROR_BOLT, new PrinterBolt());
-
-			if (config.containsKey("printTranslator")) {
-				printerBolt.shuffleGrouping(Constants.TOPOLOGY_TRANSLATOR_BOLT);
-			}
-
-			if (config.containsKey("printValidator")) {
-				printerBolt.shuffleGrouping(Constants.TOPOLOGY_VALIDATION_BOLT);
-			}
-
-			if (config.containsKey("printRuleTranslator")) {
-				printerBolt.shuffleGrouping(Constants.WRAITH_COMPONENT, Constants.RULE_STREAM_ID);
-			}
-
-			if (config.containsKey("printAlerts")) {
-				printerBolt.shuffleGrouping(Constants.TOPOLOGY_ALERT_BOLT, Constants.ALERT_STREAM_ID);
-			}
-
-			if (config.containsKey("printKafkaSpout")) {
-				printerBolt.shuffleGrouping(Constants.TOPOLOGY_KAFKA_SPOUT);
-			}
-
-			if (config.containsKey("printErrors")) {
-				printerBolt.shuffleGrouping(Constants.ERROR_BOLT, Constants.KAFKA_ERROR_STREAM);
-			}
 		}
 
 	}
@@ -183,23 +161,27 @@ public class HendrixTopology {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		Config conf = new Config();
+		for (Entry<Object, Object> entry : props.entrySet()) {
+			conf.put(entry.getKey().toString(), entry.getValue());
+		}
 		if (props.getProperty(LOCAL) != null) {
 			if (props.getProperty(FileLogReaderSpout.LOG_DIR) == null) {
 				System.out.println("Must have log directory to read data from");
 				return;
 			}
 			LocalCluster localStorm = new LocalCluster();
-			localStorm.submitTopology(topology.getTopologyName(), props, topology.getTopology());
+			localStorm.submitTopology(topology.getTopologyName(), conf, topology.getTopology());
 		} else {
 			try {
-				StormSubmitter.submitTopology(topology.getTopologyName(), props, topology.getTopology());
+				StormSubmitter.submitTopology(topology.getTopologyName(), conf, topology.getTopology());
 			} catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
 				logger.log(Level.SEVERE, "Error submitted the topology", e);
 			}
 		}
 	}
 
-//	@Override
+	// @Override
 	public void initialize() throws Exception {
 		builder = new TopologyBuilder();
 		topologyName = config.getProperty(Constants.TOPOLOGY_NAME, "Hendrix");
@@ -212,12 +194,12 @@ public class HendrixTopology {
 		topology = builder.createTopology();
 	}
 
-//	@Override
+	// @Override
 	public void setConfiguration(Properties configuration) {
 		this.config = configuration;
 	}
 
-//	@Override
+	// @Override
 	public StormTopology getTopology() {
 		return topology;
 	}

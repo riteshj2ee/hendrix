@@ -1,12 +1,12 @@
 io.symcpe.wraith.conditions.relational.JavaRegexCondition=REGEX
 io.symcpe.wraith.conditions.relational.EqualsCondition=EQUALS
 io.symcpe.wraith.conditions.relational.GreaterThanCondition=GREATER THAN
-io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition=GREAT THAN EQUALS
+io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition=GREATER THAN EQUALS
 io.symcpe.wraith.conditions.relational.LessThanCondition=LESS THAN
 io.symcpe.wraith.conditions.relational.LessThanEqualToCondition=LESS THAN EQUALS
 io.symcpe.wraith.conditions.relational.NotEqualsCondition=NOT EQUALS
 io.symcpe.wraith.conditions.logical.AndCondition=AND
 io.symcpe.wraith.conditions.logical.OrCondition=OR
 io.symcpe.wraith.conditions.logical.XorCondition=XOR
-io.symcpe.wraith.actions.alerts.AlertAction=ALERT
+io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction=ALERT
 io.symcpe.wraith.actions.TagEvent=TAG

@@ -38,11 +38,10 @@ import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.HendrixEvent;
 import io.symcpe.hendrix.storm.MockTupleHelpers;
 import io.symcpe.hendrix.storm.TestUtils;
-import io.symcpe.hendrix.storm.bolts.RulesEngineBolt;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Event;
 import io.symcpe.wraith.actions.Action;
-import io.symcpe.wraith.actions.alerts.AlertAction;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.conditions.Condition;
 import io.symcpe.wraith.conditions.relational.ExistsCondition;
 import io.symcpe.wraith.rules.Rule;
@@ -64,10 +63,10 @@ public class TestRulesEngineBolt {
 	public void before() {
 		events = new ArrayList<>();
 		Condition condition = new ExistsCondition("host");
-		Action action = new AlertAction((short) 1, "test@symantec.com", "mail", "hello world $host");
+		Action action = new TemplatedAlertAction((short) 1, (short) 1);
 		testRule = new SimpleRule((short) 1233, "testRule", true, condition, action);
 		stormConf = new HashMap<>();
-		stormConf.put(Constants.RSTORE_TYPE, TestRulesStore.class.getCanonicalName());
+		stormConf.put(Constants.RSTORE_TYPE, TestStore.class.getCanonicalName());
 	}
 
 	@Test
@@ -125,8 +124,8 @@ public class TestRulesEngineBolt {
 			Tuple input = MockTupleHelpers.mockEventTuple(testEvent);
 			bolt.execute(input);
 			HendrixEvent processedEvent = (HendrixEvent) processedEventContainer.get().get(0);
-			assertTrue(processedEvent.getHeaders().containsKey("media"));
-			assertTrue(processedEvent.getHeaders().containsKey("target"));
+			assertTrue(processedEvent.getHeaders().containsKey(Constants.FIELD_ALERT_TEMPLATE_ID));
+			assertEquals((short)1, processedEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
 			verify(mockCollector, times(1)).ack(input);
 		}
 	}
