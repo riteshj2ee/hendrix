@@ -3,6 +3,7 @@
 ## Project Description
 Hendrix is a Real-time alert generation system for the Cloud. We currently support Rule based definition of alerts and provide a platform / design pattern for high performance
 execution of rule based event matching.
+![alt tag](https://github.com/Symantec/hendrix/blob/master/docs/images/hendrix.png "Hendrix logo")
 
 Note: The hendrix-ui project is purely for demo purposes as we currently do not have a rich client user interface.
 
