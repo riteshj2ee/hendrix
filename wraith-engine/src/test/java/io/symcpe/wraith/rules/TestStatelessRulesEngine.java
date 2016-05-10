@@ -132,6 +132,7 @@ public class TestStatelessRulesEngine {
 		engine.initializeRules(new HashMap<>());
 		Event event = testFactory.buildEvent();
 		event.getHeaders().put("host", "abcd");
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, 0L);
 		engine.updateRule(null,
 				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
 						new EqualsCondition("host", "abcd"), new TemplatedAlertAction((short) 2, (short) 2)), false),
@@ -139,7 +140,7 @@ public class TestStatelessRulesEngine {
 		engine.evaluateEventAgainstAllRules(null, null, event);
 		// verify(caller).emitRawAlert(null, null, event, (short) 1123, (short)
 		// 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 2);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
 	}
 
 	@Test
@@ -154,16 +155,17 @@ public class TestStatelessRulesEngine {
 		assertEquals(1, map.size());
 		Event event = testFactory.buildEvent();
 		event.getHeaders().put("host", "abcd");
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, 0L);
 		engine.evaluateEventAgainstAllRules(null, null, event);
 //		verify(caller).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test1");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 0);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 0, 0L);
 		engine.updateRule(null,
 				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
 						new EqualsCondition("host", "abcd"), new TemplatedAlertAction((short) 0, (short) 2)), false),
 				false);
 		engine.evaluateEventAgainstAllRules(null, null, event);
 //		verify(caller).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 2);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0L);
 	}
 
 	@Test
@@ -178,6 +180,7 @@ public class TestStatelessRulesEngine {
 		assertEquals(1, map.size());
 		Event event = testFactory.buildEvent();
 		event.getHeaders().put("host", "abcd");
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, 0L);
 		engine.evaluateEventAgainstAllRules(null, null, event);
 		verify(caller).handleRuleNoMatch(null, null, event, engine.getRuleMap().values().iterator().next());
 		engine.updateRule(null,
@@ -186,7 +189,7 @@ public class TestStatelessRulesEngine {
 				false);
 		engine.evaluateEventAgainstAllRules(null, null, event);
 //		verify(caller).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 2);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0L);
 	}
 
 	@Test
@@ -197,6 +200,7 @@ public class TestStatelessRulesEngine {
 		engine.initializeRules(conf);
 		Event event = testFactory.buildEvent();
 		event.getHeaders().put("host", "abcd");
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, 0L);
 		event.getHeaders().put(Constants.FIELD_RULE_GROUP, "rg1");
 		engine.updateRule("rg1",
 				RuleSerializer.serializeRuleToJSONString(new SimpleRule((short) 1123, "test1", true,
@@ -204,11 +208,11 @@ public class TestStatelessRulesEngine {
 				false);
 		engine.evaluateEventAgainstGroupedRules(null, null, event);
 //		verify(caller, times(1)).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 2);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
 		event.getHeaders().put(Constants.FIELD_RULE_GROUP, "rg2");
 		engine.evaluateEventAgainstGroupedRules(null, null, event);
 //		verify(caller, times(1)).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, (short) 2);
+		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
 	}
 
 }

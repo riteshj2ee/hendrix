@@ -82,7 +82,7 @@ public class TestRulesEngineBolt {
 		assertTrue(rules.containsKey((short) 1233));
 		assertEquals(testRule, rules.get((short) 1233));
 	}
-	
+
 	@Test
 	public void testRuleDeletionEvent() {
 		String ruleString = RuleSerializer.serializeRuleToJSONString(testRule, false);
@@ -116,16 +116,18 @@ public class TestRulesEngineBolt {
 		bolt.execute(MockTupleHelpers.mockRuleTuple(false, null, ruleString));
 		for (String line : events) {
 			Event testEvent = TestUtils.stringToEvent(line);
-			if(line.contains("host")) {
+			testEvent.getHeaders().put(Constants.FIELD_TIMESTAMP,
+					((Double) testEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)).longValue());
+			if (line.contains("host")) {
 				assertTrue(testRule.getCondition().matches(testEvent));
-			}else {
+			} else {
 				assertTrue(!testRule.getCondition().matches(testEvent));
 			}
 			Tuple input = MockTupleHelpers.mockEventTuple(testEvent);
 			bolt.execute(input);
 			HendrixEvent processedEvent = (HendrixEvent) processedEventContainer.get().get(0);
 			assertTrue(processedEvent.getHeaders().containsKey(Constants.FIELD_ALERT_TEMPLATE_ID));
-			assertEquals((short)1, processedEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
+			assertEquals((short) 1, processedEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
 			verify(mockCollector, times(1)).ack(input);
 		}
 	}

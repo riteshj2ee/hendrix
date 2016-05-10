@@ -87,7 +87,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 		try {
 			initializeTemplates(runtimeServices, templateMap, storeFactory, stormConf);
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Failed to initialize rule/templates for alerts", e);
+			logger.log(Level.SEVERE, "Failed to initialize templates for alerts", e);
 			throw new RuntimeException(e);
 		}
 		logger.info("Templated alerting Engine Bolt initialized");
@@ -105,11 +105,11 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 						templateCommand.isDelete());
 				logger.info("Applied template update with template content:" + templateCommand.getTemplate());
 			} catch (Exception e) {
-				// failed to update rule
+				// failed to update template
 				System.err.println("Failed to apply template update:" + e.getMessage() + "\t"
 						+ tuple.getValueByField(Constants.FIELD_TEMPLATE_CONTENT));
 				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class, tuple.toString(),
-						"Failed to apply rule update", e);
+						"Failed to apply template update", e);
 			}
 		} else {
 			Alert alertResult = null;
@@ -118,33 +118,32 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 						tuple.getStringByField(Constants.FIELD_RULE_GROUP),
 						tuple.getShortByField(Constants.FIELD_RULE_ID),
 						tuple.getShortByField(Constants.FIELD_ACTION_ID),
+						tuple.getStringByField(Constants.FIELD_RULE_NAME),
 						tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID),
 						tuple.getLongByField(Constants.FIELD_TIMESTAMP));
 			} else {
 				alertResult = materialize((Event) tuple.getValueByField(Constants.FIELD_EVENT),
 						tuple.getShortByField(Constants.FIELD_RULE_ID),
 						tuple.getShortByField(Constants.FIELD_ACTION_ID),
+						tuple.getStringByField(Constants.FIELD_RULE_NAME),
 						tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID),
 						tuple.getLongByField(Constants.FIELD_TIMESTAMP));
 			}
 			if (alertResult == null) {
 				String eventJson = gson.toJson(((Event) tuple.getValueByField(Constants.FIELD_EVENT)).getHeaders());
 				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class,
-						"Failed to materialize alert into template due to missing rules", eventJson, null);
+						"Failed to materialize alert into template due to missing templates", eventJson, null);
 			} else {
-				collector.emit(Constants.ALERT_STREAM_ID, tuple,
-						new Values(alertResult.getTarget(), alertResult.getMedia(), alertResult.getBody(),
-								gson.toJson(alertResult), tuple.getShortByField(Constants.FIELD_RULE_ID),
-								tuple.getShortByField(Constants.FIELD_ACTION_ID)));
+				collector.emit(Constants.ALERT_STREAM_ID, tuple, new Values(gson.toJson(alertResult)));
 			}
 		}
 		collector.ack(tuple);
 	}
 
 	@Override
-	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, short templateId,
-			long timestamp) {
-		Alert alert = materialize(event, ruleId, actionId, templateId, timestamp);
+	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String ruleName,
+			short templateId, long timestamp) {
+		Alert alert = materialize(event, ruleId, actionId, ruleName, templateId, timestamp);
 		if (alert != null) {
 			alert.setRuleGroup(ruleGroup);
 		}
@@ -152,7 +151,8 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 	}
 
 	@Override
-	public Alert materialize(Event event, short ruleId, short actionId, short templateId, long timestamp) {
+	public Alert materialize(Event event, short ruleId, short actionId, String ruleName, short templateId,
+			long timestamp) {
 		Alert alert = new Alert();
 		VelocityAlertTemplate template = templateMap.get(templateId);
 		if (template != null) {
@@ -161,7 +161,6 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 				ctx.put(entry.getKey(), entry.getValue());
 			}
 			StringWriter writer = new StringWriter(1000);
-			System.err.println(ctx + "\t" + writer + "\t" + template.getVelocityBodyTemplate());
 			template.getVelocityBodyTemplate().merge(ctx, writer);
 			alert.setBody(writer.toString());
 			if (template.getSubject() == null) {
@@ -183,9 +182,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(Constants.ALERT_STREAM_ID,
-				new Fields(Constants.FIELD_ALERT_TARGET, Constants.FIELD_ALERT_MEDIA, Constants.FIELD_ALERT_BODY,
-						Constants.FIELD_ALERT, Constants.FIELD_RULE_ID, Constants.FIELD_ACTION_ID));
+		declarer.declareStream(Constants.ALERT_STREAM_ID, new Fields(Constants.FIELD_ALERT));
 		StormContextUtil.declareErrorStream(declarer);
 	}
 
@@ -193,7 +190,11 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 	public void updateTemplate(String ruleGroup, String templateJson, boolean delete) {
 		try {
 			AlertTemplate template = AlertTemplateSerializer.deserialize(templateJson);
-			buildTemplateMap(runtimeServices, templateMap, template);
+			if (delete) {
+				templateMap.remove(template.getTemplateId());
+			} else {
+				buildTemplateMap(runtimeServices, templateMap, template);
+			}
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Alert template error", e);
 		}
@@ -223,12 +224,12 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 		try {
 			store.connect();
 			Map<Short, AlertTemplate> templates = store.getAllTemplates();
-			logger.info("Fetched "+templates.size()+" alert templates from the store");
+			logger.info("Fetched " + templates.size() + " alert templates from the store");
 			for (AlertTemplate template : templates.values()) {
 				try {
 					buildTemplateMap(runtimeServices, templateMap, template);
 				} catch (ParseException e) {
-					//TODO log ignore template
+					// TODO log ignore template
 				}
 			}
 			store.disconnect();

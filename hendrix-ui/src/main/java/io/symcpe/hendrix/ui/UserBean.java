@@ -22,8 +22,8 @@ import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.SessionScoped;
-import javax.persistence.EntityManager;
 
+import io.symcpe.hendrix.ui.rules.TenantManager;
 import io.symcpe.hendrix.ui.storage.Tenant;
 
 /**
@@ -50,16 +50,15 @@ public class UserBean implements Serializable {
 	@PostConstruct
 	public void init() {
 		userId = lb.getUser();
-		if (am.getEM() != null) {
-			EntityManager mgr = am.getEM();
-			loadGroups(mgr);
-		} else {
-			System.out.println("Factory is null");
+		try {
+			loadGroups();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	protected void loadGroups(EntityManager em) {
-		List<Tenant> results = em.createNamedQuery(Queries.TENANT_FIND_ALL, Tenant.class).getResultList();
+	protected void loadGroups() throws Exception {
+		List<Tenant> results = TenantManager.getInstance().getTenants();
 		if (results.size() > 0) {
 			tenants = results;
 			tenant = results.get(0);

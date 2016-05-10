@@ -28,6 +28,9 @@ import backtype.storm.tuple.Values;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
 
+/**
+ * @author ambud_sharma
+ */
 public class AlertRouterBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = 1L;
@@ -42,7 +45,7 @@ public class AlertRouterBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 		Alert alert = (Alert) tuple.getValueByField(Constants.FIELD_ALERT);
-		collector.emit(alert.getMedia(), new Values(alert));
+		collector.emit(alert.getMedia(), tuple, new Values(alert));
 		collector.ack(tuple);
 	}
 

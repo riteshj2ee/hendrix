@@ -10,82 +10,29 @@ name: "HendrixRulesTopology"
 #
 config:
     topology.workers: 2
+    store.sql.url: "jdbc:mysql://localhost:3306/"
+    store.username: "root"
+    store.password: "lmm"
+    store.sql.db: "hendrix2"
     rstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
-    rstore.sql.url: "jdbc:mysql://192.168.99.101:32770/"
-    rstore.sql.db: "hendrix"
+    tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
     rstore.sql.table: "rules_table"
-    rstore.username: "root"
-    rstore.password: "root"
+    tstore.sql.table: "alert_template"
     rule.group.active: "true"
-    printErrors: "true"
-    #printRuleTranslator: "true"
-    printAlerts: "true"
-    #printTranslator: "true"
     mode: "metric"
     log.slow: "1000"
-    enable.alert.viewer: "true"
-    ui.endpoint: "http://192.168.99.101:9000/api/receive/"
+    ui.endpoint: "http://localhost:9000/api/receive/"
 
 # Components
 # Components are analagous to Spring beans. They are meant to be used as constructor,
 # property(setter), and builder arguments.
 #
 # for the time being, components must be declared in the order they are referenced
-components:
-  - id: "zkHosts"
-    className: "storm.kafka.ZkHosts"
-    constructorArgs:
-      - "localhost:2181"
-
-  - id: "logSpoutConfig"
-    className: "storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "logTopic"
-      # zkRoot
-      - "/"
-      # id
-      - "logTopic"
-    properties:
-      - name: "ignoreZkOffsets"
-        value: false
-      - name: "bufferSizeBytes"
-        value: 2097152
-#      - name: "fetchMaxWait"
-#        value:
-      - name: "fetchSizeBytes"
-        value: 2097152
-
-  - id: "ruleSpoutConfig"
-    className: "storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "rulesTopic"
-      # zkRoot
-      - "/"
-      # id
-      - "rulesTopic"
-    properties:
-      - name: "ignoreZkOffsets"
-        value: false
-      - name: "bufferSizeBytes"
-        value: 1048576
-#      - name: "fetchMaxWait"
-#        value:
-      - name: "fetchSizeBytes"
-        value: 1048576
 
 # spout definitions
 spouts:
   - id: "logSpout"
     className: "io.symcpe.hendrix.storm.bolts.helpers.FileLogReaderSpout"
-#    className: "storm.kafka.KafkaSpout"
-#    constructorArgs:
-#      - ref: "logSpoutConfig"
     constructorArgs:
       - "~/hendrix/test-data"
 
@@ -93,9 +40,11 @@ spouts:
     className: "io.symcpe.hendrix.storm.bolts.helpers.SpoolingFileSpout"
     constructorArgs:
       - "~/hendrix/rule-updates.txt"
-#    className: "storm.kafka.KafkaSpout"
-#    constructorArgs:
-#      - ref: "ruleSpoutConfig"
+
+  - id: "templateSpout"
+    className: "io.symcpe.hendrix.storm.bolts.helpers.SpoolingFileSpout"
+    constructorArgs:
+      - "~/hendrix/template-updates.txt"
 
 # bolt definitions
 bolts:
@@ -109,7 +58,12 @@ bolts:
     parallelism: 1
 
     # ...
-  - id: "ruleTranslatorBolt"
+  - id: "templateComponent"
+    className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
+    parallelism: 1
+
+    # ...
+  - id: "ruleComponent"
     className: "io.symcpe.hendrix.storm.bolts.RuleTranslatorBolt"
     parallelism: 1
 
@@ -124,8 +78,8 @@ bolts:
     parallelism: 1
 
     # ...
-  - id: "alertEngineBolt"
-    className: "io.symcpe.hendrix.storm.bolts.AlertingEngineBolt"
+  - id: "templatedAlertEngineBolt"
+    className: "io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt"
     parallelism: 1
 
     # ...
@@ -151,9 +105,15 @@ streams:
       type: SHUFFLE
 
   # Rule Spout
-  - name: "Kafka Rules->Rule Translator" # name isn't used (placeholder for logging, UI, etc.)
+  - name: "Kafka Rules->Rule Translator"
     from: "ruleSpout"
-    to: "ruleTranslatorBolt"
+    to: "ruleComponent"
+    grouping:
+      type: SHUFFLE
+      
+  - name: "Kafka Templates->Template Translator"
+    from: "templateSpout"
+    to: "templateComponent"
     grouping:
       type: SHUFFLE
 
@@ -169,26 +129,33 @@ streams:
     grouping:
       type: SHUFFLE
       
-  - name: "Rule Engine->Alert Engine"
+  - name: "Rule Engine->Templated Alert Engine"
     from: "ruleEngineBolt"
-    to: "alertEngineBolt"
+    to: "templatedAlertEngineBolt"
     grouping:
       type: SHUFFLE
-      streamId: alertStream
+      streamId: "alertStream"
+      
+  - name: "Templated Alert Engine->Printer"
+    from: "templatedAlertEngineBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "alertStream"
 
   - name: "Rule Translator->Rule Engine"
-    from: "ruleTranslatorBolt"
+    from: "ruleComponent"
     to: "ruleEngineBolt"
     grouping:
       type: ALL
-      streamId: ruleStream
+      streamId: "syncStream"
       
-  - name: "Rule Translator->Alert Engine"
-    from: "ruleTranslatorBolt"
-    to: "alertEngineBolt"
+  - name: "Template Translator->Templated Alert Engine"
+    from: "templateComponent"
+    to: "templatedAlertEngineBolt"
     grouping:
       type: ALL
-      streamId: ruleStream
+      streamId: "syncStream"
 
   - name: "Translator->Error"
     from: "translatorBolt"
@@ -198,14 +165,14 @@ streams:
       streamId: "errorStream"
 
   - name: "Rule Translator->Error"
-    from: "ruleTranslatorBolt"
+    from: "ruleComponent"
     to: "errorBolt"
     grouping:
       type: SHUFFLE
       streamId: "errorStream"
       
   - name: "Rule Translator->Error"
-    from: "ruleTranslatorBolt"
+    from: "ruleComponent"
     to: "errorBolt"
     grouping:
       type: SHUFFLE
@@ -218,9 +185,16 @@ streams:
       type: SHUFFLE
       streamId: "errorStream"
       
-  - name: "Alert Engine->Error"
-    from: "alertEngineBolt"
+  - name: "Templated Alert Engine->Error"
+    from: "templatedAlertEngineBolt"
     to: "errorBolt"
     grouping:
       type: SHUFFLE
       streamId: "errorStream"
+
+  - name: "Error->Printer"
+    from: "errorBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "kafkaErrorStream"

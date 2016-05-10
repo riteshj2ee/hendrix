@@ -57,9 +57,11 @@ public interface RulesEngineCaller<K, C> {
 	 * @param outputEvent
 	 * @param ruleId
 	 * @param actionId
+	 * @param ruleName
 	 * @param templateId
+	 * @param timestamp
 	 */
-	public void emitTemplatedAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, short templateId);
+	public void emitTemplatedAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, String ruleName, short templateId, long timestamp);
 	
 	/**
 	 * Handle if rule doesn't match for an event

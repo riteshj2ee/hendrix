@@ -11,9 +11,6 @@
 			<p:commandButton icon="ui-icon-plus" value="Rule" actionListener="#{rb.addRule}" style="float:right;background-color: #4CAF50;color: white" disabled="#{empty ub.tenant}"/><br/><br/>
 			<p:dataTable value="#{rb.rules}" var="rule" resizableColumns="true"
 				widgetVar="rules" reflow="true" editable="false" stickyHeader="true">
-				<p:column style="width:30px">
-					<p:rowToggler />
-				</p:column>
 				<p:column headerText="Name" style="width:300px;">
 					<h:outputText styleClass="#{rule.active?'active':'inactive'}"
 						value="#{rule.name}(#{rule.ruleId})" escape="true" title="#{rule.name}" />

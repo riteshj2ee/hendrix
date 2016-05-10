@@ -4,8 +4,7 @@ MAINTAINER ambud_sharma@symantec.com
 
 RUN rm -rf /usr/local/tomcat/webapps/*
 
-#RUN wget -O /usr/local/tomcat/webapps/ROOT.war 'path to repo'
-ADD ./target/ROOT.war /usr/local/tomcat/webapps/ROOT.war
+ADD ./ROOT.war /usr/local/tomcat/webapps/ROOT.war
 
 RUN ls -lg /usr/local/tomcat/webapps/
  

@@ -27,7 +27,9 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String DEFAULT_TOPIC_NAME = "logTopic";
 	public static final String DEFAULT_ZOOKEEPER = "localhost:2181";
 	public static final String DEFAULT_RULES_TOPIC = "rulesTopic";
-	public static final String FIELD_TIMESTAMP = "_ts";
+	public static final String SUPRESSION_STATE = "suppressionState";
+	public static final String SUP_MON_STREAM = "suppressionStream";
+	public static final String DELIVERY_STREAM = "deliveryStream";
 
 	private Constants() {
 	}
@@ -47,7 +49,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String TOPOLOGY_KAFKA_SPOUT = "kafkaSpout_";
 	public static final String TOPOLOGY_RULE_SYNC_SPOUT = "rsync";
 	public static final String TOPOLOGY_TEMPLATE_SYNC_SPOUT = "tsync";
-	public static final String TOPOLOGY_VALIDATION_BOLT = "validationBolt";
+	public static final String TOPOLOGY_INTERCEPTION_BOLT = "interceptionBolt";
 	public static final String TOPOLOGY_ALERT_BOLT = "alertBolt";
 	public static final String TOPOLOGY_ALERT_KAFKA_BOLT = "kafkaBolt";
 	public static final String RULES_BOLT_PARALLELISM_HINT = "rules.parallelism";
@@ -74,7 +76,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String FIELD_ERROR_KEY = "eKey";
 	public static final String DEFAULT_KAFKA_ERROR = "false";
 	public static final String ERROR_TIMESTAMP = "errorTs";
-	public static final String VALIDATION_BOLT_PARALLELISM_HINT = "validation.parallelism";
+	public static final String INTERCEPTION_BOLT_PARALLELISM_HINT = "validation.parallelism";
 
 	public static final String TOPOLOGY_NAME = "topology.name";
 	public static final String KAFKA_ALERT_TOPIC = null;

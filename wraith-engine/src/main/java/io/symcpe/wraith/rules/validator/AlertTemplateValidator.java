@@ -65,11 +65,11 @@ public class AlertTemplateValidator implements Validator<AlertTemplate> {
 		if (template.getTemplateName() == null || template.getTemplateName().trim().isEmpty()) {
 			throw new ValidationException("Template name can't be empty");
 		}
-		if (template.getThrottleDuration()<0) {
-			throw new ValidationException("Throttle duration can't be negative");
+		if (template.getThrottleDuration()<1) {
+			throw new ValidationException("Throttle duration can't be less than 1");
 		}
-		if(template.getThrottleLimit()<0) {
-			throw new ValidationException("Throttle limit can't be negative");
+		if(template.getThrottleLimit()<1) {
+			throw new ValidationException("Throttle limit can't be less than 1");
 		}
 		switch(template.getMedia()) {
 		case "mail":

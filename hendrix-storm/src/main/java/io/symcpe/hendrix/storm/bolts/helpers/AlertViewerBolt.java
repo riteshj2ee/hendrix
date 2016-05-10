@@ -15,6 +15,9 @@
  */
 package io.symcpe.hendrix.storm.bolts.helpers;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -45,11 +48,12 @@ import io.symcpe.wraith.Constants;
  */
 public class AlertViewerBolt extends BaseRichBolt {
 
-	private static final String UI_ENDPOINT = "ui.endpoint";
+	private static final String UI_ENDPOINT = "ui.endpoint.av";
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
 	private transient String uiEndpoint;
 	private transient long counter;
+	private CloseableHttpClient client;
 
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -60,22 +64,23 @@ public class AlertViewerBolt extends BaseRichBolt {
 		}else {
 			this.uiEndpoint = "http://localhost:8080/ROOT/api/receive/";
 		}
+		try {
+			client = Utils.buildClient(this.uiEndpoint, 3000, 3000);
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException e) {
+			collector.reportError(e);
+		}
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
 		short ruleId = 0;
 		try {
-			CloseableHttpClient client = Utils.buildClient(this.uiEndpoint, 3000, 3000);
 			ruleId = tuple.getShortByField(Constants.FIELD_RULE_ID);
-			
 			String endPoint = uiEndpoint+ruleId;
-			
 			HendrixEvent event = (HendrixEvent)tuple.getValueByField(Constants.FIELD_EVENT);
 			HttpPost req = new HttpPost(endPoint);
 			req.setEntity(new StringEntity(new Gson().toJson(event.getHeaders()), ContentType.APPLICATION_JSON));
 			CloseableHttpResponse resp = client.execute(req);
-			client.close();
 			counter++;
 			if(counter%1000==0) {
 				System.out.println(endPoint+"\t"+resp.getStatusLine().getStatusCode()+"\t"+EntityUtils.toString(resp.getEntity()));

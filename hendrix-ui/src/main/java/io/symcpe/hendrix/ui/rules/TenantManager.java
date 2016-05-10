@@ -15,16 +15,27 @@
  */
 package io.symcpe.hendrix.ui.rules;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
-import javax.persistence.EntityTransaction;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
+
+import com.google.gson.Gson;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
-import io.symcpe.hendrix.ui.Queries;
+import io.symcpe.hendrix.ui.Utils;
 import io.symcpe.hendrix.ui.storage.Tenant;
 
 /**
@@ -36,6 +47,7 @@ public class TenantManager {
 
 	private static final Logger logger = Logger.getLogger(TenantManager.class.getCanonicalName());
 	private static final TenantManager TENANT_MANAGER = new TenantManager();
+	private static final String TENANT_URL = "/tenants";
 	private ApplicationManager am;
 
 	private TenantManager() {
@@ -53,17 +65,18 @@ public class TenantManager {
 		if (tenant == null) {
 			throw new NullPointerException("Tenant can't be empty");
 		}
-		EntityManager em = am.getEM();
-		EntityTransaction t = em.getTransaction();
 		try {
-			t.begin();
-			em.persist(tenant);
-			em.flush();
-			t.commit();
-		} catch (Exception e) {
-			if (t.isActive()) {
-				t.rollback();
+			Gson gson = new Gson();
+			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
+					am.getRequestTimeout());
+			StringEntity entity = new StringEntity(gson.toJson(tenant), ContentType.APPLICATION_JSON);
+			HttpPost post = new HttpPost(am.getBaseUrl() + TENANT_URL);
+			post.setEntity(entity);
+			CloseableHttpResponse resp = client.execute(post);
+			if (!Utils.validateStatus(resp)) {
+				throw new Exception("status code:"+resp.getStatusLine().getStatusCode());
 			}
+		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Failed to create tenant:" + tenant + "\t" + e.getMessage());
 			throw e;
 		}
@@ -72,22 +85,15 @@ public class TenantManager {
 	public Tenant deleteTenant(String tenantId) throws Exception {
 		Tenant tenant = getTenant(tenantId);
 		if (tenant != null) {
-			EntityManager em = am.getEM();
-			EntityTransaction t = em.getTransaction();
 			try {
-				RulesManager.getInstance().deleteRules(tenantId);
-				t.begin();
-				if (em.createNamedQuery(Queries.TENANT_DELETE_BY_ID).setParameter("tenantId", tenantId)
-						.executeUpdate() != 1) {
-					throw new Exception("Tenant not deleted");
+				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+				HttpDelete delete = new HttpDelete(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+				CloseableHttpResponse resp = client.execute(delete);
+				if (!Utils.validateStatus(resp)) {
+					throw new Exception("status code:"+resp.getStatusLine().getStatusCode());
 				}
-				em.detach(tenant);
-				t.commit();
 				return tenant;
 			} catch (Exception e) {
-				if (t.isActive()) {
-					t.rollback();
-				}
 				logger.log(Level.SEVERE, "Failed to delete tenant:" + tenant, e);
 				throw e;
 			}
@@ -99,19 +105,19 @@ public class TenantManager {
 	public Tenant updateTenant(String tenantId, String tenantName) throws Exception {
 		Tenant tenant = getTenant(tenantId);
 		if (tenant != null) {
-			EntityManager em = am.getEM();
-			EntityTransaction t = em.getTransaction();
 			try {
-				t.begin();
+				Gson gson = new Gson();
 				tenant.setTenantName(tenantName);
-				em.merge(tenant);
-				em.flush();
-				t.commit();
+				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+				HttpPut put = new HttpPut(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+				StringEntity entity = new StringEntity(gson.toJson(tenant), ContentType.APPLICATION_JSON);
+				put.setEntity(entity);
+				CloseableHttpResponse resp = client.execute(put);
+				if (!Utils.validateStatus(resp)) {
+					throw new Exception("status code:"+resp.getStatusLine().getStatusCode());
+				}
 				return tenant;
 			} catch (Exception e) {
-				if (t.isActive()) {
-					t.rollback();
-				}
 				logger.log(Level.SEVERE, "Failed to update tenant:" + tenant, e);
 				throw e;
 			}
@@ -121,20 +127,30 @@ public class TenantManager {
 	}
 
 	public Tenant getTenant(String tenantId) throws Exception {
-		EntityManager em = am.getEM();
-		return em.createNamedQuery(Queries.TENANT_FIND_BY_ID, Tenant.class).setParameter("tenantId", tenantId)
-				.getSingleResult();
+		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		HttpGet get = new HttpGet(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+		CloseableHttpResponse resp = client.execute(get);
+		if(Utils.validateStatus(resp)) {
+			String result = EntityUtils.toString(resp.getEntity());
+			Gson gson = new Gson();
+			return gson.fromJson(result, Tenant.class);
+		}else {
+			throw new Exception("Tenant not found");
+		}
 	}
 
-	public List<Tenant> getTenantsByName(String tenantName) throws Exception {
-		EntityManager em = am.getEM();
-		return em.createNamedQuery(Queries.TENANT_FIND_BY_NAME, Tenant.class).setParameter("tenantName", tenantName)
-				.getResultList();
-	}
-
-	public List<Tenant> getTenants() {
-		EntityManager em = am.getEM();
-		return em.createNamedQuery(Queries.TENANT_FIND_ALL, Tenant.class).getResultList();
+	public List<Tenant> getTenants() throws Exception {
+		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		System.out.println("Base url:"+am.getBaseUrl());
+		HttpGet get = new HttpGet(am.getBaseUrl() + TENANT_URL);
+		CloseableHttpResponse resp = client.execute(get);
+		if(Utils.validateStatus(resp)) {
+			String result = EntityUtils.toString(resp.getEntity());
+			Gson gson = new Gson();
+			return Arrays.asList(gson.fromJson(result, Tenant[].class));
+		}else {
+			throw new Exception("Tenant not found");
+		}
 	}
 
 }

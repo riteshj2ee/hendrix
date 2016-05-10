@@ -103,7 +103,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 
 	public void initKafkaConnection() {
 		ruleTopicName = config.getProperty("rule.topic.name", "ruleTopic");
-		ruleTopicName = config.getProperty("template.topic.name", "templateTopic");
+		templateTopicName = config.getProperty("template.topic.name", "templateTopic");
 		producer = new KafkaProducer<>(config);
 		System.out.println("Validating kafka connectivity");
 		List<PartitionInfo> partitions = producer.partitionsFor(ruleTopicName);

@@ -200,7 +200,7 @@ public class StatelessRulesEngine<K, C> {
 			caller.reportRuleHit(rule.getRuleId());
 			List<Action> actions = rule.getActions();
 			for (Action action : actions) {
-				applyRuleAction(eventCollector, eventContainer, event, rule.getRuleId(), action);
+				applyRuleAction(eventCollector, eventContainer, event, rule, action);
 			}
 		} else {
 			caller.handleRuleNoMatch(eventCollector, eventContainer, event, rule);
@@ -215,10 +215,11 @@ public class StatelessRulesEngine<K, C> {
 	 * @param eventCollector
 	 * @param eventContainer
 	 * @param event
-	 * @param ruleId
+	 * @param rule
 	 * @param action
 	 */
-	protected void applyRuleAction(C eventCollector, K eventContainer, Event event, Short ruleId, Action action) {
+	protected void applyRuleAction(C eventCollector, K eventContainer, Event event, Rule rule, Action action) {
+		short ruleId = rule.getRuleId();
 		Event outputEvent = action.actOnEvent(event);
 		if (outputEvent == null) {
 			Event actionErrorEvent = eventFactory.buildEvent();
@@ -240,7 +241,8 @@ public class StatelessRulesEngine<K, C> {
 			break;
 		case TEMPLATED_ALERT:
 			caller.emitTemplatedAlert(eventCollector, eventContainer, outputEvent, ruleId, action.getActionId(),
-					(short) outputEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID));
+					rule.getName(), (short) outputEvent.getHeaders().get(Constants.FIELD_ALERT_TEMPLATE_ID),
+					(long) outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP));
 			break;
 		case AGGREGATION:
 			// find the correct stream id based on the aggregation action class

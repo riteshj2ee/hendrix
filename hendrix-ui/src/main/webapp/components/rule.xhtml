@@ -126,9 +126,9 @@
 		<br />
 		<p:dataTable value="#{ab.actions}" var="action" rowIndexVar="i"
 			style="margin-top:10px;" scrollable="true" scrollHeight="260">
-			<p:column style="width:30px">
-				<p:rowToggler />
-			</p:column>
+<!-- 			<p:column style="width:30px"> -->
+<!-- 				<p:rowToggler /> -->
+<!-- 			</p:column> -->
 			<p:column headerText="Seq" style="width:40px">
 				<h:outputText value="#{i}" />
 			</p:column>
@@ -137,19 +137,10 @@
 			</p:column>
 			<p:column headerText="Configuration">
 				<p:outputPanel rendered="#{ab.alertAction(action.getClass())}">
-					<p:inputText placeholder="Target" value="#{action.target}"
+					<p:inputText placeholder="Template Id" value="#{action.templateId}"
 						styleClass="conditionInput" style="width:120px">
 						<p:ajax async="true" process="@this" event="change" update="@form" />
 					</p:inputText>
-					<p:selectOneMenu value="#{action.media}" styleClass="conditionType"
-						style="width:70px;">
-						<p:ajax async="true" process="@this" event="change" update="@form" />
-						<f:selectItem itemLabel="mail" itemValue="mail" />
-						<f:selectItem itemLabel="http" itemValue="http" />
-						<f:selectItem itemLabel="flap" itemValue="flap" />
-					</p:selectOneMenu>
-					<p:outputLabel value="#{action.body}" style="font-size:8pt;padding-left:2px;font-weight:normal;">
-					</p:outputLabel>
 				</p:outputPanel>
 			</p:column>
 			<p:column headerText="" style="width:90px">
@@ -162,14 +153,14 @@
 				<!-- 							onsuccess="PF('velocity').show()" -->
 				<!-- 							rendered="#{ab.alertAction(action.getClass())}" /> -->
 			</p:column>
-			<p:rowExpansion>
-				<p:panel header="Velocity Editor" style="max-width:800px;">
-					<p:inputTextarea placeholder="Body" value="#{action.body}"
-						autoResize="true" styleClass="conditionInput" style="width:100%">
-						<p:ajax async="true" process="@this" event="change" update="@form" />
-					</p:inputTextarea>
-				</p:panel>
-			</p:rowExpansion>
+<!-- 			<p:rowExpansion> -->
+<!-- 				<p:panel header="Velocity Editor" style="max-width:800px;"> -->
+<!-- 					<p:inputTextarea placeholder="Body" value="#{action.body}" -->
+<!-- 						autoResize="true" styleClass="conditionInput" style="width:100%"> -->
+<!-- 						<p:ajax async="true" process="@this" event="change" update="@form" /> -->
+<!-- 					</p:inputTextarea> -->
+<!-- 				</p:panel> -->
+<!-- 			</p:rowExpansion> -->
 		</p:dataTable>
 	</p:panel>
 	<p:dialog header="Velocity Template Editor" widgetVar="velocity"

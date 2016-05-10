@@ -51,7 +51,7 @@ public class AlertTemplates implements Serializable {
 	public static final int MAX_TEMPLATE_LENGTH = 32000;
 
 	@Id
-	@Column(name = "templateId")
+	@Column(name = "template_id")
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private short templateId;
 

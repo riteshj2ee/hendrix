@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,17 +33,17 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.google.gson.Gson;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.MockTupleHelpers;
 import io.symcpe.hendrix.storm.TestUtils;
-import io.symcpe.wraith.actions.alerts.AlertAction;
-import io.symcpe.wraith.conditions.relational.EqualsCondition;
-import io.symcpe.wraith.rules.Rule;
-import io.symcpe.wraith.rules.RuleSerializer;
-import io.symcpe.wraith.rules.SimpleRule;
+import io.symcpe.wraith.actions.alerts.Alert;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
 
 /**
  * Test Alert generation and velocity templates
@@ -62,32 +61,29 @@ public class TestTemplatedAlertingEngineBolt {
 	@Mock
 	private Tuple input;
 	private Map<String, String> stormConf = new HashMap<>();
-	private Rule hostRule, valueRule;
 
 	@Before
 	public void before() throws IOException {
 		List<String> lines = TestUtils.linesFromFiles("src/test/resources/events.json");
 		events.addAll(lines);
-		hostRule = new SimpleRule((short) 1123, "hostrule", true, new EqualsCondition("host", "one"),
-				new AlertAction((short) 1, "test@symantec.com", "mail", "Hello $host!"));
-		valueRule = new SimpleRule((short) 1124, "hostrule", true, new EqualsCondition("value", 5),
-				new AlertAction((short) 1, "test2@symantec.com", "mail", "Hello $value!"));
-		List<Rule> rules = Arrays.asList(new Rule[] { hostRule, valueRule });
-		stormConf.put(RULES_CONTENT, RuleSerializer.serializeRulesToJSONString(rules, false));
 		stormConf.put(Constants.RSTORE_TYPE, TestStore.class.getName());
+		stormConf.put(TEMPLATE_CONTENT,
+				AlertTemplateSerializer.serialize(new AlertTemplate[] {
+						new AlertTemplate((short) 0, "t1", "t1@xyz.com", "mail", "t1", "$host t1", 5, 2),
+						new AlertTemplate((short) 1, "t2", "t2@xyz.com", "mail", "t2", "hello t2", 10, 1) }));
+		stormConf.put(Constants.TSTORE_TYPE, TestStore.class.getName());
 	}
 
 	@Test
 	public void testPerpare() {
-		AlertingEngineBolt bolt = new AlertingEngineBolt();
+		TemplatedAlertingEngineBolt bolt = new TemplatedAlertingEngineBolt();
 		bolt.prepare(stormConf, null, collector);
-		assertEquals(2, bolt.getRuleMap().size());
 		assertEquals(2, bolt.getTemplateMap().size());
 	}
 
 	@Test
 	public void testAlertExecution() {
-		AlertingEngineBolt bolt = new AlertingEngineBolt();
+		TemplatedAlertingEngineBolt bolt = new TemplatedAlertingEngineBolt();
 		when(input.getSourceStreamId()).thenReturn(Constants.EVENT_STREAM_ID);
 		int hostCounter = 0;
 		for (String event : events) {
@@ -98,19 +94,23 @@ public class TestTemplatedAlertingEngineBolt {
 				public Object answer(InvocationOnMock invocation) throws Throwable {
 					Object newEvent = invocation.getArguments()[2];
 					processedEventContainer.set((Values) newEvent);
-					System.out.println("Alert emitted:" + processedEventContainer.get());
+					System.out.println("Alert emitted: " + processedEventContainer.get());
 					return new ArrayList<>();
 				}
 			}));
 			when(input.getValueByField(Constants.FIELD_EVENT)).thenReturn(TestUtils.stringToEvent(event));
 			when(input.getShortByField(Constants.FIELD_RULE_ID)).thenReturn((short) 1123);
+			when(input.getStringByField(Constants.FIELD_RULE_NAME)).thenReturn("hello");
+			when(input.getStringByField(Constants.FIELD_RULE_GROUP)).thenReturn("test");
+			when(input.getLongByField(Constants.FIELD_TIMESTAMP)).thenReturn(1L);
+			when(input.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID)).thenReturn((short) 0);
 			when(input.getShortByField(Constants.FIELD_ACTION_ID)).thenReturn((short) 0);
-			when(input.getStringByField(Constants.FIELD_ALERT_TARGET)).thenReturn("dlp");
-			when(input.getStringByField(Constants.FIELD_ALERT_MEDIA)).thenReturn("mail");
 			bolt.execute(input);
-			assertEquals("dlp", processedEventContainer.get().get(0));
-			assertEquals("mail", processedEventContainer.get().get(1));
-			if (processedEventContainer.get().get(2).toString().contains("test")) {
+			Gson gson = new Gson();
+			Alert alert = gson.fromJson(processedEventContainer.get().get(0).toString(), Alert.class);
+			System.out.println("Alert:::" + processedEventContainer.get().get(0).toString());
+			assertEquals("mail", alert.getMedia());
+			if (alert.getBody().contains("test")) {
 				hostCounter++;
 			}
 		}

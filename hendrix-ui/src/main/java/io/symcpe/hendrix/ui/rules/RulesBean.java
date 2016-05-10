@@ -39,7 +39,6 @@ import org.primefaces.model.StreamedContent;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
 import io.symcpe.hendrix.ui.UserBean;
-import io.symcpe.hendrix.ui.storage.Rules;
 import io.symcpe.hendrix.ui.storage.Tenant;
 import io.symcpe.wraith.actions.Action;
 import io.symcpe.wraith.rules.Rule;
@@ -61,7 +60,6 @@ public class RulesBean implements Serializable {
 	private ApplicationManager am;
 	@ManagedProperty(value = "#{ub}")
 	private UserBean ub;
-	private Rules currRules;
 	private Rule currRule;
 	private boolean editable;
 	private boolean editRule;
@@ -84,7 +82,7 @@ public class RulesBean implements Serializable {
 
 	public void addRule() {
 		try {
-			short ruleId = RulesManager.getInstance().createNewRule(new Rules(), ub.getTenant());
+			short ruleId = RulesManager.getInstance().createNewRule(ub.getTenant());
 			if (ruleId > 0) {
 				changeCurrentRule(ruleId);
 			}
@@ -99,7 +97,7 @@ public class RulesBean implements Serializable {
 			return;
 		}
 		try {
-			short ruleId = RulesManager.getInstance().saveRule(currRules, ub.getTenant(), currRule);
+			short ruleId = RulesManager.getInstance().saveRule(ub.getTenant(), currRule);
 			if (ruleId > 0) {
 				FacesContext.getCurrentInstance().addMessage(null,
 						new FacesMessage("Rule " + currRule.getName() + " successfully saved"));
@@ -175,7 +173,7 @@ public class RulesBean implements Serializable {
 
 	public void enableDisableRule(short ruleId) {
 		try {
-			Rule ruleObj = RulesManager.getInstance().getRuleObj(ruleId);
+			Rule ruleObj = RulesManager.getInstance().getRule(ub.getTenant().getTenantId(), ruleId);
 			if (ruleObj.isActive()) {
 				RulesManager.getInstance().enableDisableRule(false, ub.getTenant().getTenantId(), ruleId);
 			} else {
@@ -211,31 +209,30 @@ public class RulesBean implements Serializable {
 
 	public void changeCurrentRule(Short ruleId) {
 		if (ruleId != null) {
-			currRules = RulesManager.getInstance().getRule(ruleId);
-			if (currRules != null) {
-				currRule = currRules.getRuleContent() != null
-						? RuleSerializer.deserializeJSONStringToRule(currRules.getRuleContent()) : null;
-				if (currRule == null) {
-					currRule = new SimpleRule((short) currRules.getRuleId(), "", true, null, new Action[0]);
-				}
-				editRule = true;
-				System.out.println("selected rule:" + currRule);
-
-				FacesContext context = FacesContext.getCurrentInstance();
-				ExpressionFactory expressionFactory = context.getApplication().getExpressionFactory();
-				ELContext elContext = context.getELContext();
-				ValueExpression vex = expressionFactory.createValueExpression(elContext, "#{cb}", ConditionBean.class);
-				ConditionBean result = (ConditionBean) vex.getValue(elContext);
-				result.buildTreeFromRule();
-
-				vex = expressionFactory.createValueExpression(elContext, "#{ab}", ActionBean.class);
-				ActionBean ab = (ActionBean) vex.getValue(elContext);
-				ab.loadActions();
-
-				RequestContext.getCurrentInstance().execute("location.reload();");
-			} else {
-				logger.severe("Didn't find rule id:" + ruleId);
+			try {
+				currRule = RulesManager.getInstance().getRule(ub.getTenant().getTenantId(), ruleId);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return;
 			}
+			if (currRule == null) {
+				currRule = new SimpleRule((short) ruleId, "", true, null, new Action[0]);
+			}
+			editRule = true;
+			System.out.println("selected rule:" + currRule);
+
+			FacesContext context = FacesContext.getCurrentInstance();
+			ExpressionFactory expressionFactory = context.getApplication().getExpressionFactory();
+			ELContext elContext = context.getELContext();
+			ValueExpression vex = expressionFactory.createValueExpression(elContext, "#{cb}", ConditionBean.class);
+			ConditionBean result = (ConditionBean) vex.getValue(elContext);
+			result.buildTreeFromRule();
+
+			vex = expressionFactory.createValueExpression(elContext, "#{ab}", ActionBean.class);
+			ActionBean ab = (ActionBean) vex.getValue(elContext);
+			ab.loadActions();
+
+			RequestContext.getCurrentInstance().execute("location.reload();");
 		}
 	}
 

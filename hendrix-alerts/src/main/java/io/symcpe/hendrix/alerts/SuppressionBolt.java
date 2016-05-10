@@ -18,8 +18,10 @@ package io.symcpe.hendrix.alerts;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import backtype.storm.Config;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -27,11 +29,12 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import io.symcpe.hendrix.alerts.helpers.MutableBoolean;
+import io.symcpe.hendrix.alerts.helpers.MutableInt;
+import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.hendrix.storm.Utils;
-import io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt;
-import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
@@ -40,19 +43,21 @@ import io.symcpe.wraith.store.StoreFactory;
 import io.symcpe.wraith.store.TemplateStore;
 
 /**
- * 
+ * This bolt suppresses alerts by throttling policies enforced on templates. It
+ * actively tracks trigger counts by template for a given tumbling time window
+ * (measured in seconds).
  * 
  * @author ambud_sharma
  */
 public class SuppressionBolt extends BaseRichBolt {
 
-	public static final String DELIVERY_STREAM = "deliveryStream";
 	private static final Logger logger = Logger.getLogger(SuppressionBolt.class.getName());
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
 	private transient StoreFactory storeFactory;
 	private transient Map<Short, AlertTemplate> templateMap;
 	private transient Map<Short, MutableInt> counter;
+	private transient Map<Short, MutableBoolean> stateMap;
 	private transient long globalCounter = 1;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -61,14 +66,22 @@ public class SuppressionBolt extends BaseRichBolt {
 		this.collector = collector;
 		this.templateMap = new HashMap<>();
 		this.counter = new HashMap<>();
+		this.stateMap = new HashMap<>();
 		this.storeFactory = new UnifiedFactory();
 		try {
 			initTemplates(stormConf);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		logger.info("Suppression bolt initialized");
 	}
 
+	/**
+	 * Initialize templates
+	 * 
+	 * @param conf
+	 * @throws Exception
+	 */
 	public void initTemplates(Map<String, String> conf) throws Exception {
 		TemplateStore store = null;
 		try {
@@ -95,21 +108,45 @@ public class SuppressionBolt extends BaseRichBolt {
 			Alert alert = (Alert) tuple.getValueByField(Constants.FIELD_ALERT);
 			AlertTemplate template = templateMap.get(alert.getId());
 			if (template != null) {
-				if (globalCounter % template.getThrottleDuration() == 0 || !counter.containsKey(alert.getId())) {
-					counter.put(alert.getId(), new MutableInt());
-				}
 				MutableInt result = counter.get(alert.getId());
-				if (result.incrementAndGet() <= template.getThrottleLimit()) {
-					collector.emit(DELIVERY_STREAM, tuple, new Values(alert));
+				if (result == null) {
+					result = new MutableInt();
+					counter.put(alert.getId(), result);
+					stateMap.put(alert.getId(), new MutableBoolean());
+				}
+				if (result.incrementAndGet() <= template.getThrottleLimit() || template.getThrottleLimit() == 0) {
+					collector.emit(Constants.DELIVERY_STREAM, tuple, new Values(alert));
 				} else {
-					// else just drop the alert
+					// else just drop the alert and notify suppression monitor
+					MutableBoolean state = stateMap.get(alert.getId());
+					if (!state.isVal()) {
+						collector.emit(Constants.SUP_MON_STREAM, tuple, new Values(alert.getId(), true));
+						logger.fine("Entering suppression state for template:" + alert.getId());
+						state.setVal(true);
+					}
 					logger.fine("Suppression alert for:" + alert.getId() + ":\t" + alert);
 				}
 			} else {
 				logger.severe("Template for alert not found for templateid:" + alert.getId());
+				StormContextUtil.emitErrorTuple(collector, tuple, SuppressionBolt.class, tuple.toString(),
+						"Template for alert not found for templateid:" + alert.getId(), null);
 			}
 		} else if (Utils.isTickTuple(tuple)) {
 			globalCounter++;
+			logger.fine("Received tick tuple gc:" + globalCounter);
+			for (Entry<Short, AlertTemplate> entry : templateMap.entrySet()) {
+				if (globalCounter % entry.getValue().getThrottleDuration() == 0
+						&& counter.containsKey(entry.getKey())) {
+					counter.get(entry.getKey()).setVal(0);
+					MutableBoolean res = stateMap.get(entry.getKey());
+					if (res.isVal()) {
+						collector.emit(Constants.SUP_MON_STREAM, tuple, new Values(entry.getKey(), false));
+						logger.fine("Leaving suppression state for template:" + entry.getKey());
+						res.setVal(false);
+					}
+					logger.fine("Resetting suppression counters for:" + entry.getKey());
+				}
+			}
 		} else if (Utils.isTemplateSyncTuple(tuple)) {
 			logger.info(
 					"Attempting to apply template update:" + tuple.getValueByField(Constants.FIELD_TEMPLATE_CONTENT));
@@ -121,19 +158,28 @@ public class SuppressionBolt extends BaseRichBolt {
 				logger.info("Applied template update with template content:" + templateCommand.getTemplate());
 			} catch (Exception e) {
 				// failed to update rule
-				System.err.println("Failed to apply template update:" + e.getMessage() + "\t"
-						+ tuple.getValueByField(Constants.FIELD_TEMPLATE_CONTENT));
-				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class, tuple.toString(),
+				StormContextUtil.emitErrorTuple(collector, tuple, SuppressionBolt.class, tuple.toString(),
 						"Failed to apply rule update", e);
 			}
 		}
 		collector.ack(tuple);
 	}
 
+	/**
+	 * Update templates
+	 * 
+	 * @param ruleGroup
+	 * @param templateJson
+	 * @param delete
+	 */
 	public void updateTemplate(String ruleGroup, String templateJson, boolean delete) {
 		try {
 			AlertTemplate template = AlertTemplateSerializer.deserialize(templateJson);
-			templateMap.put(template.getTemplateId(), template);
+			if (delete) {
+				templateMap.remove(template.getTemplateId());
+			} else {
+				templateMap.put(template.getTemplateId(), template);
+			}
 		} catch (Exception e) {
 			// logger.log(Level.SEVERE, "Alert template error", e);
 		}
@@ -141,8 +187,18 @@ public class SuppressionBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(DELIVERY_STREAM, new Fields(Constants.FIELD_ALERT));
+		declarer.declareStream(Constants.SUP_MON_STREAM,
+				new Fields(Constants.FIELD_ALERT_TEMPLATE_ID, io.symcpe.hendrix.storm.Constants.SUPRESSION_STATE));
+		declarer.declareStream(Constants.DELIVERY_STREAM, new Fields(Constants.FIELD_ALERT));
 		StormContextUtil.declareErrorStream(declarer);
+	}
+
+	@Override
+	public Map<String, Object> getComponentConfiguration() {
+		Config conf = new Config();
+		// send tick tuples every second
+		conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
+		return conf;
 	}
 
 	/**

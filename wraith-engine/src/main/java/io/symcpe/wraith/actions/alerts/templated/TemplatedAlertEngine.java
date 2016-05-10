@@ -33,7 +33,7 @@ public interface TemplatedAlertEngine {
 	 * @param templateId
 	 * @return
 	 */
-	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, short templateId,
+	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String ruleName, short templateId,
 			long timestamp);
 
 	/**
@@ -54,6 +54,6 @@ public interface TemplatedAlertEngine {
 	 * @param templateId
 	 * @return
 	 */
-	public Alert materialize(Event event, short ruleId, short actionId, short templateId, long timestamp);
+	public Alert materialize(Event event, short ruleId, short actionId, String ruleName, short templateId, long timestamp);
 
 }

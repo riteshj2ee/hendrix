@@ -39,13 +39,14 @@ import org.mockito.stubbing.Answer;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.MockTupleHelpers;
 import io.symcpe.hendrix.storm.bolts.TestAlertingEngineBolt;
 import io.symcpe.hendrix.storm.bolts.TestStore;
-import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.actions.alerts.Alert;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
+import io.symcpe.wraith.actions.alerts.templated.TemplateCommand;
 
 /**
  * @author ambud_sharma
@@ -91,7 +92,7 @@ public class TestSuppressionBolt {
 			}
 		});
 		conf.put(TestAlertingEngineBolt.TEMPLATE_CONTENT, AlertTemplateSerializer.serialize(new AlertTemplate[] {
-				new AlertTemplate((short) 0, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 5, 2) }));
+				new AlertTemplate((short) 0, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 2, 2) }));
 		bolt.prepare(conf, null, collector);
 		Alert alert = new Alert();
 		alert.setId((short) 0);
@@ -103,13 +104,93 @@ public class TestSuppressionBolt {
 		for (i = 0; i < 2; i++) {
 			bolt.execute(input);
 			assertEquals(i + 1, bolt.getCounter().get(alert.getId()).getVal());
-			verify(collector, times(i + 1)).emit(eq(SuppressionBolt.DELIVERY_STREAM), eq(input), any());
+			verify(collector, times(i + 1)).emit(eq(Constants.DELIVERY_STREAM), eq(input), any());
 			assertEquals(alert, (Alert) processedEventContainer.get().get(0));
 			verify(collector, times(i + 1)).ack(input);
 		}
 		bolt.execute(input);
-		assertEquals(i+1, bolt.getCounter().get(alert.getId()).getVal());
+		assertEquals(i + 1, bolt.getCounter().get(alert.getId()).getVal());
 		verify(collector, times(i + 1)).ack(input);
+		when(input.contains(Constants.FIELD_ALERT)).thenReturn(false);
+		when(input.getSourceComponent()).thenReturn(backtype.storm.Constants.SYSTEM_COMPONENT_ID);
+		when(input.getSourceStreamId()).thenReturn(backtype.storm.Constants.SYSTEM_TICK_STREAM_ID);
+		bolt.execute(input);
+		assertEquals(0, bolt.getCounter().get(alert.getId()).getVal());
 	}
 
+	@Test
+	public void testSuppressionTick() {
+		SuppressionBolt bolt = new SuppressionBolt();
+		final AtomicReference<Values> processedEventContainer = new AtomicReference<Values>(null);
+		OutputCollector collector = MockTupleHelpers.mockCollector(new Answer<Object>() {
+
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+				Object newEvent = invocation.getArguments()[2];
+				processedEventContainer.set((Values) newEvent);
+				return new ArrayList<>();
+			}
+		});
+		conf.put(TestAlertingEngineBolt.TEMPLATE_CONTENT, AlertTemplateSerializer.serialize(new AlertTemplate[] {
+				new AlertTemplate((short) 0, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 2, 2) }));
+		bolt.prepare(conf, null, collector);
+		Alert alert = new Alert();
+		alert.setId((short) 0);
+		alert.setBody("test");
+		alert.setTimestamp(3253454235L);
+		when(input.getValueByField(Constants.FIELD_ALERT)).thenReturn(alert);
+		int i = 0;
+		int j = 1;
+		for (i = 1; i < 5; i++) {
+			when(input.contains(Constants.FIELD_ALERT)).thenReturn(true);
+			bolt.execute(input);
+			assertEquals(j % 3, bolt.getCounter().get(alert.getId()).getVal());
+			verify(collector, times(i)).emit(eq(Constants.DELIVERY_STREAM), eq(input), any());
+			assertEquals(alert, (Alert) processedEventContainer.get().get(0));
+			verify(collector, times(j++)).ack(input);
+			if (i % 2 == 0) {
+				when(input.contains(Constants.FIELD_ALERT)).thenReturn(false);
+				when(input.getSourceComponent()).thenReturn(backtype.storm.Constants.SYSTEM_COMPONENT_ID);
+				when(input.getSourceStreamId()).thenReturn(backtype.storm.Constants.SYSTEM_TICK_STREAM_ID);
+				long counter = bolt.getGlobalCounter();
+				bolt.execute(input);
+				verify(collector, times(j++)).ack(input);
+				assertEquals(counter + 1, bolt.getGlobalCounter());
+			}
+		}
+	}
+
+	@Test
+	public void testSuppressionTemplateUpdates() {
+		SuppressionBolt bolt = new SuppressionBolt();
+		final AtomicReference<Values> processedEventContainer = new AtomicReference<Values>(null);
+		OutputCollector collector = MockTupleHelpers.mockCollector(new Answer<Object>() {
+
+			@Override
+			public Object answer(InvocationOnMock invocation) throws Throwable {
+				Object newEvent = invocation.getArguments()[2];
+				processedEventContainer.set((Values) newEvent);
+				return new ArrayList<>();
+			}
+		});
+		conf.put(TestAlertingEngineBolt.TEMPLATE_CONTENT, AlertTemplateSerializer.serialize(new AlertTemplate[] {
+				new AlertTemplate((short) 0, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 5, 2) }));
+		bolt.prepare(conf, null, collector);
+
+		assertEquals(1, bolt.getTemplateMap().size());
+
+		TemplateCommand cmd = new TemplateCommand("rgxyz", false, AlertTemplateSerializer
+				.serialize(new AlertTemplate((short) 1, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 5, 2), false));
+		when(input.getValueByField(Constants.FIELD_TEMPLATE_CONTENT)).thenReturn(cmd);
+		when(input.getSourceStreamId()).thenReturn(Constants.SYNC_STREAM_ID);
+		when(input.getSourceComponent()).thenReturn(Constants.TEMPLATE_SYNC_COMPONENT);
+		bolt.execute(input);
+		assertEquals(2, bolt.getTemplateMap().size());
+		
+		cmd = new TemplateCommand("rgxyz", true, AlertTemplateSerializer
+				.serialize(new AlertTemplate((short) 1, "t1", "t1@xyz.com", "mail", "t1", "hello t1", 5, 2), false));
+		when(input.getValueByField(Constants.FIELD_TEMPLATE_CONTENT)).thenReturn(cmd);
+		bolt.execute(input);
+		assertEquals(1, bolt.getTemplateMap().size());
+	}
 }

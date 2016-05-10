@@ -145,7 +145,7 @@ public class TestHendrixTopologyRuleGroups {
 	@Test
 	public void testFluxTopology() throws IOException, IllegalAccessException, InstantiationException,
 			ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-		TopologyDef topologyDef = FluxParser.parseResource("/default-flux.yml", true, true, null, true);
+		TopologyDef topologyDef = FluxParser.parseResource("/default.yaml", true, true, null, true);
 		assertNotNull(topologyDef);
 		Config conf = FluxBuilder.buildConfig(topologyDef);
 		ExecutionContext context = new ExecutionContext(topologyDef, conf);

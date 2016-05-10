@@ -10,13 +10,13 @@ name: "HendrixRulesTopology"
 #
 config:
     topology.workers: 2
-    store.sql.url: "jdbc:mysql://192.168.99.101:32770/"
+    store.sql.url: "jdbc:mysql://localhost:3306/"
     store.username: "root"
-    store.password: "root"
-    store.sql.db: "hendrix"
+    store.password: "lmm"
+    store.sql.db: "hendrix2"
     tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
     tstore.sql.table: "alert_template"
-    log.slow: "1000"
+    log.slow: "100"
 
 # Components
 # Components are analagous to Spring beans. They are meant to be used as constructor,
@@ -97,7 +97,7 @@ bolts:
     parallelism: 1
 
     # ...
-  - id: "templateTranslatorBolt"
+  - id: "templateComponent"
     className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
     parallelism: 1
 
@@ -107,15 +107,21 @@ bolts:
     parallelism: 1
 
     # ...
-  - id: "alertRouter"
+  - id: "alertRouterBolt"
     className: "io.symcpe.hendrix.alerts.AlertRouterBolt"
     parallelism: 1
+
+    # ...
+  - id: "mailBolt"
+    className: "io.symcpe.hendrix.alerts.MailBolt"
+    parallelism: 1    
 
     # ...
   - id: "errorBolt"
     className: "io.symcpe.hendrix.storm.bolts.ErrorBolt"
     parallelism: 1
 
+    # ...
   - id: "printerBolt"
     className: "io.symcpe.hendrix.storm.bolts.helpers.PrinterBolt"
     parallelism: 1
@@ -135,7 +141,7 @@ streams:
 
   - name: "Kafka Templates->Template Translator"
     from: "templateSpout"
-    to: "templateTranslatorBolt"
+    to: "templateComponent"
     grouping:
       type: SHUFFLE
 
@@ -146,18 +152,53 @@ streams:
       type: FIELDS
       args: ["_id"]
 
-  - name: "Print Alerts"
-    from: "alertTranslatorBolt"
+#  - name: "Print Alerts"
+#    from: "alertTranslatorBolt"
+#    to: "printerBolt"
+#    grouping:
+#      type: SHUFFLE
+
+  - name: "Suppresion->Printer"
+    from: "suppressionBolt"
     to: "printerBolt"
     grouping:
       type: SHUFFLE
+      streamId: suppressionStream
+
+  - name: "Suppresion->Printer"
+    from: "suppressionBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: deliveryStream
 
   - name: "Template Translator->Templated Alert Engine"
-    from: "templateTranslatorBolt"
+    from: "templateComponent"
     to: "suppressionBolt"
     grouping:
       type: ALL
       streamId: "syncStream"
+      
+  - name: "Suppresion->Router"
+    from: "suppressionBolt"
+    to: "alertRouterBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: deliveryStream
+
+#  - name: "Router->Mail"
+#    from: "alertRouterBolt"
+#    to: "mailBolt"
+#    grouping:
+#      type: SHUFFLE
+#      streamId: mail
+
+#  - name: "Router->HTTP"
+#    from: "alertRouterBolt"
+#    to: "httpBolt"
+#    grouping:
+#      type: SHUFFLE
+#      streamId: http
 
   - name: "Translator->Error"
     from: "alertTranslatorBolt"
@@ -165,9 +206,16 @@ streams:
     grouping:
       type: SHUFFLE
       streamId: "errorStream"
+      
+  - name: "Suppression->Error"
+    from: "suppressionBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
 
   - name: "Template Translator->Error"
-    from: "templateTranslatorBolt"
+    from: "templateComponent"
     to: "errorBolt"
     grouping:
       type: SHUFFLE

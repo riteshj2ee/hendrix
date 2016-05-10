@@ -25,14 +25,9 @@ import java.util.Properties;
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ApplicationScoped;
 import javax.faces.bean.ManagedBean;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.common.PartitionInfo;
 
 import io.symcpe.hendrix.ui.rules.RulesManager;
+import io.symcpe.hendrix.ui.rules.TemplateManager;
 import io.symcpe.hendrix.ui.rules.TenantManager;
 import io.symcpe.hendrix.ui.validations.VelocityValidator;
 import io.symcpe.wraith.rules.validator.RuleValidator;
@@ -47,14 +42,15 @@ import io.symcpe.wraith.rules.validator.Validator;
 @ApplicationScoped
 public class ApplicationManager implements Serializable {
 
+	private static final String API_URL = "api.url";
 	private static final long serialVersionUID = 1L;
 	public static final boolean LOCAL = Boolean.parseBoolean(System.getProperty("local", "true"));
 	private static final String PROP_CONFIG_FILE = "hendrixConfig";
 	private Properties config;
-	private EntityManagerFactory factory;
-	private EntityManager em;
 	private String ruleTopicName;
-	private KafkaProducer<String, String> producer;
+	private String baseUrl;
+	private int connectTimeout;
+	private int requestTimeout;
 
 	public ApplicationManager() {
 	}
@@ -62,6 +58,7 @@ public class ApplicationManager implements Serializable {
 	@PostConstruct
 	public void init() {
 		config = new Properties(System.getProperties());
+		baseUrl = config.getProperty(API_URL, "http://localhost:9000/api");
 		if (System.getenv(PROP_CONFIG_FILE) != null) {
 			try {
 				config.load(new FileInputStream(System.getenv(PROP_CONFIG_FILE)));
@@ -75,28 +72,9 @@ public class ApplicationManager implements Serializable {
 				throw new RuntimeException("Default configuration file not loaded", e);
 			}
 		}
-		try {
-			Utils.createDatabase(config.getProperty("javax.persistence.jdbc.url"),
-					config.getProperty("javax.persistence.jdbc.db", "hendrix"),
-					config.getProperty("javax.persistence.jdbc.user"),
-					config.getProperty("javax.persistence.jdbc.password"),
-					config.getProperty("javax.persistence.jdbc.driver"));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		config.setProperty("javax.persistence.jdbc.url", config.getProperty("javax.persistence.jdbc.url")
-				+ config.getProperty("javax.persistence.jdbc.db", "hendrix"));
-//		AlertReceiver.getInstance();
-		factory = Persistence.createEntityManagerFactory("hendrix", config);
-		EntityManager em = factory.createEntityManager();
-		System.out.println("Rules stats" + em.createNamedQuery("Rules.stats").getResultList());
-		em.close();
 		RulesManager.getInstance().init(this);
 		TenantManager.getInstance().init(this);
-		if (!LOCAL) {
-			initKafkaConnection();
-		}
-		
+		TemplateManager.getInstance().init(this);
 	}
 	
 	public void addRuleValidators(Properties config) {
@@ -104,33 +82,31 @@ public class ApplicationManager implements Serializable {
 		RuleValidator.getInstance().configure(validators);
 	}
 
-	public void initKafkaConnection() {
-		producer = new KafkaProducer<>(config);
-		System.out.println("Validating kafka connectivity");
-		List<PartitionInfo> partitions = producer.partitionsFor(ruleTopicName);
-		for (PartitionInfo partitionInfo : partitions) {
-			System.out.println(partitionInfo.topic() + "\t" + partitionInfo.leader().toString());
-		}
-	}
-
-	public EntityManager getEM() {
-		if (em == null) {
-			em = factory.createEntityManager();
-		}
-		return em;
-	}
-
-	/**
-	 * @return producer
-	 */
-	public KafkaProducer<String, String> getKafkaProducer() {
-		return producer;
-	}
-
 	/**
 	 * @return ruleTopicName
 	 */
 	public String getRuleTopicName() {
 		return ruleTopicName;
+	}
+
+	/**
+	 * @return the connectTimeout
+	 */
+	public int getConnectTimeout() {
+		return connectTimeout;
+	}
+
+	/**
+	 * @return the requestTimeout
+	 */
+	public int getRequestTimeout() {
+		return requestTimeout;
+	}
+
+	/**
+	 * @return the baseUrl
+	 */
+	public String getBaseUrl() {
+		return baseUrl;
 	}
 }

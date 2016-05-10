@@ -113,7 +113,7 @@ public class TenantBean implements Serializable {
 		}
 	}
 
-	public List<Tenant> getTenants() {
+	public List<Tenant> getTenants() throws Exception {
 		return TenantManager.getInstance().getTenants();
 	}
 

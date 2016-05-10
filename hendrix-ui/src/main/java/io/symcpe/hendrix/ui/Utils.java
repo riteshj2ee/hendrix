@@ -15,12 +15,21 @@
  */
 package io.symcpe.hendrix.ui;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -70,6 +79,30 @@ public class Utils {
 				.putAll((Map<String, Object>) gson.fromJson(eventJson, new TypeToken<HashMap<String, Object>>() {
 				}.getType()));
 		return event;
+	}
+	
+	public static boolean validateStatus(CloseableHttpResponse response) {
+		return response.getStatusLine().getStatusCode()>=200 && response.getStatusLine().getStatusCode()<300;
+	}
+	
+	/**
+	 * Build a {@link CloseableHttpClient}
+	 * 
+	 * @param baseURL
+	 * @param connectTimeout
+	 * @param requestTimeout
+	 * @return http client
+	 * @throws NoSuchAlgorithmException
+	 * @throws KeyStoreException
+	 * @throws KeyManagementException
+	 */
+	public static CloseableHttpClient buildClient(String baseURL, int connectTimeout, int requestTimeout)
+			throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+		HttpClientBuilder clientBuilder = HttpClients.custom();
+		RequestConfig config = RequestConfig.custom().setConnectTimeout(connectTimeout)
+				.setConnectionRequestTimeout(requestTimeout).build();
+
+		return clientBuilder.setDefaultRequestConfig(config).build();
 	}
 
 	public static class UIEvent implements Event {

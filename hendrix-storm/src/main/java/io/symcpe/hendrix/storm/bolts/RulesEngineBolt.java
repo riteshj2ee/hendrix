@@ -16,6 +16,7 @@
 package io.symcpe.hendrix.storm.bolts;
 
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -108,13 +109,18 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 						"Failed to apply rule update", e);
 			}
 		} else {
-			HendrixEvent event = (HendrixEvent) tuple.getValueByField(Constants.FIELD_EVENT);
-			// call rules engine to evaluate this event and then trigger
-			// appropriate actions
-			if (multiTenancyActive) {
-				rulesEngine.evaluateEventAgainstGroupedRules(this.collector, tuple, event);
-			} else {
-				rulesEngine.evaluateEventAgainstAllRules(this.collector, tuple, event);
+			try {
+				HendrixEvent event = (HendrixEvent) tuple.getValueByField(Constants.FIELD_EVENT);
+				// call rules engine to evaluate this event and then trigger
+				// appropriate actions
+				if (multiTenancyActive) {
+					rulesEngine.evaluateEventAgainstGroupedRules(this.collector, tuple, event);
+				} else {
+					rulesEngine.evaluateEventAgainstAllRules(this.collector, tuple, event);
+				}
+			} catch (Exception e) {
+				// unknown event type
+				logger.log(Level.SEVERE, "Unknown event type:" + tuple, e);
 			}
 		}
 		collector.ack(tuple);
@@ -122,22 +128,30 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-//		declarer.declareStream(Constants.ALERT_STREAM_ID, new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID,
-//				Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TARGET, Constants.FIELD_ALERT_MEDIA, Constants.FIELD_RULE_GROUP, Constants.FIELD_TIMESTAMP));
-		declarer.declareStream(Constants.ALERT_STREAM_ID, new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID,
-				Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TEMPLATE_ID, Constants.FIELD_RULE_GROUP, Constants.FIELD_TIMESTAMP));
+		// Disabled non-templated alerts
+		// declarer.declareStream(Constants.ALERT_STREAM_ID, new
+		// Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID,
+		// Constants.FIELD_ACTION_ID, Constants.FIELD_ALERT_TARGET,
+		// Constants.FIELD_ALERT_MEDIA, Constants.FIELD_RULE_GROUP,
+		// Constants.FIELD_TIMESTAMP));
+		declarer.declareStream(Constants.ALERT_STREAM_ID,
+				new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID, Constants.FIELD_ACTION_ID,
+						Constants.FIELD_RULE_NAME, Constants.FIELD_ALERT_TEMPLATE_ID, Constants.FIELD_RULE_GROUP,
+						Constants.FIELD_TIMESTAMP));
 		StormContextUtil.declareErrorStream(declarer);
 	}
 
 	@Override
 	public void emitRawAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent, short ruleId,
 			short actionId, String target, String mediaType) {
-		if(multiTenancyActive) {
+		if (multiTenancyActive) {
 			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
-					new Values(outputEvent, ruleId, actionId, target, mediaType, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), 0L));
-		}else {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
-					new Values(outputEvent, ruleId, actionId, target, mediaType, null, 0L));
+					new Values(outputEvent, ruleId, actionId, target, mediaType,
+							outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP),
+							outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
+		} else {
+			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId, target,
+					mediaType, null, outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
 		}
 	}
 
@@ -197,19 +211,20 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	}
 
 	@Override
-	public void emitAnomalyAction(OutputCollector eventCollector, Tuple eventContainer, String seriesName, Number value) {
+	public void emitAnomalyAction(OutputCollector eventCollector, Tuple eventContainer, String seriesName,
+			Number value) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void emitTemplatedAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent,
-			short ruleId, short actionId, short templateId) {
-		if(multiTenancyActive) {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
-					new Values(outputEvent, ruleId, actionId, templateId, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), 0L));
-		}else {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
-					new Values(outputEvent, ruleId, actionId, templateId, null, 0L));
+			short ruleId, short actionId, String ruleName, short templateId, long timestamp) {
+		if (multiTenancyActive) {
+			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
+					ruleName, templateId, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), timestamp));
+		} else {
+			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
+					ruleName, templateId, null, outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
 		}
 	}
 

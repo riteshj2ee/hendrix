@@ -27,7 +27,7 @@ import javax.faces.bean.SessionScoped;
 
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.actions.Action;
-import io.symcpe.wraith.actions.alerts.AlertAction;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 
 /**
  * JSF Action Bean
@@ -62,7 +62,7 @@ public class ActionBean implements Serializable {
 		if (actionType != null) {
 			switch (actionType) {
 			case ALERT:
-				actions.add(new AlertAction((short) actions.size(), null, null, null));
+				actions.add(new TemplatedAlertAction((short) actions.size(), (short)-1));
 				break;
 			default:
 				break;
@@ -111,7 +111,7 @@ public class ActionBean implements Serializable {
 	}
 
 	public boolean alertAction(Class<? extends Action> actionClass) {
-		return actionClass == AlertAction.class;
+		return actionClass == TemplatedAlertAction.class;
 	}
 
 	public void selectAction(int actionId) {

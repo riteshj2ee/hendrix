@@ -1,8 +1,8 @@
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "host" : "test1" }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "host" : "test2" }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "host" : "test3" }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "host" : "test4" }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "value": 10 }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "value": 10 }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "value": 10 }
-{ "@timestamp" : 1461272081103, "message" : "hello world", "fields" : 4, "value": 10 }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test1" }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test2" }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test3" }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "host" : "test5" }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10 }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10 }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10 }
+{ "_t" : 1561272081103, "@timestamp" : 1561272081103, "message" : "hello world", "fields" : 5, "value": 10 }

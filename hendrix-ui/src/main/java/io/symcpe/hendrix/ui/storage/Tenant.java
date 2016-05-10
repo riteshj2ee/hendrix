@@ -16,37 +16,17 @@
 package io.symcpe.hendrix.ui.storage;
 
 import java.io.Serializable;
-import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import io.symcpe.hendrix.ui.Queries;
 
 /**
  * The persistent class for the tenant database table.
  * 
  * @author ambud_sharma
  */
-@Entity
-@Table(name = "tenant")
-@NamedQueries({ @NamedQuery(name = Queries.TENANT_FIND_ALL, query = "SELECT t FROM Tenant t"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_ID, query = "SELECT t FROM Tenant t where t.tenantId=:tenantId"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_IDS, query = "SELECT t FROM Tenant t where t.tenantId in :tenantIds"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_NAMES, query = "SELECT t FROM Tenant t where t.tenantName in :tenantNames"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_NAME, query = "SELECT t FROM Tenant t where t.tenantName like :tenantName"),
-		@NamedQuery(name = Queries.TENANT_DELETE_BY_ID, query = "DELETE FROM Tenant t where t.tenantId=:tenantId")})
 public class Tenant implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -61,10 +41,6 @@ public class Tenant implements Serializable {
 	@NotNull(message="Tenant name can't be empty")
 	@Size(min = 1, max = 100, message="Tenant name must be under 100 characters")
 	private String tenantName;
-
-	// bi-directional many-to-one association to RulesTable
-	@OneToMany(mappedBy = "tenant", orphanRemoval = true, cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	private List<Rules> rulesTables;
 
 	public Tenant() {
 	}
@@ -85,29 +61,6 @@ public class Tenant implements Serializable {
 		this.tenantName = tenantName;
 	}
 
-	@JsonIgnore
-	public List<Rules> getRulesTables() {
-		return this.rulesTables;
-	}
-
-	public void setRulesTables(List<Rules> rulesTables) {
-		this.rulesTables = rulesTables;
-	}
-
-	public Rules addRulesTable(Rules rulesTable) {
-		getRulesTables().add(rulesTable);
-		rulesTable.setTenant(this);
-
-		return rulesTable;
-	}
-
-	public Rules removeRulesTable(Rules rulesTable) {
-		getRulesTables().remove(rulesTable);
-		rulesTable.setTenant(null);
-
-		return rulesTable;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -115,7 +68,7 @@ public class Tenant implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + ", rulesTables=" + rulesTables + "]";
+		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + ", ";
 	}
 
 }

@@ -1,7 +1,7 @@
 io.symcpe.wraith.conditions.relational.JavaRegexCondition=REGEX
 io.symcpe.wraith.conditions.relational.EqualsCondition=EQUALS
 io.symcpe.wraith.conditions.relational.GreaterThanCondition=GREATER THAN
-io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition=GREAT THAN EQUALS
+io.symcpe.wraith.conditions.relational.GreaterThanEqualToCondition=GREATER THAN EQUALS
 io.symcpe.wraith.conditions.relational.LessThanCondition=LESS THAN
 io.symcpe.wraith.conditions.relational.LessThanEqualToCondition=LESS THAN EQUALS
 io.symcpe.wraith.conditions.relational.NotEqualsCondition=NOT EQUALS

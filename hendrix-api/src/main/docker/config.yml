@@ -1,3 +1,0 @@
-name: hendrix-api
-server:
- applicationContextPath: /api/*

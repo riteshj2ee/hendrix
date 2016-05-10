@@ -81,14 +81,14 @@ public class HendrixTopology {
 	 * Attach and configure bolts
 	 */
 	public void attachAndConfigureBolts() {
-		BoltDeclarer validationBolt = builder.setBolt(Constants.TOPOLOGY_VALIDATION_BOLT, new InterceptionBolt())
+		BoltDeclarer validationBolt = builder.setBolt(Constants.TOPOLOGY_INTERCEPTION_BOLT, new InterceptionBolt())
 				.setMaxTaskParallelism(Integer.parseInt(
-						config.getProperty(Constants.VALIDATION_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
+						config.getProperty(Constants.INTERCEPTION_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
 		validationBolt.shuffleGrouping(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME);
 
 		builder.setBolt(Constants.TOPOLOGY_TRANSLATOR_BOLT, new JSONTranslatorBolt())
-				.shuffleGrouping(Constants.TOPOLOGY_VALIDATION_BOLT).setMaxTaskParallelism(Integer.parseInt(
+				.shuffleGrouping(Constants.TOPOLOGY_INTERCEPTION_BOLT).setMaxTaskParallelism(Integer.parseInt(
 						config.getProperty(Constants.TRANSLATOR_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
 		builder.setBolt(Constants.RULE_SYNC_COMPONENT, new RuleTranslatorBolt())
