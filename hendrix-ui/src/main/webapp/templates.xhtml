@@ -14,6 +14,9 @@
 			<br />
 			<br />
 			<p:dataTable value="#{atb.templates}" var="t">
+				<p:column style="width:30px">
+					<p:rowToggler />
+				</p:column>
 				<p:column headerText="Template Id">
 					<h:outputText value="#{t.templateId}" />
 				</p:column>
@@ -31,6 +34,11 @@
 							icon="ui-icon-alert" />
 					</p:commandButton>
 				</p:column>
+				<p:rowExpansion>
+					<p:panel header="Template JSON" style="max-width:800px;">
+						<h:outputText value="#{atb.templateToJson(t)}" escape="false" />
+					</p:panel>
+				</p:rowExpansion>
 			</p:dataTable>
 			<p:dialog visible="#{atb.enableEdit}" widgetVar="re"
 				header="Create Template" modal="true" closeOnEscape="true"

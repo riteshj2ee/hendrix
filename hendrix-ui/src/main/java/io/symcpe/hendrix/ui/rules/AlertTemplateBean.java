@@ -16,6 +16,7 @@ import org.primefaces.context.RequestContext;
 import io.symcpe.hendrix.ui.ApplicationManager;
 import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
+import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
 
 @ManagedBean(name="atb")
 @SessionScoped
@@ -95,6 +96,10 @@ public class AlertTemplateBean implements Serializable {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to find template", e.getMessage()));
 		}
+	}
+	
+	public String templateToJson(AlertTemplate template) {
+		return AlertTemplateSerializer.serialize(template, true).replace("\n", "<br/>").replaceAll("\\s", "&nbsp;");
 	}
 	
 	public List<AlertTemplate> getTemplates() {

@@ -8,12 +8,21 @@
 	<ui:define name="title">Rules</ui:define>
 	<ui:define name="body">
 		<h:form>
-			<p:commandButton icon="ui-icon-plus" value="Rule" actionListener="#{rb.addRule}" style="float:right;background-color: #4CAF50;color: white" disabled="#{empty ub.tenant}"/><br/><br/>
+			<p:commandButton icon="ui-icon-plus" value="Rule"
+				actionListener="#{rb.addRule}"
+				style="float:right;background-color: #4CAF50;color: white"
+				disabled="#{empty ub.tenant}" />
+			<br />
+			<br />
 			<p:dataTable value="#{rb.rules}" var="rule" resizableColumns="true"
 				widgetVar="rules" reflow="true" editable="false" stickyHeader="true">
+				<p:column style="width:30px">
+					<p:rowToggler />
+				</p:column>
 				<p:column headerText="Name" style="width:300px;">
 					<h:outputText styleClass="#{rule.active?'active':'inactive'}"
-						value="#{rule.name}(#{rule.ruleId})" escape="true" title="#{rule.name}" />
+						value="#{rule.name}(#{rule.ruleId})" escape="true"
+						title="#{rule.name}" />
 				</p:column>
 				<p:column headerText="Description">
 					<h:outputText value="#{rule.description}" escape="true" />
@@ -25,11 +34,14 @@
 					</h:selectBooleanCheckbox>
 				</p:column>
 				<p:column headerText="" style="width:95px">
-					<p:commandButton icon="ui-icon-pencil" style="background-color:black"
+					<p:commandButton icon="ui-icon-pencil"
+						style="background-color:black"
 						actionListener="#{rb.changeCurrentRule(rule.ruleId)}" />
 					<p:commandButton icon="ui-icon-trash" styleClass="btnDelete"
 						actionListener="#{rb.deleteRule(rule.ruleId)}" update="@form">
-						<p:confirm header="Confirm rule delete" message="Are you sure about deleting #{rule.name}(#{rule.ruleId})?" icon="ui-icon-alert" />
+						<p:confirm header="Confirm rule delete"
+							message="Are you sure about deleting #{rule.name}(#{rule.ruleId})?"
+							icon="ui-icon-alert" />
 					</p:commandButton>
 				</p:column>
 				<p:rowExpansion>
