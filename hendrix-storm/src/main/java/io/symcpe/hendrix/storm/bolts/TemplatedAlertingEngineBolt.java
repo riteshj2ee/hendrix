@@ -32,6 +32,7 @@ import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.RuntimeSingleton;
 import org.apache.velocity.runtime.parser.ParseException;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
+import org.apache.velocity.tools.generic.DateTool;
 
 import com.google.gson.Gson;
 
@@ -46,6 +47,7 @@ import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.hendrix.storm.Utils;
+import io.symcpe.hendrix.storm.VelocityAlertTemplate;
 import io.symcpe.wraith.Event;
 import io.symcpe.wraith.actions.alerts.Alert;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
@@ -65,6 +67,7 @@ import io.symcpe.wraith.store.TemplateStore;
  */
 public class TemplatedAlertingEngineBolt extends BaseRichBolt implements TemplatedAlertEngine {
 
+	private static final String VELOCITY_VAR_DATE = "date";
 	private static final long serialVersionUID = 1L;
 	private static final Logger logger = Logger.getLogger(TemplatedAlertingEngineBolt.class.getName());
 	private transient Map<Short, VelocityAlertTemplate> templateMap;
@@ -132,7 +135,10 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			if (alertResult == null) {
 				String eventJson = gson.toJson(((Event) tuple.getValueByField(Constants.FIELD_EVENT)).getHeaders());
 				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class,
-						"Failed to materialize alert into template due to missing templates", eventJson, null);
+						"Failed to materialize alert due to missing template for rule:"
+								+ tuple.getShortByField(Constants.FIELD_RULE_ID) + ",templateid:"
+								+ tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID),
+						eventJson, null);
 			} else {
 				collector.emit(Constants.ALERT_STREAM_ID, tuple, new Values(gson.toJson(alertResult)));
 			}
@@ -160,11 +166,12 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			for (Entry<String, Object> entry : event.getHeaders().entrySet()) {
 				ctx.put(entry.getKey(), entry.getValue());
 			}
+			ctx.put(VELOCITY_VAR_DATE, new DateTool());
 			StringWriter writer = new StringWriter(1000);
 			template.getVelocityBodyTemplate().merge(ctx, writer);
 			alert.setBody(writer.toString());
 			if (template.getSubject() == null) {
-				alert.setSubject("");
+				alert.setSubject(ruleName);
 			} else {
 				writer = new StringWriter(1000);
 				template.getVelocitySubjectTemplate().merge(ctx, writer);
@@ -217,7 +224,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 		TemplateStore store = null;
 		try {
 			System.out.println(conf.get(Constants.TSTORE_TYPE));
-			store = storeFactory.getTemplateStoreStore(conf.get(Constants.TSTORE_TYPE), conf);
+			store = storeFactory.getTemplateStore(conf.get(Constants.TSTORE_TYPE), conf);
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			throw e;
 		}
@@ -255,13 +262,16 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 		VelocityAlertTemplate alertTemplate = new VelocityAlertTemplate(template);
 		alertTemplate.setVelocityBodyTemplate(velocityTemplate);
 
-		reader = new StringReader(template.getSubject());
-		node = runtimeServices.parse(reader, String.valueOf(template.getTemplateId()) + "_subject");
-		velocityTemplate = new Template();
-		velocityTemplate.setRuntimeServices(runtimeServices);
-		velocityTemplate.setData(node);
-		velocityTemplate.initDocument();
-		alertTemplate.setVelocitySubjectTemplate(velocityTemplate);
+		if (template.getSubject() != null) {
+			reader = new StringReader(template.getSubject());
+			node = runtimeServices.parse(reader, String.valueOf(template.getTemplateId()) + "_subject");
+			velocityTemplate = new Template();
+			velocityTemplate.setRuntimeServices(runtimeServices);
+			velocityTemplate.setData(node);
+			velocityTemplate.initDocument();
+			alertTemplate.setVelocitySubjectTemplate(velocityTemplate);
+		}
+		
 		templateMap.put(template.getTemplateId(), alertTemplate);
 	}
 

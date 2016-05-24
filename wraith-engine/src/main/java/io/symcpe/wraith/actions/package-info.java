@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 /**
+ * Defines blueprints for {@link io.symcpe.wraith.actions.Action}s
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.wraith.actions;

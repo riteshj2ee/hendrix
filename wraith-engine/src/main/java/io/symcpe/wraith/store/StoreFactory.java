@@ -40,6 +40,15 @@ public interface StoreFactory {
 	 * @return templateStore object
 	 * @throws Exception
 	 */
-	public TemplateStore getTemplateStoreStore(String type, Map<String, String> conf) throws Exception;
+	public TemplateStore getTemplateStore(String type, Map<String, String> conf) throws Exception;
+	
+	
+	/**
+	 * @param type
+	 * @param conf
+	 * @return
+	 * @throws Exception
+	 */
+	public AggregationStore getAggregationStore(String type, Map<String, String> conf) throws Exception;
 
 }

@@ -17,6 +17,8 @@ package io.symcpe.hendrix.alerts;
 
 import java.util.Map;
 
+import javax.mail.MessagingException;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -35,12 +37,22 @@ public class MailBolt extends BaseRichBolt {
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
 	private transient MailService mailService;
+	
+	public MailBolt() {
+	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		this.mailService = new MailService(stormConf);
+		this.mailService = new MailService();
+		if(stormConf!=null) {
+			try {
+				this.mailService.init(stormConf);
+			} catch (MessagingException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	@Override
@@ -55,6 +67,20 @@ public class MailBolt extends BaseRichBolt {
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		StormContextUtil.declareErrorStream(declarer);
+	}
+
+	/**
+	 * @return the mailService
+	 */
+	public MailService getMailService() {
+		return mailService;
+	}
+
+	/**
+	 * @param mailService the mailService to set
+	 */
+	protected void setMailService(MailService mailService) {
+		this.mailService = mailService;
 	}
 
 }

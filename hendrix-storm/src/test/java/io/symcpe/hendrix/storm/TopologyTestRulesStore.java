@@ -37,7 +37,6 @@ import io.symcpe.wraith.store.TemplateStore;
  */
 public class TopologyTestRulesStore implements RulesStore, TemplateStore {
 
-
 	private Map<String, Map<Short, Rule>> rules;
 	private Map<Short, AlertTemplate> templates;
 	

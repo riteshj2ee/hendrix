@@ -14,7 +14,7 @@ config:
     store.username: "root"
     store.password: "lmm"
     store.sql.db: "hendrix2"
-    tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
+    tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     tstore.sql.table: "alert_template"
     log.slow: "100"
 
@@ -23,61 +23,12 @@ config:
 # property(setter), and builder arguments.
 #
 # for the time being, components must be declared in the order they are referenced
-components:
-  - id: "zkHosts"
-    className: "storm.kafka.ZkHosts"
-    constructorArgs:
-      - "localhost:2181"
 
-  - id: "logSpoutConfig"
-    className: "storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "alertTopic"
-      # zkRoot
-      - "/"
-      # id
-      - "alertTopic"
-    properties:
-      - name: "ignoreZkOffsets"
-        value: false
-      - name: "bufferSizeBytes"
-        value: 2097152
-#      - name: "fetchMaxWait"
-#        value:
-      - name: "fetchSizeBytes"
-        value: 2097152
-
-  - id: "templateSpoutConfig"
-    className: "storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "templateTopic"
-      # zkRoot
-      - "/"
-      # id
-      - "templateTopic"
-    properties:
-      - name: "ignoreZkOffsets"
-        value: false
-      - name: "bufferSizeBytes"
-        value: 1048576
-#      - name: "fetchMaxWait"
-#        value:
-      - name: "fetchSizeBytes"
-        value: 1048576
 
 # spout definitions
 spouts:
   - id: "alertSpout"
     className: "io.symcpe.hendrix.storm.bolts.helpers.FileLogReaderSpout"
-#    className: "storm.kafka.KafkaSpout"
-#    constructorArgs:
-#      - ref: "logSpoutConfig"
     constructorArgs:
       - "~/hendrix/alert-data"
 
@@ -86,42 +37,32 @@ spouts:
     constructorArgs:
       - "~/hendrix/template-updates.txt"
     
-#    className: "storm.kafka.KafkaSpout"
-#    constructorArgs:
-#      - ref: "ruleSpoutConfig"
-
 # bolt definitions
 bolts:
   - id: "alertTranslatorBolt"
     className: "io.symcpe.hendrix.alerts.AlertTranslatorBolt"
     parallelism: 1
 
-    # ...
   - id: "templateComponent"
     className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
     parallelism: 1
 
-    # ...
   - id: "suppressionBolt"
     className: "io.symcpe.hendrix.alerts.SuppressionBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "alertRouterBolt"
     className: "io.symcpe.hendrix.alerts.AlertRouterBolt"
     parallelism: 1
-
-    # ...
-  - id: "mailBolt"
-    className: "io.symcpe.hendrix.alerts.MailBolt"
-    parallelism: 1    
-
-    # ...
+    
+  - id: "suppressionMonitorBolt"
+    className: "io.symcpe.hendrix.alerts.SuppressionMonitorBolt"
+    parallelism: 1
+    
   - id: "errorBolt"
     className: "io.symcpe.hendrix.storm.bolts.ErrorBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "printerBolt"
     className: "io.symcpe.hendrix.storm.bolts.helpers.PrinterBolt"
     parallelism: 1
@@ -132,8 +73,7 @@ bolts:
 # custom stream groupings are also supported
 
 streams:
-  # Log Spout
-  - name: "Kafka->Translator" # name isn't used (placeholder for logging, UI, etc.)
+  - name: "Kafka->Alert Translator"
     from: "alertSpout"
     to: "alertTranslatorBolt"
     grouping:
@@ -145,7 +85,7 @@ streams:
     grouping:
       type: SHUFFLE
 
-  - name: "Translator->Suppression"
+  - name: "Alert Translator->Suppression"
     from: "alertTranslatorBolt"
     to: "suppressionBolt"
     grouping:

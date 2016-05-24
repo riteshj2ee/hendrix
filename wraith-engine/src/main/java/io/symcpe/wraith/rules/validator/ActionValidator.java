@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.symcpe.wraith.actions.Action;
+import io.symcpe.wraith.actions.aggregations.AggregationAction;
+import io.symcpe.wraith.actions.aggregations.StateAggregationAction;
+import io.symcpe.wraith.actions.aggregations.ValueAggregationAction;
 import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 import io.symcpe.wraith.rules.Rule;
 
@@ -30,10 +33,12 @@ import io.symcpe.wraith.rules.Rule;
 public class ActionValidator implements Validator<Action> {
 
 	private List<Validator<Action>> conditionValidators = new ArrayList<>();
+	private List<Validator<?>> globalValidators;
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public void configure(List<Validator<?>> validators) {
+		this.globalValidators = validators;
 		for (Validator<?> validator : validators) {
 			try {
 				conditionValidators.add((Validator<Action>) validator);
@@ -45,9 +50,37 @@ public class ActionValidator implements Validator<Action> {
 	@Override
 	public void validate(Action action) throws ValidationException {
 		if (action instanceof TemplatedAlertAction) {
-			TemplatedAlertAction alertAction = (TemplatedAlertAction)action;
-			if(alertAction.getTemplateId()<0) {
+			TemplatedAlertAction alertAction = (TemplatedAlertAction) action;
+			if (alertAction.getTemplateId() < 0) {
 				throw new ValidationException("Template ids always start from 0 ");
+			}
+		} else if (action instanceof AggregationAction) {
+			AggregationAction aggregationAction = (AggregationAction) action;
+			if (!(aggregationAction instanceof StateAggregationAction)) {
+				throw new ValidationException("Unsupported aggregation action type");
+			}
+			if (aggregationAction.getAggregationKey() == null
+					|| aggregationAction.getAggregationKey().isEmpty()) {
+				throw new ValidationException("Aggregation key can't be empty");
+			}
+			if (aggregationAction.getAggregationWindow() < 10) {
+				throw new ValidationException("Aggregation window must be bigger than 10 seconds");
+			}
+			if (aggregationAction instanceof StateAggregationAction) {
+				StateAggregationAction stateAggregation = (StateAggregationAction) action;
+				if (stateAggregation.getStateCondition() == null) {
+					throw new ValidationException("State condition can't be empty");
+				}
+				ConditionValidator validator = new ConditionValidator();
+				if (globalValidators != null) {
+					validator.configure(globalValidators);
+				}
+				validator.validate(stateAggregation.getStateCondition());
+			}else if (aggregationAction instanceof ValueAggregationAction) {
+				ValueAggregationAction valueAggregation = (ValueAggregationAction) action;
+				if (valueAggregation.getAggregationValue() == null || valueAggregation.getAggregationValue().isEmpty()) {
+					throw new ValidationException("Aggregation value can't be empty");
+				}
 			}
 		} else {
 			// unsupported action
@@ -57,34 +90,5 @@ public class ActionValidator implements Validator<Action> {
 			validator.validate(action);
 		}
 	}
-	
-	/*
-	 * AlertAction alertAction = (AlertAction) action;
-			if (alertAction.getTarget() == null || alertAction.getTarget().trim().isEmpty()) {
-				throw new ValidationException("Alert target can't be empty");
-			}
-			if (alertAction.getTarget().length() > MAX_LENGTH_ALERT_TARGET) {
-				throw new ValidationException(
-						"Alert target must be less than " + MAX_LENGTH_ALERT_TARGET + " characters");
-			}
-			if (alertAction.getMedia() == null || alertAction.getMedia().trim().isEmpty()) {
-				throw new ValidationException("Alert media can't be empty");
-			}
-			if (alertAction.getMedia().length() > MAX_LENGTH_ALERT_MEDIA) {
-				throw new ValidationException(
-						"Alert target must be less than " + MAX_LENGTH_ALERT_MEDIA + " characters");
-			}
-			if (alertAction.getBody() == null || alertAction.getBody().trim().isEmpty()) {
-				throw new ValidationException("Alert body can't be empty");
-			}
-			if (alertAction.getMedia().contains("mail")) {
-				String[] emails = alertAction.getTarget().split("\\s{0,1},");
-				for (String email : emails) {
-					if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
-						throw new ValidationException("Not a valid email address:" + email);
-					}
-				}
-			}
-	 */
 
 }

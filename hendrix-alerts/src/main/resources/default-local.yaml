@@ -14,7 +14,7 @@ config:
     store.username: "root"
     store.password: "lmm"
     store.sql.db: "hendrix2"
-    tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
+    tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     tstore.sql.table: "alert_template"
     log.slow: "100"
 

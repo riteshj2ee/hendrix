@@ -177,7 +177,7 @@ public class ConditionBean implements Serializable {
 			Object val;
 			if (!(condition instanceof ComplexCondition)) {
 				AbstractSimpleCondition simpleCondition = (AbstractSimpleCondition) condition;
-				headerKey = simpleCondition.getHeaderKey();
+				headerKey = simpleCondition.getkey();
 				if (condition instanceof NumericCondition) {
 					val = ((NumericCondition) condition).getValue();
 					matchValue = String.valueOf(val);

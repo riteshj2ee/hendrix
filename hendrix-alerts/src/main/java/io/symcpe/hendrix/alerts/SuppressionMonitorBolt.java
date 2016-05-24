@@ -15,14 +15,23 @@
  */
 package io.symcpe.hendrix.alerts;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Tuple;
+import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
+import io.symcpe.hendrix.storm.Utils;
 
 /**
  * Ability to monitor suppression states for templates in real-time i.e. if a
@@ -37,7 +46,7 @@ public class SuppressionMonitorBolt extends BaseRichBolt {
 	private static final String UI_ENDPOINT = "ui.endpoint.av";
 	private transient OutputCollector collector;
 	private transient String uiEndpoint;
-	// private transient CloseableHttpClient client;
+	private transient CloseableHttpClient client;
 
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -48,16 +57,19 @@ public class SuppressionMonitorBolt extends BaseRichBolt {
 		} else {
 			this.uiEndpoint = "http://localhost:8080/ROOT/api/suppression/";
 		}
-		// try {
-		// client = Utils.buildClient(this.uiEndpoint, 3000, 3000);
-		// } catch (KeyManagementException | NoSuchAlgorithmException |
-		// KeyStoreException e) {
-		// collector.reportError(e);
-		// }
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
+		try {
+			client = Utils.buildClient(this.uiEndpoint, 3000, 3000);
+			HttpPut put = new HttpPut(this.uiEndpoint + "/" + tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID)
+					+ "/" + tuple.getBooleanByField(Constants.SUPRESSION_STATE));
+			client.execute(put);
+			client.close();
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException e) {
+			collector.reportError(e);
+		}
 		collector.ack(tuple);
 	}
 

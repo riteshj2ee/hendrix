@@ -43,7 +43,7 @@ public class GreaterThanCondition extends NumericCondition {
 	 */
 	@Override
 	public String toString() {
-		return getHeaderKey()+" > "+getValue();
+		return getkey()+" > "+getValue();
 	}
 
 }

@@ -47,7 +47,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param target
 	 * @param mediaType
 	 */
-	public void emitRawAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, String target, String mediaType);
+	public void emitRawAlert(C eventCollector, K eventContainer, Event outputEvent, Short ruleId, Short actionId, String target, String mediaType);
 	
 	/**
 	 * Handle alert {@link Action}s
@@ -61,7 +61,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param templateId
 	 * @param timestamp
 	 */
-	public void emitTemplatedAlert(C eventCollector, K eventContainer, Event outputEvent, short ruleId, short actionId, String ruleName, short templateId, long timestamp);
+	public void emitTemplatedAlert(C eventCollector, K eventContainer, Event outputEvent, Short ruleId, Short actionId, String ruleName, Short templateId, Long timestamp);
 	
 	/**
 	 * Handle if rule doesn't match for an event
@@ -80,7 +80,7 @@ public interface RulesEngineCaller<K, C> {
 	 * 
 	 * @param ruleId
 	 */
-	public void reportRuleHit(Short ruleId);
+	public void reportRuleHit(short ruleId);
 
 	/**
 	 * Report time taken to execute the supplied rule id <br>
@@ -90,7 +90,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param ruleId
 	 * @param executeTime
 	 */
-	public void reportRuleEfficiency(Short ruleId, long executeTime);
+	public void reportRuleEfficiency(short ruleId, long executeTime);
 
 	/**
 	 * Report time taken to execute the condition for the supplied rule id <br>
@@ -100,7 +100,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param ruleId
 	 * @param executeTime
 	 */
-	public void reportConditionEfficiency(Short ruleId, long executeTime);
+	public void reportConditionEfficiency(short ruleId, long executeTime);
 
 	/**
 	 * Handle emission of an aggregation event
@@ -116,7 +116,20 @@ public interface RulesEngineCaller<K, C> {
 	 * @param aggregationValue
 	 */
 	public void emitAggregationEvent(Class<? extends Action> action, C eventCollector, K eventContainer,
-			Event originalEvent, long timestamp, int windowSize, String ruleActionId, String aggregationKey, Object aggregationValue);
+			Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey, Object aggregationValue);
+	
+	/**
+	 * @param eventCollector
+	 * @param eventContainer
+	 * @param track
+	 * @param originalEvent
+	 * @param timestamp
+	 * @param windowSize
+	 * @param ruleActionId
+	 * @param aggregationKey
+	 */
+	public void emitStateTrackingEvent(C eventCollector, K eventContainer, Boolean track,
+			Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey);
 
 	/**
 	 * Build new event and emit that

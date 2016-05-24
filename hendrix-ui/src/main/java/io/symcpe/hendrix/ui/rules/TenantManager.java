@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityNotFoundException;
+import javax.ws.rs.NotFoundException;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
@@ -98,7 +98,7 @@ public class TenantManager {
 				throw e;
 			}
 		} else {
-			throw new EntityNotFoundException("Tenant not found");
+			throw new NotFoundException("Tenant not found");
 		}
 	}
 
@@ -122,7 +122,7 @@ public class TenantManager {
 				throw e;
 			}
 		} else {
-			throw new EntityNotFoundException("Tenant not found");
+			throw new NotFoundException("Tenant not found");
 		}
 	}
 

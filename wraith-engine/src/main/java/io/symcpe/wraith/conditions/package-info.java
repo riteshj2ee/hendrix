@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 /**
+ * Defines blueprints for a {@link io.symcpe.wraith.rules.Rule} {@link io.symcpe.wraith.conditions.Condition}
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.wraith.conditions;

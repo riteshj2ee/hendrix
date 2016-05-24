@@ -14,8 +14,8 @@ config:
     store.username: "root"
     store.password: "lmm"
     store.sql.db: "hendrix2"
-    rstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
-    tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
+    rstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
+    tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     rstore.sql.table: "rules_table"
     tstore.sql.table: "alert_template"
     rule.group.active: "true"
@@ -52,37 +52,34 @@ bolts:
     className: "io.symcpe.hendrix.storm.bolts.InterceptionBolt"
     parallelism: 1
 
-    # ...
   - id: "translatorBolt"
     className: "io.symcpe.hendrix.storm.bolts.JSONTranslatorBolt"
     parallelism: 1
 
-    # ...
   - id: "templateComponent"
     className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
     parallelism: 1
 
-    # ...
   - id: "ruleComponent"
     className: "io.symcpe.hendrix.storm.bolts.RuleTranslatorBolt"
     parallelism: 1
 
-    # ...
   - id: "ruleEngineBolt"
     className: "io.symcpe.hendrix.storm.bolts.RulesEngineBolt"
     parallelism: 1
 
-    # ...
   - id: "alertViewerBolt"
     className: "io.symcpe.hendrix.storm.bolts.helpers.AlertViewerBolt"
     parallelism: 1
 
-    # ...
   - id: "templatedAlertEngineBolt"
     className: "io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt"
     parallelism: 1
 
-    # ...
+  - id: "stateTrackingBolt"
+    className: "io.symcpe.hendrix.storm.bolts.StateTrackingBolt"
+    parallelism: 1
+
   - id: "errorBolt"
     className: "io.symcpe.hendrix.storm.bolts.ErrorBolt"
     parallelism: 1
@@ -149,7 +146,15 @@ streams:
     grouping:
       type: ALL
       streamId: "syncStream"
-      
+
+  - name: "Rule Engine->State Tracking"
+    from: "ruleEngineBolt"
+    to: "stateTrackingBolt"
+    grouping:
+      type: FIELDS
+      args: ["_ri", "_a"]
+      streamId: stateStream
+     
   - name: "Template Translator->Templated Alert Engine"
     from: "templateComponent"
     to: "templatedAlertEngineBolt"

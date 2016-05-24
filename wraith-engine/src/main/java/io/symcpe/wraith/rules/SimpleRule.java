@@ -67,6 +67,14 @@ public class SimpleRule extends Rule {
 	public void setCondition(Condition condition) {
 		this.condition = condition;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof SimpleRule) {
+			return ((SimpleRule)obj).getRuleId()==getRuleId();
+		}
+		return false;
+	}
 
 	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()

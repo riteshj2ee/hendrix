@@ -48,6 +48,7 @@ import io.symcpe.wraith.rules.validator.AlertTemplateValidator;
  */
 public class TemplateManager {
 
+	private static final String HENDRIX_TEMPLATE_UPDATES_TXT = "~/hendrix/template-updates.txt";
 	private static final Logger logger = Logger.getLogger(TemplateManager.class.getName());
 	private static final String PARAM_TEMPLATE_ID = "templateId";
 	private static final String PARAM_TENANT_ID = "tenantId";
@@ -321,7 +322,8 @@ public class TemplateManager {
 			KafkaProducer<String, String> producer = am.getKafkaProducer();
 			producer.send(new ProducerRecord<String, String>(am.getTemplateTopicName(), cmdJson)).get();
 		} else {
-			PrintWriter pr = new PrintWriter(new FileWriter("/tmp/template-updates.txt", true));
+			PrintWriter pr = new PrintWriter(new FileWriter(
+					HENDRIX_TEMPLATE_UPDATES_TXT.replaceFirst("^~", System.getProperty("user.home")), true));
 			pr.println(cmdJson);
 			pr.close();
 		}

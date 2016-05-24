@@ -32,10 +32,12 @@ import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.generated.StormTopology;
 import backtype.storm.topology.BoltDeclarer;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
 import io.symcpe.hendrix.storm.bolts.ErrorBolt;
 import io.symcpe.hendrix.storm.bolts.JSONTranslatorBolt;
 import io.symcpe.hendrix.storm.bolts.RuleTranslatorBolt;
 import io.symcpe.hendrix.storm.bolts.RulesEngineBolt;
+import io.symcpe.hendrix.storm.bolts.StateTrackingBolt;
 import io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt;
 import io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt;
 import io.symcpe.hendrix.storm.bolts.helpers.AlertViewerBolt;
@@ -55,6 +57,7 @@ public class HendrixTopology {
 
 	public static final String LOCAL = "local";
 	private static final Logger logger = Logger.getLogger(HendrixTopology.class.getName());
+	private static final String KAFKA_ALERT_TOPIC = "kafka.error.topic";
 	private TopologyBuilder builder;
 	private Properties config;
 	private StormTopology topology;
@@ -71,10 +74,12 @@ public class HendrixTopology {
 	 */
 	public void attachAndConfigureFileSpouts() {
 		logger.info("Running in local mode");
-		builder.setSpout(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME, new FileLogReaderSpout("~/hendrix/test-data"))
+		builder.setSpout(Constants.TOPOLOGY_KAFKA_SPOUT + Constants.DEFAULT_TOPIC_NAME,
+				new FileLogReaderSpout("~/hendrix/test-data")).setMaxTaskParallelism(1);
+		builder.setSpout(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/rule-updates.txt"))
 				.setMaxTaskParallelism(1);
-		builder.setSpout(Constants.TOPOLOGY_RULE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/rule-updates.txt")).setMaxTaskParallelism(1);
-		builder.setSpout(Constants.TOPOLOGY_TEMPLATE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/template-updates.txt")).setMaxTaskParallelism(1);
+		builder.setSpout(Constants.TOPOLOGY_TEMPLATE_SYNC_SPOUT, new SpoolingFileSpout("/tmp/template-updates.txt"))
+				.setMaxTaskParallelism(1);
 	}
 
 	/**
@@ -105,6 +110,12 @@ public class HendrixTopology {
 				.setMaxTaskParallelism(Integer.parseInt(
 						config.getProperty(Constants.RULES_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
 
+		builder.setBolt(Constants.TOPOLOGY_STATE_BOLT, new StateTrackingBolt())
+				.fieldsGrouping(Constants.TOPOLOGY_RULES_BOLT, Constants.STATE_STREAM_ID,
+						new Fields(Constants.FIELD_RULE_ACTION_ID, Constants.FIELD_AGGREGATION_KEY))
+				.setMaxTaskParallelism(Integer.parseInt(
+						config.getProperty(Constants.RULES_BOLT_PARALLELISM_HINT, Constants.PARALLELISM_ONE)));
+
 		if (Boolean.parseBoolean(config.getProperty(Constants.ENABLE_ALERT_VIEWER, Constants.FALSE))) {
 			builder.setBolt(Constants.ALERT_VIEWER_BOLT, new AlertViewerBolt())
 					.shuffleGrouping(Constants.TOPOLOGY_RULES_BOLT, Constants.ALERT_STREAM_ID)
@@ -129,8 +140,8 @@ public class HendrixTopology {
 		if (config.getProperty(LOCAL) == null) {
 			builder.setBolt(Constants.TOPOLOGY_ALERT_KAFKA_BOLT,
 					new KafkaBolt<String, String>()
-							.withTopicSelector(new DefaultTopicSelector(
-									config.getProperty(Constants.KAFKA_ALERT_TOPIC, "alertTopic")))
+							.withTopicSelector(
+									new DefaultTopicSelector(config.getProperty(KAFKA_ALERT_TOPIC, "alertTopic")))
 							.withTupleToKafkaMapper(new AlertTupleMapper()))
 					.shuffleGrouping(Constants.TOPOLOGY_ALERT_BOLT, Constants.ALERT_STREAM_ID)
 					.setMaxTaskParallelism(Integer.parseInt(

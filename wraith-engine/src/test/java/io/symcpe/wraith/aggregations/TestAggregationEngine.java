@@ -26,7 +26,12 @@ import org.junit.Test;
 
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Utils;
-import io.symcpe.wraith.aggregators.MarkovianAggregationEngineImpl;
+import io.symcpe.wraith.aggregations.MarkovianAggregationEngineImpl;
+import io.symcpe.wraith.aggregators.AggregationRejectException;
+import io.symcpe.wraith.aggregators.CoarseCountingAggregator;
+import io.symcpe.wraith.aggregators.CountingEngine;
+import io.symcpe.wraith.aggregators.FineCountingAggregator;
+import io.symcpe.wraith.aggregators.SetAggregator;
 
 /**
  * All tests for Aggregations
@@ -46,7 +51,7 @@ public class TestAggregationEngine {
 	public void testFineCountingAggregator() throws Exception {
 		CountingEngine aggregationEngine = new CountingEngine();
 		conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		for (int i = 0; i < 10; i++) {
 			try {
@@ -90,7 +95,7 @@ public class TestAggregationEngine {
 		int limit = 100000;
 		conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
 		conf.put(Constants.AGGREGATIONS_FCOUNT_LIMIT, String.valueOf(limit));
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		int count = 1000000;
 		for (int i = 0; i < count; i++) {
@@ -118,7 +123,7 @@ public class TestAggregationEngine {
 		int count = 1000000;
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		conf.put(Constants.COUNTER_TYPE, CoarseCountingAggregator.class.getName());
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
 				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
@@ -137,7 +142,7 @@ public class TestAggregationEngine {
 				.get(Utils.createMapKey(1, 1, ruleActionId, "1233_hello2")).size()) / count) > 0.9);
 
 		ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1234);
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
 				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", i);
@@ -163,7 +168,7 @@ public class TestAggregationEngine {
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		conf.put(Constants.AGGREGATOR_TYPE, SetAggregator.class.getName());
 		conf.put(Constants.AGGREGATIONS_SET_LIMIT, String.valueOf(count));
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
 				aggregationEngine.aggregate(1, 1, ruleActionId, "1233_hello", "hey" + i);
@@ -189,7 +194,7 @@ public class TestAggregationEngine {
 		int limit = 500000;
 		conf.put(Constants.AGGREGATOR_TYPE, SetAggregator.class.getName());
 		conf.put(Constants.AGGREGATIONS_SET_LIMIT, String.valueOf(limit));
-		aggregationEngine.initialize(conf);
+		aggregationEngine.initialize(conf, 1);
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		for (int i = 0; i < count; i++) {
 			try {

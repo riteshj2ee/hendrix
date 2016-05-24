@@ -85,7 +85,7 @@ public class JavaRegexCondition extends AbstractSimpleCondition {
 	 */
 	@Override
 	public String toString() {
-		return getHeaderKey() + " matches " + value;
+		return getkey() + " matches " + value;
 	}
 
 }

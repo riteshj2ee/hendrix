@@ -17,8 +17,6 @@ package io.symcpe.hendrix.ui.storage;
 
 import java.io.Serializable;
 
-import javax.persistence.Column;
-import javax.persistence.Id;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
@@ -31,13 +29,10 @@ public class Tenant implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	@Id
-	@Column(name = "tenant_id", length = 100)
 	@NotNull(message="Tenant ID can't be empty")
 	@Size(min = 1, max = 100, message="Tenant ID must be under 100 characters")
 	private String tenantId;
 
-	@Column(name = "tenant_name", length = 100)
 	@NotNull(message="Tenant name can't be empty")
 	@Size(min = 1, max = 100, message="Tenant name must be under 100 characters")
 	private String tenantName;

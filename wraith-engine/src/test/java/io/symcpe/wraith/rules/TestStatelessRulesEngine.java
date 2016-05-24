@@ -140,7 +140,7 @@ public class TestStatelessRulesEngine {
 		engine.evaluateEventAgainstAllRules(null, null, event);
 		// verify(caller).emitRawAlert(null, null, event, (short) 1123, (short)
 		// 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
+		verify(caller).emitTemplatedAlert(null, null, event, Short.valueOf((short) 1123), Short.valueOf((short) 0), "test1", Short.valueOf((short) 2), 0L);
 	}
 
 	@Test
@@ -208,11 +208,11 @@ public class TestStatelessRulesEngine {
 				false);
 		engine.evaluateEventAgainstGroupedRules(null, null, event);
 //		verify(caller, times(1)).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
+		verify(caller).emitTemplatedAlert(null, null, event, Short.valueOf((short) 1123), Short.valueOf((short) 0), "test1", Short.valueOf((short) 2), 0L);
 		event.getHeaders().put(Constants.FIELD_RULE_GROUP, "rg2");
 		engine.evaluateEventAgainstGroupedRules(null, null, event);
 //		verify(caller, times(1)).emitRawAlert(null, null, event, (short) 1123, (short) 0, "test", "test");
-		verify(caller).emitTemplatedAlert(null, null, event, (short) 1123, (short) 0, "test1", (short) 2, 0);
+		verify(caller).emitTemplatedAlert(null, null, event, Short.valueOf((short) 1123), Short.valueOf((short) 0), "test1", Short.valueOf((short) 2), 0L);
 	}
 
 }

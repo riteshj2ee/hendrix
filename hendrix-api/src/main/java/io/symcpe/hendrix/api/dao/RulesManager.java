@@ -54,6 +54,7 @@ import io.symcpe.wraith.rules.validator.RuleValidator;
  */
 public class RulesManager {
 
+	private static final String HENDRIX_RULE_UPDATES_TXT = "~/hendrix/rule-updates.txt";
 	private static final String PARAM_TENANT_ID = "tenantId";
 	private static final String PARAM_RULE_ID = "ruleId";
 	private static final Logger logger = Logger.getLogger(RulesManager.class.getCanonicalName());
@@ -102,7 +103,10 @@ public class RulesManager {
 		}
 		RuleValidator.getInstance().validate(currRule);
 		for (Action action : currRule.getActions()) {
-			TemplateManager.getInstance().getTemplate(em, tenant.getTenantId(), ((TemplatedAlertAction)action).getTemplateId());
+			if (action instanceof TemplatedAlertAction) {
+				TemplateManager.getInstance().getTemplate(em, tenant.getTenantId(),
+						((TemplatedAlertAction) action).getTemplateId());
+			}
 		}
 		logger.info("Rule is valid attempting to save");
 		try {
@@ -149,7 +153,8 @@ public class RulesManager {
 			KafkaProducer<String, String> producer = am.getKafkaProducer();
 			producer.send(new ProducerRecord<String, String>(am.getRuleTopicName(), cmdJson)).get();
 		} else {
-			PrintWriter pr = new PrintWriter(new FileWriter("/tmp/rule-updates.txt", true));
+			PrintWriter pr = new PrintWriter(
+					new FileWriter(HENDRIX_RULE_UPDATES_TXT.replaceFirst("^~", System.getProperty("user.home")), true));
 			pr.println(cmdJson);
 			pr.close();
 		}
@@ -297,8 +302,7 @@ public class RulesManager {
 		}
 	}
 
-	public String getRuleContents(EntityManager em, String tenantId, boolean pretty, int filter)
-			throws Exception {
+	public String getRuleContents(EntityManager em, String tenantId, boolean pretty, int filter) throws Exception {
 		List<Rule> rules = new ArrayList<>();
 		try {
 			List<Rules> results = getRules(em, tenantId);
@@ -334,8 +338,7 @@ public class RulesManager {
 					if (rule.getRuleContent() != null) {
 						rules.add(RuleSerializer.deserializeJSONStringToRule(rule.getRuleContent()));
 					} else {
-						rules.add(
-								new SimpleRule(rule.getRuleId(), "", false, null, new Action[] {}));
+						rules.add(new SimpleRule(rule.getRuleId(), "", false, null, new Action[] {}));
 					}
 					break;
 				}

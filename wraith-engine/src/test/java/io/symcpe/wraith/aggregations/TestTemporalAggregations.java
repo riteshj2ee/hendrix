@@ -30,6 +30,10 @@ import org.junit.Test;
 
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Utils;
+import io.symcpe.wraith.aggregators.AggregationRejectException;
+import io.symcpe.wraith.aggregators.Aggregator;
+import io.symcpe.wraith.aggregators.CountingEngine;
+import io.symcpe.wraith.aggregators.FineCountingAggregator;
 
 public class TestTemporalAggregations {
 
@@ -47,7 +51,7 @@ public class TestTemporalAggregations {
 			CountingEngine aggregationEngine = new CountingEngine();
 			conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
 			conf.put(Constants.AGGREGATION_JITTER_TOLERANCE, String.valueOf(k * 10));
-			aggregationEngine.initialize(conf);
+			aggregationEngine.initialize(conf, 1);
 			String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 			int aggregationWindow = 10;
 			long time = 1452452090520L;

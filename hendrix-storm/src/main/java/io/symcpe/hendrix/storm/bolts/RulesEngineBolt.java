@@ -138,20 +138,30 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 				new Fields(Constants.FIELD_EVENT, Constants.FIELD_RULE_ID, Constants.FIELD_ACTION_ID,
 						Constants.FIELD_RULE_NAME, Constants.FIELD_ALERT_TEMPLATE_ID, Constants.FIELD_RULE_GROUP,
 						Constants.FIELD_TIMESTAMP));
+		declarer.declareStream(Constants.STATE_STREAM_ID,
+				new Fields(Constants.FIELD_STATE_TRACK, Constants.FIELD_TIMESTAMP, Constants.FIELD_AGGREGATION_WINDOW,
+						Constants.FIELD_RULE_ACTION_ID, Constants.FIELD_AGGREGATION_KEY));
 		StormContextUtil.declareErrorStream(declarer);
 	}
 
 	@Override
-	public void emitRawAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent, short ruleId,
-			short actionId, String target, String mediaType) {
+	public void emitStateTrackingEvent(OutputCollector eventCollector, Tuple eventContainer, Boolean track,
+			Event originalEvent, Long timestamp, int windowSize, String ruleActionId, String aggregationKey) {
+		eventCollector.emit(Constants.STATE_STREAM_ID, eventContainer,
+				new Values(track, timestamp, windowSize, ruleActionId, aggregationKey));
+	}
+
+	@Override
+	public void emitRawAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent, Short ruleId,
+			Short actionId, String target, String mediaType) {
 		if (multiTenancyActive) {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer,
+			eventCollector.emit(Constants.ALERT_STREAM_ID, eventContainer,
 					new Values(outputEvent, ruleId, actionId, target, mediaType,
 							outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP),
 							outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
 		} else {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId, target,
-					mediaType, null, outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
+			eventCollector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
+					target, mediaType, null, outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
 		}
 	}
 
@@ -160,18 +170,18 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	}
 
 	@Override
-	public void reportConditionEfficiency(Short ruleId, long executeTime) {
-		conditionEfficiency.scope(ruleId.toString()).update(executeTime);
+	public void reportConditionEfficiency(short ruleId, long executeTime) {
+		conditionEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
 	}
 
 	@Override
-	public void reportRuleEfficiency(Short ruleId, long executeTime) {
-		ruleEfficiency.scope(ruleId.toString()).update(executeTime);
+	public void reportRuleEfficiency(short ruleId, long executeTime) {
+		ruleEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
 	}
 
 	@Override
-	public void reportRuleHit(Short ruleId) {
-		ruleHitCount.scope(ruleId.toString()).incr();
+	public void reportRuleHit(short ruleId) {
+		ruleHitCount.scope(String.valueOf(ruleId)).incr();
 	}
 
 	@Override
@@ -189,7 +199,7 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void emitAggregationEvent(Class<? extends Action> action, OutputCollector eventCollector,
-			Tuple eventContainer, Event originalEvent, long timestamp, int windowSize, String ruleActionId,
+			Tuple eventContainer, Event originalEvent, Long timestamp, int windowSize, String ruleActionId,
 			String aggregationKey, Object aggregationValue) {
 		throw new UnsupportedOperationException();
 	}
@@ -218,12 +228,12 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void emitTemplatedAlert(OutputCollector eventCollector, Tuple eventContainer, Event outputEvent,
-			short ruleId, short actionId, String ruleName, short templateId, long timestamp) {
+			Short ruleId, Short actionId, String ruleName, Short templateId, Long timestamp) {
 		if (multiTenancyActive) {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
+			eventCollector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
 					ruleName, templateId, outputEvent.getHeaders().get(Constants.FIELD_RULE_GROUP), timestamp));
 		} else {
-			collector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
+			eventCollector.emit(Constants.ALERT_STREAM_ID, eventContainer, new Values(outputEvent, ruleId, actionId,
 					ruleName, templateId, null, outputEvent.getHeaders().get(Constants.FIELD_TIMESTAMP)));
 		}
 	}

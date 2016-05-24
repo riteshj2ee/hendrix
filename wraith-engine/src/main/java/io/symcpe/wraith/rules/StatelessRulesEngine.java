@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
+import io.symcpe.wraith.PerformantException;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.actions.Action;
 import io.symcpe.wraith.actions.aggregations.AggregationAction;
@@ -105,13 +106,8 @@ public class StatelessRulesEngine<K, C> {
 			throw e;
 		}
 	}
-
-	/**
-	 * Rule updates are delivered synchronously by invoking this method.
-	 * 
-	 * @param ruleJson
-	 */
-	public void updateRule(String ruleGroup, String ruleJson, boolean delete) throws Exception {
+	
+	public static void updateRuleMap(Map<Short, Rule> ruleMap, String ruleJson, boolean delete) throws ValidationException {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
 		try {
 			RuleValidator.getInstance().validate(rule);
@@ -119,6 +115,19 @@ public class StatelessRulesEngine<K, C> {
 			// ignore rules that don't pass validation
 			throw e;
 		}
+		if (!delete) {
+			ruleMap.put(rule.getRuleId(), rule);
+		} else {
+			ruleMap.remove(rule.getRuleId());
+		}
+	}
+
+	/**
+	 * Rule updates are delivered synchronously by invoking this method.
+	 * 
+	 * @param ruleJson
+	 */
+	public void updateRule(String ruleGroup, String ruleJson, boolean delete) throws Exception {
 		Map<Short, Rule> ruleMap = this.ruleMap;
 		if (ruleGroupsActive) {
 			if (ruleGroup != null) {
@@ -128,17 +137,13 @@ public class StatelessRulesEngine<K, C> {
 					ruleGroupMap.put(ruleGroup, ruleMap);
 				}
 			} else {
-				throw new Exception("Supplied rule group is null");
+				throw new PerformantException("Supplied rule group is null");
 			}
 		}
 		if (ruleMap == null) {
-			throw new Exception("Rule map not found for rule:" + rule.getRuleId() + "\trule-group:" + ruleGroup);
+			throw new PerformantException("Rule map not found for rule:" + ruleJson + "\trule-group:" + ruleGroup);
 		}
-		if (!delete) {
-			ruleMap.put(rule.getRuleId(), rule);
-		} else {
-			ruleMap.remove(rule.getRuleId());
-		}
+		updateRuleMap(ruleMap, ruleJson, delete);
 	}
 
 	/**
@@ -248,10 +253,19 @@ public class StatelessRulesEngine<K, C> {
 			// find the correct stream id based on the aggregation action class
 			String ruleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
 			caller.emitAggregationEvent(action.getClass(), eventCollector, eventContainer, event,
-					(long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
+					(Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
 					((AggregationAction) action).getAggregationWindow(), ruleActionId,
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString(),
 					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_VALUE));
+			break;
+		case STATE:
+			// find the correct stream id based on the aggregation action class
+			String stateRuleActionId = Utils.combineRuleActionId(ruleId, action.getActionId());
+			caller.emitStateTrackingEvent(eventCollector, eventContainer,
+					(Boolean) event.getHeaders().get(Constants.FIELD_STATE_TRACK), event,
+					(Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP),
+					((AggregationAction) action).getAggregationWindow(), stateRuleActionId,
+					outputEvent.getHeaders().get(Constants.FIELD_AGGREGATION_KEY).toString());
 			break;
 		case NEW:
 			outputEvent.getHeaders().put(Constants.FIELD_RULE_ID, ruleId);

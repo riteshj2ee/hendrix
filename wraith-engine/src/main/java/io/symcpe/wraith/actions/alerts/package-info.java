@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 /**
+ * Defines the {@link io.symcpe.wraith.actions.alerts.Alert} blueprint and
+ * {@link io.symcpe.wraith.actions.alerts.AlertingEngine}
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.wraith.actions.alerts;

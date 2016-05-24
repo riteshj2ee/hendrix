@@ -199,7 +199,7 @@ public class TestRulesManager {
 			for (Rule rule2 : rules) {
 				if (rule2.getRuleId() == ruleId) {
 					assertEquals("simple-rule", rule2.getName());
-					assertEquals("host", ((EqualsCondition) rule2.getCondition()).getHeaderKey());
+					assertEquals("host", ((EqualsCondition) rule2.getCondition()).getkey());
 				}
 			}
 		} catch (NoResultException e) {

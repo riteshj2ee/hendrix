@@ -65,7 +65,7 @@ public class FileLogReaderSpout extends BaseRichSpout {
 		this.collector = collector;
 		if (conf.get(SLOW) != null) {
 			slow = Integer.parseInt(conf.get(SLOW).toString());
-			System.err.println("Setting low slow to:"+slow);
+			System.err.println("Setting slow log to:"+slow);
 		}else {
 			slow = -1;
 		}

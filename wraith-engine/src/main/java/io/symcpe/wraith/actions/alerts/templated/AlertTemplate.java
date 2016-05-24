@@ -39,7 +39,8 @@ public class AlertTemplate implements Serializable {
 	private String subject;
 	@Required
 	private String body;
-	private int throttleDuration = 120;
+	// Default to 1 alert per 5 mins
+	private int throttleDuration = 300;
 	private int throttleLimit = 1;
 	
 	public AlertTemplate() {

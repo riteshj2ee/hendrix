@@ -25,7 +25,7 @@ import io.symcpe.wraith.Event;
  * 
  * @author ambud_sharma
  */
-public abstract class CountingAggregationAction extends AggregationAction {
+public abstract class CountingAggregationAction extends ValueAggregationAction {
 
 	private static final long serialVersionUID = 1L;
 	

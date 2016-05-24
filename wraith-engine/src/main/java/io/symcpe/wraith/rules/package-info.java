@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 /**
+ * Defining the blueprints for a {@link io.symcpe.wraith.rules.Rule} and it's
+ * implementation with {@link io.symcpe.wraith.rules.SimpleRule}. Also contains
+ * Serializers and Deserializers for Rules.
+ * 
+ * <br>
+ * <br>
+ * 
+ * This package contains THE implementation for Rules Engine as well as defines
+ * the {@link io.symcpe.wraith.rules.RulesEngineCaller} design pattern.
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.wraith.rules;

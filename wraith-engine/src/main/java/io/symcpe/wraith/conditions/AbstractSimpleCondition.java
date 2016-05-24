@@ -28,15 +28,15 @@ public abstract class AbstractSimpleCondition implements Condition {
 	
 	private static final long serialVersionUID = 1L;
 	@Required
-	private String headerKey;
+	private String key;
 
 	public AbstractSimpleCondition(String headerKey) {
-		this.headerKey = headerKey;
+		this.key = headerKey;
 	}
 
 	@Override
 	public final boolean matches(Event event) {
-		Object value = event.getHeaders().get(headerKey);
+		Object value = event.getHeaders().get(key);
 		if(value!=null) {
 			return satisfiesCondition(value);
 		}
@@ -48,15 +48,15 @@ public abstract class AbstractSimpleCondition implements Condition {
 	/**
 	 * @return header key
 	 */
-	public String getHeaderKey() {
-		return headerKey;
+	public String getkey() {
+		return key;
 	}
 
 	/**
-	 * @param headerKey the headerKey to set
+	 * @param key the headerKey to set
 	 */
-	public void setHeaderKey(String headerKey) {
-		this.headerKey = headerKey;
+	public void setKey(String key) {
+		this.key = key;
 	}
 
 	/* (non-Javadoc)
@@ -64,7 +64,7 @@ public abstract class AbstractSimpleCondition implements Condition {
 	 */
 	@Override
 	public String toString() {
-		return "AbstractSimpleCondition [headerKey=" + headerKey + "]";
+		return "AbstractSimpleCondition [key=" + key + "]";
 	}
 
 }

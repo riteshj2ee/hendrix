@@ -27,6 +27,7 @@ import javax.faces.bean.SessionScoped;
 
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.actions.Action;
+import io.symcpe.wraith.actions.aggregations.StateAggregationAction;
 import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
 
 /**
@@ -41,6 +42,7 @@ public class ActionBean implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public static final String AGGREGATE = "aggregate";
 	public static final String ALERT = "alert";
+	public static final String STATE = "state";
 	public static final String TAG = "tag";
 	public static final String BUILD = "build";
 	public static final List<String> ACTION_TYPES = Arrays.asList(AGGREGATE, ALERT, TAG, BUILD);
@@ -64,6 +66,8 @@ public class ActionBean implements Serializable {
 			case ALERT:
 				actions.add(new TemplatedAlertAction((short) actions.size(), (short)-1));
 				break;
+			case STATE:
+				actions.add(new StateAggregationAction((short) actions.size(), "", 30, null));
 			default:
 				break;
 			}
@@ -112,6 +116,10 @@ public class ActionBean implements Serializable {
 
 	public boolean alertAction(Class<? extends Action> actionClass) {
 		return actionClass == TemplatedAlertAction.class;
+	}
+	
+	public boolean stateAction(Class<? extends Action> actionClass) {
+		return actionClass == StateAggregationAction.class;
 	}
 
 	public void selectAction(int actionId) {

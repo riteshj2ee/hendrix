@@ -32,6 +32,10 @@ import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.wraith.rules.RuleCommand;
+import io.symcpe.wraith.rules.RuleSerializer;
+import io.symcpe.wraith.rules.SimpleRule;
+import io.symcpe.wraith.rules.validator.RuleValidator;
+import io.symcpe.wraith.rules.validator.ValidationException;
 
 /**
  * Converts {@link RuleCommand} JSON to object before it's sent to
@@ -62,9 +66,16 @@ public class RuleTranslatorBolt extends BaseRichBolt {
 	public void execute(Tuple input) {
 		try {
 			logger.info("Translating rule command:"+input.getString(0));
-			RuleCommand ruleCommandJson = gson.fromJson(input.getString(0), type);
-			if (ruleCommandJson != null) {
-				collector.emit(Constants.SYNC_STREAM_ID, new Values(ruleCommandJson));
+			RuleCommand ruleCommand = gson.fromJson(input.getString(0), type);
+			if (ruleCommand != null) {
+				SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleCommand.getRuleContent());
+				try {
+					RuleValidator.getInstance().validate(rule);
+				} catch (ValidationException e) {
+					// ignore rules that don't pass validation
+					logger.warning("Dropping invalid rule:"+ruleCommand.getRuleContent());
+				}
+				collector.emit(Constants.SYNC_STREAM_ID, new Values(ruleCommand));
 			} else {
 				throw new NullPointerException("Rule command is null, unable to parse:" + input.getString(0));
 			}

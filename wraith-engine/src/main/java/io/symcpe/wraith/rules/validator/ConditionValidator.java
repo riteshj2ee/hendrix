@@ -56,7 +56,7 @@ public class ConditionValidator implements Validator<Condition> {
 		} else {
 			if (condition instanceof AbstractSimpleCondition) {
 				AbstractSimpleCondition castedConditon = ((AbstractSimpleCondition) condition);
-				if (castedConditon.getHeaderKey() == null || castedConditon.getHeaderKey().isEmpty()) {
+				if (castedConditon.getkey() == null || castedConditon.getkey().isEmpty()) {
 					throw new ValidationException("Condition header key cannot be empty");
 				}
 				if (castedConditon instanceof NumericCondition) {

@@ -65,7 +65,7 @@ public class NotEqualsCondition extends AbstractSimpleCondition {
 	 */
 	@Override
 	public String toString() {
-		return getHeaderKey() + " != " + getValue();
+		return getkey() + " != " + getValue();
 	}
 
 }

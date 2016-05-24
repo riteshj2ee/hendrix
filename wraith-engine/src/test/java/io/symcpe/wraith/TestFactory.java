@@ -23,6 +23,7 @@ import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleSerializer;
+import io.symcpe.wraith.store.AggregationStore;
 import io.symcpe.wraith.store.RulesStore;
 import io.symcpe.wraith.store.StoreFactory;
 import io.symcpe.wraith.store.TemplateStore;
@@ -90,7 +91,13 @@ public class TestFactory implements EventFactory, StoreFactory {
 	}
 
 	@Override
-	public TemplateStore getTemplateStoreStore(String type, Map<String, String> conf) throws Exception {
+	public TemplateStore getTemplateStore(String type, Map<String, String> conf) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public AggregationStore getAggregationStore(String type, Map<String, String> conf) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}

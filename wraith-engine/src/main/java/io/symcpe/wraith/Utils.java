@@ -56,7 +56,7 @@ public class Utils {
 		try {
 			if (map == null) {
 				stream = ConditionSerializer.class.getClassLoader().getResourceAsStream("naming.default");
-				System.out.println("Loading default naming convection:" + stream);
+				System.out.println("Loading default naming convention");
 			} else {
 				stream = new FileInputStream(new File(map));
 				System.out.println("Found naming map configuration:" + map);
@@ -125,12 +125,21 @@ public class Utils {
 	 */
 	public static String createMapKey(long timestamp, int aggregationWindow, String ruleActionId,
 			String aggregationKey) {
-		String ts = intToString((int) (timestamp / (1000 * aggregationWindow)) * aggregationWindow);
+		String ts = intToString(floorTs(timestamp, aggregationWindow));
 		return new StringBuilder(ruleActionId.length() + 1 + ts.length() + 1 + aggregationKey.length())
 				.append(ruleActionId).append(Constants.KEY_SEPARATOR).append(ts).append(Constants.KEY_SEPARATOR)
 				.append(aggregationKey).toString();
 	}
 	
+	/**
+	 * @param timestamp
+	 * @param aggregationWindow
+	 * @return
+	 */
+	public static int floorTs(long timestamp, int aggregationWindow) {
+		return (int) (timestamp / (1000 * aggregationWindow)) * aggregationWindow;
+	}
+
 	public static short bytesToShort(byte[] data) {
 		return (short) (((data[0] << 8)) | ((data[1] & 0xFF)));
 	}
@@ -181,6 +190,14 @@ public class Utils {
 	public static int stringToInt(String val) {
 		return Integer.parseInt(val, 16);
 	}
+	
+	public static String longToString(long val) {
+		return Long.toHexString(val);
+	}
+
+	public static long stringToLong(String val) {
+		return Long.parseLong(val, 16);
+	}
 
 	public static String combineRuleActionId(short ruleId, short actionId) {
 		String str = Base64.getEncoder().encodeToString(combineRuleAction(ruleId, actionId));
@@ -214,4 +231,5 @@ public class Utils {
 		}
 		return builder.toString();
 	}
+
 }

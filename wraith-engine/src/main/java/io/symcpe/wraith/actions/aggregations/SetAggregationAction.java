@@ -22,7 +22,7 @@ import io.symcpe.wraith.Event;
  * 
  * @author ambud_sharma
  */
-public class SetAggregationAction extends AggregationAction {
+public class SetAggregationAction extends ValueAggregationAction {
 
 	private static final long serialVersionUID = 1L;
 

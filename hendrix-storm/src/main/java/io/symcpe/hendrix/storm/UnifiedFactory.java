@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
+import io.symcpe.wraith.store.AggregationStore;
 import io.symcpe.wraith.store.RulesStore;
 import io.symcpe.wraith.store.StoreFactory;
 import io.symcpe.wraith.store.TemplateStore;
@@ -31,14 +32,11 @@ import io.symcpe.wraith.store.TemplateStore;
  */
 public class UnifiedFactory implements StoreFactory, EventFactory {
 	
+	private static final String STORE_PROP_PREFIX = "store.";
+
 	@Override
 	public RulesStore getRulesStore(String type, Map<String, String> stormConf) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-		Map<String, String> conf = new HashMap<>();
-		for(Object key:stormConf.keySet()) {
-			if(key.toString().contains("store.")) {
-				conf.put(key.toString(), stormConf.get(key).toString());
-			}
-		}
+		Map<String, String> conf = getSubmap(STORE_PROP_PREFIX, stormConf);
 		RulesStore store = (RulesStore) Class.forName(type).newInstance();
 		store.initialize(conf);
 		return store;
@@ -48,16 +46,29 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 	public Event buildEvent() {
 		return new HendrixEvent();
 	}
-
+	
 	@Override
-	public TemplateStore getTemplateStoreStore(String type, Map<String, String> stormConf) throws Exception {
+	public TemplateStore getTemplateStore(String type, Map<String, String> stormConf) throws Exception {
+		Map<String, String> conf = getSubmap(STORE_PROP_PREFIX, stormConf);
+		TemplateStore store = (TemplateStore) Class.forName(type).newInstance();
+		store.initialize(conf);
+		return store;
+	}
+	
+	public static Map<String, String> getSubmap(String contains, Map<String, String> stormConf) {
 		Map<String, String> conf = new HashMap<>();
 		for(Object key:stormConf.keySet()) {
-			if(key.toString().contains("store.")) {
+			if(key.toString().contains(contains)) {
 				conf.put(key.toString(), stormConf.get(key).toString());
 			}
 		}
-		TemplateStore store = (TemplateStore) Class.forName(type).newInstance();
+		return conf;
+	}
+
+	@Override
+	public AggregationStore getAggregationStore(String type, Map<String, String> stormConf) throws Exception {
+		Map<String, String> conf = getSubmap(STORE_PROP_PREFIX, stormConf);
+		AggregationStore store = (AggregationStore) Class.forName(type).newInstance();
 		store.initialize(conf);
 		return store;
 	}

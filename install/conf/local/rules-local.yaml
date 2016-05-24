@@ -14,13 +14,12 @@ config:
     store.username: "root"
     store.password: "lmm"
     store.sql.db: "hendrix2"
-    rstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
-    tstore.type: "io.symcpe.hendrix.storm.SQLRulesStore"
+    rstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
+    tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     rstore.sql.table: "rules_table"
     tstore.sql.table: "alert_template"
     rule.group.active: "true"
-    mode: "metric"
-    log.slow: "1000"
+    log.slow: "3000"
     ui.endpoint: "http://localhost:9000/api/receive/"
 
 # Components
@@ -34,7 +33,7 @@ spouts:
   - id: "logSpout"
     className: "io.symcpe.hendrix.storm.bolts.helpers.FileLogReaderSpout"
     constructorArgs:
-      - "~/hendrix/test-data"
+      - "~/hendrix/log-data"
 
   - id: "ruleSpout"
     className: "io.symcpe.hendrix.storm.bolts.helpers.SpoolingFileSpout"
@@ -51,38 +50,39 @@ bolts:
   - id: "interceptionBolt"
     className: "io.symcpe.hendrix.storm.bolts.InterceptionBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "translatorBolt"
     className: "io.symcpe.hendrix.storm.bolts.JSONTranslatorBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "templateComponent"
     className: "io.symcpe.hendrix.storm.bolts.TemplateTranslatorBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "ruleComponent"
     className: "io.symcpe.hendrix.storm.bolts.RuleTranslatorBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "ruleEngineBolt"
     className: "io.symcpe.hendrix.storm.bolts.RulesEngineBolt"
     parallelism: 1
 
-    # ...
+  - id: "aggregationController"
+    className: "io.symcpe.hendrix.storm.bolts.AggregationControllerBolt"
+    parallelism: 1
+    
+  - id: "stateTrackingBolt"
+    className: "io.symcpe.hendrix.storm.bolts.StateTrackingBolt"
+    parallelism: 1
+
   - id: "alertViewerBolt"
     className: "io.symcpe.hendrix.storm.bolts.helpers.AlertViewerBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "templatedAlertEngineBolt"
     className: "io.symcpe.hendrix.storm.bolts.TemplatedAlertingEngineBolt"
     parallelism: 1
-
-    # ...
+    
   - id: "errorBolt"
     className: "io.symcpe.hendrix.storm.bolts.ErrorBolt"
     parallelism: 1
@@ -97,14 +97,12 @@ bolts:
 # custom stream groupings are also supported
 
 streams:
-  # Log Spout
-  - name: "Kafka->Interception" # name isn't used (placeholder for logging, UI, etc.)
+  - name: "Kafka->Interception"
     from: "logSpout"
     to: "interceptionBolt"
     grouping:
       type: SHUFFLE
 
-  # Rule Spout
   - name: "Kafka Rules->Rule Translator"
     from: "ruleSpout"
     to: "ruleComponent"
@@ -122,12 +120,26 @@ streams:
     to: "translatorBolt"
     grouping:
       type: SHUFFLE
-
+      
   - name: "Translator->Rule Engine"
     from: "translatorBolt"
     to: "ruleEngineBolt"
     grouping:
       type: SHUFFLE
+
+  - name: "Translator->Printer"
+    from: "translatorBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      
+  - name: "Rule Engine->State Tracking"
+    from: "ruleEngineBolt"
+    to: "stateTrackingBolt"
+    grouping:
+      type: FIELDS
+      args: ["_ri", "_a"]
+      streamId: stateStream
       
   - name: "Rule Engine->Templated Alert Engine"
     from: "ruleEngineBolt"
@@ -135,6 +147,13 @@ streams:
     grouping:
       type: SHUFFLE
       streamId: "alertStream"
+
+  - name: "Rule Engine->Printer"
+    from: "ruleEngineBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: stateStream
       
   - name: "Templated Alert Engine->Printer"
     from: "templatedAlertEngineBolt"
@@ -149,6 +168,20 @@ streams:
     grouping:
       type: ALL
       streamId: "syncStream"
+
+  - name: "Rule Translator->Aggregation Controller"
+    from: "ruleComponent"
+    to: "aggregationController"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+
+  - name: "Aggregation Controller->State Tracker"
+    from: "aggregationController"
+    to: "stateTrackingBolt"
+    grouping:
+      type: ALL
+      streamId: "tickStream" 
       
   - name: "Template Translator->Templated Alert Engine"
     from: "templateComponent"
@@ -156,6 +189,13 @@ streams:
     grouping:
       type: ALL
       streamId: "syncStream"
+      
+  - name: "State Tracker->Printer"
+    from: "stateTrackingBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "aggregationOutputStream"
 
   - name: "Translator->Error"
     from: "translatorBolt"

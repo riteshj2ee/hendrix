@@ -22,6 +22,9 @@ package io.symcpe.hendrix.storm;
  */
 public class Constants extends io.symcpe.wraith.Constants {
 
+	private Constants() {
+	}
+
 	public static final String PARALLELISM_ONE = "1";
 	public static final String ALERT_VIEWER_BOLT = "alertViewerBolt";
 	public static final String DEFAULT_TOPIC_NAME = "logTopic";
@@ -30,19 +33,18 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String SUPRESSION_STATE = "suppressionState";
 	public static final String SUP_MON_STREAM = "suppressionStream";
 	public static final String DELIVERY_STREAM = "deliveryStream";
+	public static final String AGGREGATION_OUTPUT_STREAM = "aggregationOutputStream";
 
-	private Constants() {
-	}
-
-//	public static final String RULE_ENGINE_STREAM_ID = "reStream";
+	// public static final String RULE_ENGINE_STREAM_ID = "reStream";
 	public static final String RULE_SYNC_COMPONENT = "ruleComponent";
 	public static final String TEMPLATE_SYNC_COMPONENT = "templateComponent";
 	public static final String SYNC_STREAM_ID = "syncStream";
-	public static final Object TICK_STREAM_ID = "tickStream";
+	public static final String TICK_STREAM_ID = "tickStream";
 	public static final String STORE_STREAM_ID = "storeStream";
 	public static final String EVENT_STREAM_ID = "eventStream";
 	public static final String LOOPBACK_STREAM_ID = "loopbackStream";
 	public static final String ALERT_STREAM_ID = "alertStream";
+	public static final String STATE_STREAM_ID = "stateStream";
 
 	public static final String TOPOLOGY_RULES_BOLT = "ruleBolt";
 	public static final String TOPOLOGY_EVENT_BOLT = "eventBolt";
@@ -60,7 +62,6 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String RULE_TRANSLATOR_BOLT_PARALLELISM_HINT = "rule.translator.parallelism";
 	public static final String ENABLE_ALERT_VIEWER = "enable.alert.viewer";
 	public static final String KAFKA_RULES_TOPIC_NAME = "rule.topic.name";
-	public static final String FIELD_RULE_ACTION = "_ra";
 	public static final String KAFKA_SPOUT_PARALLELISM = "spout.parallelism";
 	public static final String ERROR_STREAM = "errorStream";
 	public static final String ERROR_MESSAGE = "message";
@@ -79,6 +80,6 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String INTERCEPTION_BOLT_PARALLELISM_HINT = "validation.parallelism";
 
 	public static final String TOPOLOGY_NAME = "topology.name";
-	public static final String KAFKA_ALERT_TOPIC = null;
+	public static final String TOPOLOGY_STATE_BOLT = "stateBolt";
 
 }

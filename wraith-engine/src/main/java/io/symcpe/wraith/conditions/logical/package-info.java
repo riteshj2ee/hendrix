@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 /**
+ * Logical {@link io.symcpe.wraith.conditions.Condition} implementations. Logical Conditions include And, Or, Not an Xor
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.wraith.conditions.logical;

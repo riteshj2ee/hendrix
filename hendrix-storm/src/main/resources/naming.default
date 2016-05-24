@@ -10,3 +10,4 @@ io.symcpe.wraith.conditions.logical.OrCondition=OR
 io.symcpe.wraith.conditions.logical.XorCondition=XOR
 io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction=ALERT
 io.symcpe.wraith.actions.TagEvent=TAG
+io.symcpe.wraith.actions.aggregations.StateAggregationAction=STATE

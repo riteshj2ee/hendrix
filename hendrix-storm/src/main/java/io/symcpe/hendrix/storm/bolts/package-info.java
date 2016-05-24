@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 /**
+ * Definition and implementations of all key bolts for the rules pipeline.
+ * 
  * @author ambud_sharma
- *
  */
 package io.symcpe.hendrix.storm.bolts;

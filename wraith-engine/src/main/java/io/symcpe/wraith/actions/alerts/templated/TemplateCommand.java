@@ -86,7 +86,7 @@ public class TemplateCommand implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "RuleCommand [ruleGroup=" + ruleGroup + ", delete=" + delete + ", templateContent=" + template + "]";
+		return "TemplateCommand [ruleGroup=" + ruleGroup + ", delete=" + delete + ", templateContent=" + template + "]";
 	}
 
 }

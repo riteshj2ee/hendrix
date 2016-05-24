@@ -23,9 +23,10 @@ import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
 
 public class AlertTemplateValidator implements Validator<AlertTemplate> {
 
-	private static final int MAX_LENGTH_ALERT_TARGET = 200;
+	private static final int MAX_LENGTH_ALERT_DESTINATION = 200;
 	private static final int MAX_LENGTH_ALERT_MEDIA = 50;
 	private static final Pattern EMAIL_PATTERN = Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$");
+	private static final Pattern HTTP_PATTERN = Pattern.compile("^https?\\://.*");
 	private List<Validator<AlertTemplate>> alertTemplateValidator;
 	
 	public AlertTemplateValidator() {
@@ -48,9 +49,9 @@ public class AlertTemplateValidator implements Validator<AlertTemplate> {
 		if (template.getDestination() == null || template.getDestination().trim().isEmpty()) {
 			throw new ValidationException("Alert target can't be empty");
 		}
-		if (template.getDestination().length() > MAX_LENGTH_ALERT_TARGET) {
+		if (template.getDestination().length() > MAX_LENGTH_ALERT_DESTINATION) {
 			throw new ValidationException(
-					"Alert target must be less than " + MAX_LENGTH_ALERT_TARGET + " characters");
+					"Alert target must be less than " + MAX_LENGTH_ALERT_DESTINATION + " characters");
 		}
 		if (template.getMedia() == null || template.getMedia().trim().isEmpty()) {
 			throw new ValidationException("Alert media can't be empty");
@@ -83,6 +84,10 @@ public class AlertTemplateValidator implements Validator<AlertTemplate> {
 				if (!EMAIL_PATTERN.matcher(email.trim()).matches()) {
 					throw new ValidationException("Not a valid email address:" + email);
 				}
+			}
+		}else if (template.getMedia().contains("http")) {
+			if(!HTTP_PATTERN.matcher(template.getDestination()).matches()) {
+				throw new ValidationException("Not a valid http address:" + template.getDestination());
 			}
 		}
 		for (Validator<AlertTemplate> validator : alertTemplateValidator) {

@@ -135,7 +135,10 @@ public class AlertingEngineBolt extends BaseRichBolt implements AlertingEngine {
 			if (alertResult == null) {
 				String eventJson = gson.toJson(((Event) tuple.getValueByField(Constants.FIELD_EVENT)).getHeaders());
 				StormContextUtil.emitErrorTuple(collector, tuple, AlertingEngineBolt.class,
-						"Failed to materialize alert into template due to missing rules", eventJson, null);
+						"Failed to materialize alert due to missing template for rule:"
+								+ tuple.getShortByField(Constants.FIELD_RULE_ID) + ",action:"
+								+ tuple.getShortByField(Constants.FIELD_ACTION_ID),
+						eventJson, null);
 			} else {
 				collector.emit(Constants.ALERT_STREAM_ID, tuple,
 						new Values(alertResult.getTarget(), alertResult.getMedia(), alertResult.getBody(),
@@ -158,7 +161,7 @@ public class AlertingEngineBolt extends BaseRichBolt implements AlertingEngine {
 	public Alert materialize(Event event, String ruleGroup, short ruleId, short actionId, String target, String media,
 			long timestamp) {
 		Alert alert = materialize(event, ruleId, actionId, target, media, timestamp);
-		if(alert!=null) {
+		if (alert != null) {
 			alert.setRuleGroup(ruleGroup);
 		}
 		return alert;

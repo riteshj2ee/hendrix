@@ -18,16 +18,17 @@ package io.symcpe.hendrix.alerts.media;
 import java.security.Security;
 import java.util.Date;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.NoSuchProviderException;
 import javax.mail.Session;
+import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.sun.mail.smtp.SMTPTransport;
@@ -36,54 +37,53 @@ import io.symcpe.wraith.actions.alerts.Alert;
 
 /**
  * Provides methods for send emails.
+ * 
+ * @author ambud_sharma
  */
 public class MailService {
-	
-	private static final String ALERT_MAIL_USE_SSL = "alert.mail.use.ssl";
-	private static final String ALERT_MAIL_USE_AUTH = "alert.mail.smtps.auth";
-	private static final String ALERT_MAIL_HOST = "alert.mail.smtps.host";
-	private static final String ALERT_MAIL_PORT = "alert.mail.smtp.port";
-	private static final String ALERT_MAIL_USER = "alert.mail.smtps.auth.user";
-	private static final String ALERT_MAIL_PASS = "alert.mail.smtps.auth.pass";
-	private static final String ALERT_MAIL_SMTP_SOCKET_FACTORY_CLASS = "alert.mail.smtp.socketFactory.class";
-	private static final String ALERT_MAIL_SOCKET_FACTORY_PORT = "alert.mail.smtp.socketFactory.port";
-	private String host;
-	private String username;
-	private String password;
+
+	private static final String MAIL_SMTP_FROM = "mail.smtp.from";
+	private static final String MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
 	private Session session;
-	private SMTPTransport transport;
-	private int port;
 	private Logger logger;
+	private String from;
 
 	/**
 	 * Creates service according provided storm topology config.
 	 */
-	public MailService(Map<String, String> conf) {
+	public MailService() {
+	}
+
+	/**
+	 * @param conf
+	 * @throws MessagingException
+	 */
+	public void init(Map<String, Object> conf) throws MessagingException {
 		logger = Logger.getLogger(MailService.class);
-		boolean useAuth = Boolean.valueOf((String) conf.get(ALERT_MAIL_USE_AUTH));
-		boolean useSsl = Boolean.valueOf((String) conf.get(ALERT_MAIL_USE_SSL));
-
-		username = useAuth ? (String) conf.get(ALERT_MAIL_USER) : StringUtils.EMPTY;
-		password = useAuth ? (String) conf.get(ALERT_MAIL_PASS) : StringUtils.EMPTY;
-
-		host = (String) conf.get(ALERT_MAIL_HOST);
-		port = Integer.valueOf((String) conf.get(ALERT_MAIL_PORT));
-
-		session = createSession(useAuth, useSsl, host, port, username, password, conf);
-
+		session = createSession(conf);
+		from = conf.get(MAIL_SMTP_FROM).toString();
+		boolean useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
 		String transportString = useSsl ? "smtps" : "smtp";
 		try {
-			transport = (SMTPTransport) session.getTransport(transportString);
+			SMTPTransport transport = (SMTPTransport) session.getTransport(transportString);
+			if(!transport.isConnected()) {
+				transport.connect();
+			}
+			transport.close();
 		} catch (NoSuchProviderException e) {
-			String message = "Can't initialise Mail bolt. Can't make transport for " + transportString;
+			String message = "Can't initialise Mail Service. Can't make transport for " + transportString;
 			logger.fatal(message, e);
-			throw new IllegalArgumentException(message);
+			throw new MessagingException(message);
 		}
 	}
 
-	private void setMessage(MimeMessage msg, Alert alert) {
+	/**
+	 * @param msg
+	 * @param alert
+	 */
+	protected void setMessage(MimeMessage msg, Alert alert) {
 		try {
-			msg.setFrom(new InternetAddress("LMM@symantec.com"));
+			msg.setFrom(new InternetAddress(from));
 			// send only to non-null recipients
 			if (alert.getTarget() != null) {
 				msg.setRecipients(Message.RecipientType.TO, alert.getTarget());
@@ -108,60 +108,36 @@ public class MailService {
 		}
 		try {
 			setMessage(msg, alert);
-			transport.connect(host, port, username, password);
-			transport.sendMessage(msg, msg.getAllRecipients());
+//			if (!transport.isConnected()) {
+//				transport.connect();
+//			}
+//			transport.sendMessage(msg, msg.getAllRecipients());
+			Transport.send(msg);
 			return true;
-		} catch (MessagingException e) {
-			logger.error("Error when trying to send e-mail via " + host + ":" + port + ". Tenant ID: "
-					+ alert.getRuleGroup(), e);
+		} catch (Exception e) {
+			logger.info("Error when trying to send e-mail via, tenant ID: " + alert.getRuleGroup(), e);
 			return false;
 		}
 	}
 
+	/**
+	 * @param conf
+	 * @return
+	 */
 	@SuppressWarnings("restriction")
-	private Session createSession(boolean useAuth, boolean useSsl, String host, int port, String username,
-			String password, Map<String, String> conf) {
+	private Session createSession(Map<String, Object> conf) {
 		Properties properties = new Properties();
-		properties.put("mail.smtp.host", host);
-		properties.put("mail.smtp.port", port);
-
-		properties.put("mail.smtp.auth", useAuth);
-		if (useAuth) {
-			if (useSsl) {
-				properties.put("mail.smtps.auth.user", username);
-				properties.put("mail.smtps.auth.pass", password);
-			} else {
-				properties.put("mail.smtp.user", username);
-				properties.put("mail.smtp.password", password);
+		for (Entry<String, Object> entry : conf.entrySet()) {
+			if (entry.getKey().startsWith("mail.")) {
+				properties.setProperty(entry.getKey(), entry.getValue().toString());
 			}
 		}
-
-		properties.put("mail.smtp.starttls.enable", useSsl);
+		boolean useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
 		if (useSsl) {
-			String socketFactoryClass = (String) conf.get(ALERT_MAIL_SMTP_SOCKET_FACTORY_CLASS);
-			boolean socketFactoryFallback = Boolean
-					.valueOf((String) conf.get(ALERT_MAIL_SMTP_SOCKET_FACTORY_CLASS));
-			int socketFactoryPort = Integer.valueOf((String) conf.get(ALERT_MAIL_SOCKET_FACTORY_PORT));
-
 			Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
-			properties.put("mail.smtp.socketFactory.class", socketFactoryClass);
-			properties.put("mail.smtp.socketFactory.fallback", socketFactoryFallback);
-			properties.put("mail.smtp.socketFactory.port", socketFactoryPort);
 		}
-
 		Session session = Session.getInstance(properties);
-
 		return session;
 	}
 
-	/**
-	 * Closes email transport.
-	 */
-	public void close() {
-		try {
-			transport.close();
-		} catch (MessagingException e) {
-			logger.error("Error when trying to close connection to smtp server.", e);
-		}
-	}
 }

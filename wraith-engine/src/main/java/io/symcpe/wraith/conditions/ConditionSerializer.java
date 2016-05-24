@@ -18,7 +18,6 @@ package io.symcpe.wraith.conditions;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
 
@@ -35,12 +34,7 @@ import com.google.gson.JsonSerializer;
 
 import io.symcpe.wraith.Required;
 import io.symcpe.wraith.Utils;
-import io.symcpe.wraith.conditions.logical.AndCondition;
-import io.symcpe.wraith.conditions.logical.OrCondition;
-import io.symcpe.wraith.conditions.relational.EqualsCondition;
 import io.symcpe.wraith.conditions.relational.JavaRegexCondition;
-import io.symcpe.wraith.rules.RuleSerializer;
-import io.symcpe.wraith.rules.SimpleRule;
 
 /**
  * Gson Type adapter for {@link Condition} to serialize and deserialize
@@ -53,28 +47,10 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 	public static final String TYPE = "type";
 	public static final String PROPS = "props";
 
-	public static void main(String[] args) {
-		Condition one = new OrCondition(Arrays.asList((Condition) new EqualsCondition("header1", "val1"),
-				(Condition) new JavaRegexCondition("header", "\\d+")));
-		Condition two = new EqualsCondition("header2", (Number)Double.valueOf("2"));
-		Condition condition = new AndCondition(Arrays.asList(one, two));
-		GsonBuilder gsonBilder = new GsonBuilder();
-		gsonBilder.registerTypeAdapter(Condition.class, new ConditionSerializer());
-		Gson gson = gsonBilder.setPrettyPrinting().create();
-
-		condition = gson.fromJson(gson.toJson(condition, Condition.class), Condition.class);
-		
-		System.out.println(((EqualsCondition)((AndCondition)condition).getConditions().get(1)).getValue().getClass());
-		
-		String val = "{\"condition\":{\"type\":\"EQUALS\",\"props\":{\"value\":5,\"headerKey\":\"severity_int\"}},\"actions\":[{\"type\":\"ALERT\",\"props\":{\"actionId\":0,\"target\":\"test_email_ITC-RE-Validation-A.1.2@gmail.com\",\"media\":\"mail\",\"body\":\"This is a rule of type ITC-RE-Validation-A.1.2\"}}],\"ruleId\":20,\"name\":\"ITC-RE-Validation-A.1.2. mrfeocinygimauqge.\",\"active\":true,\"description\":\"This is a rule of type A.1. Rule is firing when the condition is found\"}";
-		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(val);
-		System.out.println(((EqualsCondition)rule.getCondition()).getValue().getClass());
-	}
-
 	public Condition deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
 			throws JsonParseException {
 		JsonObject jsonObject = json.getAsJsonObject();
-		if(jsonObject.entrySet().isEmpty()) {
+		if (jsonObject.entrySet().isEmpty()) {
 			throw new JsonParseException("Empty conditions are not allowed");
 		}
 		String type = jsonObject.get(TYPE).getAsString();
@@ -84,15 +60,15 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 		JsonElement element = jsonObject.get(PROPS);
 		try {
 			Condition pojo = context.deserialize(element, Class.forName(type));
-			if(pojo instanceof JavaRegexCondition) {
-				JavaRegexCondition regex = ((JavaRegexCondition)pojo);
-				if(regex.getValue()==null) {
+			if (pojo instanceof JavaRegexCondition) {
+				JavaRegexCondition regex = ((JavaRegexCondition) pojo);
+				if (regex.getValue() == null) {
 					throw new JsonParseException("Regex can't be empty");
-				}else {
-					try{
+				} else {
+					try {
 						regex.setValue(regex.getValue());
-					}catch(PatternSyntaxException e) {
-						throw new JsonParseException("Regex "+regex.getValue()+" is not a valid Java regex");
+					} catch (PatternSyntaxException e) {
+						throw new JsonParseException("Regex " + regex.getValue() + " is not a valid Java regex");
 					}
 				}
 			}
@@ -124,6 +100,22 @@ public class ConditionSerializer implements JsonSerializer<Condition>, JsonDeser
 		result.add(TYPE, new JsonPrimitive(type));
 		result.add(PROPS, context.serialize(src, src.getClass()));
 		return result;
+	}
+
+	public static Condition deserialize(String condition) {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapter(Condition.class, new ConditionSerializer());
+		gsonBuilder.disableHtmlEscaping();
+		Gson gson = gsonBuilder.create();
+		return gson.fromJson(condition, Condition.class);
+	}
+
+	public static String serialize(Condition condition) {
+		GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapter(Condition.class, new ConditionSerializer());
+		gsonBuilder.disableHtmlEscaping();
+		Gson gson = gsonBuilder.create();
+		return gson.toJson(condition, Condition.class);
 	}
 
 }

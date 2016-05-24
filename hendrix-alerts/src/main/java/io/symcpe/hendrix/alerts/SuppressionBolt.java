@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import backtype.storm.Config;
@@ -29,12 +30,12 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
-import io.symcpe.hendrix.alerts.helpers.MutableBoolean;
-import io.symcpe.hendrix.alerts.helpers.MutableInt;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.hendrix.storm.Utils;
+import io.symcpe.wraith.MutableBoolean;
+import io.symcpe.wraith.MutableInt;
 import io.symcpe.wraith.actions.alerts.Alert;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplateSerializer;
@@ -85,7 +86,7 @@ public class SuppressionBolt extends BaseRichBolt {
 	public void initTemplates(Map<String, String> conf) throws Exception {
 		TemplateStore store = null;
 		try {
-			store = storeFactory.getTemplateStoreStore(conf.get(Constants.TSTORE_TYPE), conf);
+			store = storeFactory.getTemplateStore(conf.get(Constants.TSTORE_TYPE), conf);
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			throw e;
 		}
@@ -127,13 +128,13 @@ public class SuppressionBolt extends BaseRichBolt {
 					logger.fine("Suppression alert for:" + alert.getId() + ":\t" + alert);
 				}
 			} else {
-				logger.severe("Template for alert not found for templateid:" + alert.getId());
+				logger.severe("Suppression policy not found for templateid:" + alert.getId());
 				StormContextUtil.emitErrorTuple(collector, tuple, SuppressionBolt.class, tuple.toString(),
-						"Template for alert not found for templateid:" + alert.getId(), null);
+						"Suppression policy not found for templateid:" + alert.getId(), null);
 			}
 		} else if (Utils.isTickTuple(tuple)) {
 			globalCounter++;
-			logger.fine("Received tick tuple gc:" + globalCounter);
+			logger.fine("Received tick tuple, gc:" + globalCounter);
 			for (Entry<Short, AlertTemplate> entry : templateMap.entrySet()) {
 				if (globalCounter % entry.getValue().getThrottleDuration() == 0
 						&& counter.containsKey(entry.getKey())) {
@@ -177,18 +178,19 @@ public class SuppressionBolt extends BaseRichBolt {
 			AlertTemplate template = AlertTemplateSerializer.deserialize(templateJson);
 			if (delete) {
 				templateMap.remove(template.getTemplateId());
+				logger.info("Deleted template:"+template.getTemplateId());
 			} else {
 				templateMap.put(template.getTemplateId(), template);
 			}
 		} catch (Exception e) {
-			// logger.log(Level.SEVERE, "Alert template error", e);
+			 logger.log(Level.SEVERE, "Alert template error", e);
 		}
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declareStream(Constants.SUP_MON_STREAM,
-				new Fields(Constants.FIELD_ALERT_TEMPLATE_ID, io.symcpe.hendrix.storm.Constants.SUPRESSION_STATE));
+				new Fields(Constants.FIELD_ALERT_TEMPLATE_ID, Constants.SUPRESSION_STATE));
 		declarer.declareStream(Constants.DELIVERY_STREAM, new Fields(Constants.FIELD_ALERT));
 		StormContextUtil.declareErrorStream(declarer);
 	}

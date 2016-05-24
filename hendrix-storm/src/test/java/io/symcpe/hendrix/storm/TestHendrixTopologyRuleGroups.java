@@ -71,6 +71,7 @@ public class TestHendrixTopologyRuleGroups {
 			MkClusterParam mkClusterParam = new MkClusterParam();
 			properties.load(TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".props"));
 			properties.put("rule.group.active", "true");
+//			properties.put(Constants.ASTORE_TYPE, "io.symcpe.wraith.silo.redis.RedisAggregationStore");
 			properties.put(TestAlertingEngineBolt.RULES_CONTENT, builder.toString());
 			List<String> templates = Utils.readAllLinesFromStream(
 					TestHendrixTopologyRuleGroups.class.getClassLoader().getResourceAsStream(file + ".template"));

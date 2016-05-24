@@ -40,14 +40,14 @@ public class MockTupleHelpers {
 	private MockTupleHelpers() {
 	}
 
-	public static Tuple mockRuleTuple(boolean deleteRule, String tenantId, String rule) {
+	public static Tuple mockRuleTuple(boolean deleteRule, String ruleGroup, String rule) {
 		Tuple tuple = mock(Tuple.class);
 		when(tuple.getSourceComponent()).thenReturn(Constants.RULE_SYNC_COMPONENT);
 		when(tuple.getSourceStreamId()).thenReturn(Constants.SYNC_STREAM_ID);
 		RuleCommand command = new RuleCommand();
 		command.setDelete(deleteRule);
 		command.setRuleContent(rule);
-		command.setRuleGroup(tenantId);
+		command.setRuleGroup(ruleGroup);
 		when(tuple.getValue(0)).thenReturn(command);
 		when(tuple.getValueByField(Constants.FIELD_RULE_CONTENT)).thenReturn(command);
 		return tuple;

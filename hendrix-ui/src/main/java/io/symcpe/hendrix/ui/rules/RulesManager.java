@@ -21,9 +21,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.persistence.NoResultException;
-import javax.ws.rs.BadRequestException;
-
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -181,8 +178,6 @@ public class RulesManager {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
 			}
 			return rule;
-		} catch (BadRequestException | NoResultException e) {
-			throw e;
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Failed to enabled disable rule" + ruleId + "\t" + tenantId, e);
 			throw e;

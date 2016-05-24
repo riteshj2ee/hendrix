@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 /**
+ * This package contains common utilities, constants and {@link io.symcpe.wraith.Event} blueprints
+ * 
  * @author ambud_sharma
  *
  */

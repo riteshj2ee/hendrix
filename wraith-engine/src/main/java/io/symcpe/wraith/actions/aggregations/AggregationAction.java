@@ -19,6 +19,7 @@ import java.util.Map;
 
 import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.Event;
+import io.symcpe.wraith.PerformantException;
 import io.symcpe.wraith.actions.Action;
 
 /**
@@ -30,49 +31,50 @@ public abstract class AggregationAction implements Action {
 	
 	private static final long serialVersionUID = 1L;
 	private short actionId;
-	private String aggregationHeaderKey;
-	private String aggregationHeaderValueKey;
+	private String aggregationKey;
 	private int aggregationWindow;
 	
-	public AggregationAction(short actionId, String aggregationHeaderKey, String aggregationHeaderValueKey, int aggregationWindow) {
+	public AggregationAction(short actionId, String aggregationKey, int aggregationWindow) {
 		this.actionId = actionId;
-		this.aggregationHeaderKey = aggregationHeaderKey;
-		this.aggregationHeaderValueKey = aggregationHeaderValueKey;
+		this.aggregationKey = aggregationKey;
 		this.aggregationWindow = aggregationWindow;
 	}
 	
 	@Override
 	public Event actOnEvent(Event inputEvent) {
 		Map<String, Object> headers = inputEvent.getHeaders();
-		Object aggregationKey = headers.get(getAggregationHeaderKey());
-		Object aggregationValue = headers.get(getAggregationHeaderValueKey());
-		if(aggregationKey==null || aggregationValue==null) {
+		Object aggregationKey = headers.get(getAggregationKey());
+		if(aggregationKey==null) {
 			return null;
 		}
 		headers.put(Constants.FIELD_AGGREGATION_KEY, aggregationKey.toString());
-		headers.put(Constants.FIELD_AGGREGATION_VALUE, aggregationValue);
-		postProcessEvent(inputEvent);
+		try {
+			postProcessEvent(inputEvent);
+		} catch (PerformantException e) {
+			return null;
+		}
 		return inputEvent;
 	}
 
-	public abstract void postProcessEvent(Event inputEvent);
+	/**
+	 * Run any post processing operations
+	 * @param inputEvent
+	 * @throws PerformantException
+	 */
+	public abstract void postProcessEvent(Event inputEvent) throws PerformantException;
 
 	@Override
 	public ACTION_TYPE getActionType() {
 		return ACTION_TYPE.AGGREGATION;
 	}
 	
-	public String getAggregationHeaderKey() {
-		return aggregationHeaderKey;
+	/**
+	 * @return aggregationKey
+	 */
+	public String getAggregationKey() {
+		return aggregationKey;
 	}
 
-	/**
-	 * @return the aggregationHeaderValueKey
-	 */
-	public String getAggregationHeaderValueKey() {
-		return aggregationHeaderValueKey;
-	}
-	
 	@Override
 	public short getActionId() {
 		return actionId;
@@ -88,5 +90,19 @@ public abstract class AggregationAction implements Action {
 	@Override
 	public void setActionId(short actionId) {
 		this.actionId = actionId;
+	}
+
+	/**
+	 * @param aggregationKey the aggregationKey to set
+	 */
+	public void setAggregationKey(String aggregationKey) {
+		this.aggregationKey = aggregationKey;
+	}
+
+	/**
+	 * @param aggregationWindow the aggregationWindow to set
+	 */
+	public void setAggregationWindow(int aggregationWindow) {
+		this.aggregationWindow = aggregationWindow;
 	}
 }

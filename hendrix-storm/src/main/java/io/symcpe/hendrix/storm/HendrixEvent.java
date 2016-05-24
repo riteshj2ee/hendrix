@@ -52,7 +52,7 @@ public class HendrixEvent implements Event {
 
 	@Override
 	public String toString() {
-		return "LMMEvent [headers=" + headers + ", body=" + Arrays.toString(body) + "]";
+		return "LMMEvent [headers=" + headers.size() + ", body=" + Arrays.toString(body) + "]";
 	}
 
 	@Override

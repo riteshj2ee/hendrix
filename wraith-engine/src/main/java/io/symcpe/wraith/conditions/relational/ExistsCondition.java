@@ -42,7 +42,7 @@ public class ExistsCondition extends AbstractSimpleCondition {
 	 */
 	@Override
 	public String toString() {
-		return "Exists:"+getHeaderKey();
+		return "Exists:"+getkey();
 	}
 
 }

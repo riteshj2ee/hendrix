@@ -61,6 +61,14 @@ public final class Utils extends io.symcpe.wraith.Utils {
 		return tuple.getSourceStreamId().equals(Constants.SYNC_STREAM_ID)
 				&& tuple.getSourceComponent().equals(Constants.TEMPLATE_SYNC_COMPONENT);
 	}
+	
+	/**
+	 * @param tuple
+	 * @return
+	 */
+	public static boolean isWraithTickTuple(Tuple tuple) {
+		return tuple.getSourceStreamId().equals(Constants.TICK_STREAM_ID);
+	}
 
 	/**
 	 * Check if the supplied tuple is a tick {@link Tuple}
@@ -129,15 +137,15 @@ public final class Utils extends io.symcpe.wraith.Utils {
 		}
 	}
 
-	/**
-	 * Combine rule action id for bucketing
-	 * 
-	 * @param ruleId
-	 * @param actionId
-	 * @return ruleActionId
-	 */
-	public static String combineRuleActionId(short ruleId, short actionId) {
-		return ruleId + "_" + actionId;
-	}
+//	/**
+//	 * Combine rule action id for bucketing
+//	 * 
+//	 * @param ruleId
+//	 * @param actionId
+//	 * @return ruleActionId
+//	 */
+//	public static String combineRuleActionId(short ruleId, short actionId) {
+//		return ruleId + "_" + actionId;
+//	}
 
 }
