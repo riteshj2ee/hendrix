@@ -34,6 +34,7 @@ import io.symcpe.hendrix.api.Queries;
 		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_NAME, query = "SELECT r FROM Rules r where r.tenant.tenantName=:tenantName"),
 		@NamedQuery(name = Queries.RULES_DELETE_BY_ID, query = "DELETE FROM Rules r where r.ruleId=:ruleId"),
 		@NamedQuery(name = Queries.RULES_LATEST_RULE_ID, query = "SELECT r.ruleId from Rules r order by r.ruleId desc"),
+		@NamedQuery(name = Queries.RULES_BY_TEMPLATE_ID_BY_TENANT, query = "SELECT r.ruleId from Rules r where r.tenant.tenantId=:tenantId and r.ruleContent like :template"),
 		@NamedQuery(name = Queries.RULES_ENABLE_DISABLE_RULE, query = "UPDATE Rules r set r.ruleContent=:ruleContent where r.ruleId=:ruleId") })
 public class Rules implements Serializable {
 
@@ -50,7 +51,7 @@ public class Rules implements Serializable {
 	private String ruleContent;
 
 	// bi-directional many-to-one association to Tenant
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne()
 	@JoinColumn(name = "tenant_id")
 	private Tenant tenant;
 

@@ -232,10 +232,19 @@ public class TemplateManager {
 	public void deleteTemplate(EntityManager em, String tenantId, short templateId, ApplicationManager am)
 			throws Exception {
 		EntityTransaction transaction = em.getTransaction();
+		TenantManager.getInstance().getTenant(em, tenantId);
 		try {
 			AlertTemplates template = getTemplate(em, tenantId, templateId);
 			if (template == null) {
 				throw new NotFoundException();
+			}
+			List<Short> result = null;
+			try {
+				result = RulesManager.getInstance().getRuleByTemplateId(em, tenantId, templateId);
+			} catch (Exception e) {
+			}
+			if(result!=null && result.size()>0) {
+				throw new Exception("Can't delete template when it has rules referring to it:"+result.toString());
 			}
 			transaction.begin();
 			String templateContent = template.getTemplateContent();
@@ -271,6 +280,14 @@ public class TemplateManager {
 			List<AlertTemplates> templates = getTemplates(em, tenant.getTenantId());
 			if (templates != null) {
 				for (AlertTemplates template : templates) {
+					List<Short> result = null;
+					try {
+						result = RulesManager.getInstance().getRuleByTemplateId(em, tenant.getTenantId(), template.getTemplateId());
+					} catch (Exception e) {
+					}
+					if(result!=null && result.size()>0) {
+						throw new Exception("Can't delete template when it has rules referring to it:"+result.toString());
+					}
 					em.remove(template);
 					if (template.getTemplateContent() != null) {
 						sendTemplateToKafka(true, template.getTenant().getTenantId(), template.getTemplateContent(),

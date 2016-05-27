@@ -52,10 +52,10 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	private static final long serialVersionUID = 1L;
 	public static final String RULE_VALUE_SEPARATOR = "_";
-	public static final int METRICS_FREQUENCY = 60;
-	public static final String RULE_HIT_COUNT = "rule_hit_count";
-	public static final String CONDITION_EFFICIENCY = "condition_efficiency";
-	public static final String RULE_EFFICIENCY = "rule_efficiency";
+	public static final String _METRIC_RULE_HIT_COUNT = "mcm.rule.hit.count";
+	public static final String _METRIC_RULE_NO_HIT_COUNT = "mcm.rule.nohit.count";
+	public static final String _METRIC_CONDITION_EFFICIENCY = "mcm.condition.efficiency";
+	public static final String _METRIC_RULE_EFFICIENCY = "mcm.rule.efficiency";
 	private transient Logger logger;
 	private transient Gson gson;
 	private transient StatelessRulesEngine<Tuple, OutputCollector> rulesEngine;
@@ -63,6 +63,7 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	private transient MultiReducedMetric ruleEfficiency;
 	private transient MultiReducedMetric conditionEfficiency;
 	private transient MultiCountMetric ruleHitCount;
+	private transient MultiCountMetric ruleNoHitCount;
 	private transient boolean multiTenancyActive;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
@@ -83,10 +84,12 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 		this.ruleEfficiency = new MultiReducedMetric(new MeanReducer());
 		this.conditionEfficiency = new MultiReducedMetric(new MeanReducer());
 		this.ruleHitCount = new MultiCountMetric();
+		this.ruleNoHitCount = new MultiCountMetric();
 		if (context != null) {
-			context.registerMetric(RULE_EFFICIENCY, ruleEfficiency, METRICS_FREQUENCY);
-			context.registerMetric(CONDITION_EFFICIENCY, conditionEfficiency, METRICS_FREQUENCY);
-			context.registerMetric(RULE_HIT_COUNT, ruleHitCount, METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_RULE_EFFICIENCY, ruleEfficiency, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_CONDITION_EFFICIENCY, conditionEfficiency, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_RULE_HIT_COUNT, ruleHitCount, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_RULE_NO_HIT_COUNT, ruleHitCount, Constants.METRICS_FREQUENCY);
 		}
 		logger.info("Rules Engine Bolt initialized");
 	}
@@ -167,6 +170,7 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 
 	@Override
 	public void handleRuleNoMatch(OutputCollector eventCollector, Tuple eventContainer, Event inputEvent, Rule rule) {
+		ruleNoHitCount.scope(String.valueOf(rule.getRuleId())).incr();
 	}
 
 	@Override

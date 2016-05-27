@@ -24,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import backtype.storm.metric.api.CountMetric;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -35,6 +36,7 @@ import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.UnifiedFactory;
 import io.symcpe.wraith.Event;
+import io.symcpe.wraith.PerformantException;
 
 /**
  * Bolt to translate data from Logstash Json to {@link Event} format
@@ -43,9 +45,14 @@ import io.symcpe.wraith.Event;
  */
 public class JSONTranslatorBolt extends BaseRichBolt {
 
+	private static final String _METRIC_TRANSLATOR_FAIL = "cm.translator.fail";
+	private static final String _METRIC_TRANSLATOR_SUCCESS = "cm.translator.success";
+	private static final String DEFAULT_TENANT_ID = "tenant_id";
+	private static final String DEFAULT_TIMESTAMP = "@timestamp";
 	private static final String TRANSLATOR_TIMESTAMP_KEY = "translator.timestampKey";
 	private static final String TRANSLATOR_TENAN_ID_KEY = "translator.tenanIdKey";
 	private static final long serialVersionUID = 1L;
+	private static final PerformantException INVALID_JSON = new PerformantException("Invalid JSON");
 	private transient Logger logger;
 	private transient Type type;
 	private transient UnifiedFactory factory;
@@ -53,6 +60,8 @@ public class JSONTranslatorBolt extends BaseRichBolt {
 	private transient OutputCollector collector;
 	private transient String timestampKey;
 	private transient String tenantIdKey;
+	private transient CountMetric sucessMetric;
+	private transient CountMetric failMetric;
 
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -66,12 +75,18 @@ public class JSONTranslatorBolt extends BaseRichBolt {
 		if (stormConf.get(TRANSLATOR_TIMESTAMP_KEY) != null) {
 			this.timestampKey = stormConf.get(TRANSLATOR_TIMESTAMP_KEY).toString();
 		} else {
-			timestampKey = "@timestamp";
+			timestampKey = DEFAULT_TIMESTAMP;
 		}
 		if (stormConf.get(TRANSLATOR_TENAN_ID_KEY) != null) {
 			this.timestampKey = stormConf.get(TRANSLATOR_TENAN_ID_KEY).toString();
 		} else {
-			tenantIdKey = "tenant_id";
+			tenantIdKey = DEFAULT_TENANT_ID;
+		}
+		sucessMetric = new CountMetric();
+		failMetric = new CountMetric();
+		if (context != null) {
+			context.registerMetric(_METRIC_TRANSLATOR_SUCCESS, sucessMetric, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_TRANSLATOR_FAIL, failMetric, Constants.METRICS_FREQUENCY);
 		}
 		logger.info("Translator bolt initialized");
 	}
@@ -85,14 +100,21 @@ public class JSONTranslatorBolt extends BaseRichBolt {
 			Map<String, Object> map = (Map<String, Object>) gson.fromJson(eventLine, type);
 			if (map != null) {
 				event.getHeaders().putAll(map);
-				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ((Double)event.getHeaders().get(timestampKey)).longValue());
+				event.getHeaders().put(Constants.FIELD_TIMESTAMP,
+						((Double) event.getHeaders().get(timestampKey)).longValue());
 				event.getHeaders().put(Constants.FIELD_RULE_GROUP, event.getHeaders().get(tenantIdKey));
 				collector.emit(input, new Values(event));
 			} else {
-				throw new Exception("Invalid JSON");
+				throw INVALID_JSON;
+			}
+			if (sucessMetric != null) {
+				sucessMetric.incr();
 			}
 		} catch (Exception e) {
 			// emit error
+			if (failMetric != null) {
+				failMetric.incr();
+			}
 			StormContextUtil.emitErrorTuple(collector, input, JSONTranslatorBolt.class, "JSON to Map issue", eventLine,
 					e);
 		}

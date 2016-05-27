@@ -60,5 +60,29 @@ public class HttpService {
 			throw exception;
 		}
 	}
+	
+	/**
+	 * @param destination
+	 * @param bodyContent
+	 * @throws AlertDeliveryException
+	 */
+	public void sendHttpCallback(String destination, String bodyContent) throws AlertDeliveryException {
+		try {
+			CloseableHttpClient client = Utils.buildClient(destination, 3000, 3000);
+			HttpPost request = new HttpPost(destination);
+			StringEntity body = new StringEntity(bodyContent, ContentType.APPLICATION_JSON);
+			request.addHeader("content-type", "application/json");
+			request.setEntity(body);
+			HttpResponse response = client.execute(request);
+			EntityUtils.consume(response.getEntity());
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode < 200 && statusCode >= 300) {
+				throw exception;
+			}
+			client.close();
+		} catch (KeyManagementException | NoSuchAlgorithmException | KeyStoreException | IOException |AlertDeliveryException e) {
+			throw exception;
+		}
+	}
 
 }

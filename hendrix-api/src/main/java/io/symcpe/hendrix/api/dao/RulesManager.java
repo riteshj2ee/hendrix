@@ -58,6 +58,7 @@ public class RulesManager {
 	private static final String PARAM_TENANT_ID = "tenantId";
 	private static final String PARAM_RULE_ID = "ruleId";
 	private static final Logger logger = Logger.getLogger(RulesManager.class.getCanonicalName());
+	private static final String PARAM_TEMPLATE = "template";
 	private static RulesManager RULES_MANAGER = new RulesManager();;
 
 	private RulesManager() {
@@ -160,7 +161,7 @@ public class RulesManager {
 		}
 	}
 
-	public Rules getRule(EntityManager em, short ruleId) {
+	protected Rules getRule(EntityManager em, short ruleId) {
 		try {
 			Rules resultResult = em.createNamedQuery(Queries.RULES_FIND_BY_ID, Rules.class)
 					.setParameter(PARAM_RULE_ID, ruleId).getSingleResult();
@@ -185,7 +186,14 @@ public class RulesManager {
 		}
 	}
 
-	public Rule getRuleObject(EntityManager em, short ruleId) throws Exception {
+	public List<Short> getRuleByTemplateId(EntityManager em, String tenantId, short templateId) throws Exception {
+		List<Short> results = em.createNamedQuery(Queries.RULES_BY_TEMPLATE_ID_BY_TENANT, Short.class)
+				.setParameter(PARAM_TENANT_ID, tenantId)
+				.setParameter(PARAM_TEMPLATE, "%\"templateId\":" + templateId + "%").getResultList();
+		return results;
+	}
+
+	protected Rule getRuleObject(EntityManager em, short ruleId) throws Exception {
 		Rules rule = getRule(em, ruleId);
 		if (rule.getRuleContent() != null) {
 			return RuleSerializer.deserializeJSONStringToRule(rule.getRuleContent());
@@ -294,8 +302,9 @@ public class RulesManager {
 			throw new NoResultException("Tenant not found");
 		}
 		try {
-			return em.createNamedQuery(Queries.RULES_FIND_ALL_BY_TENANT_ID, Rules.class)
+			List<Rules> result = em.createNamedQuery(Queries.RULES_FIND_ALL_BY_TENANT_ID, Rules.class)
 					.setParameter(PARAM_TENANT_ID, tenantId).getResultList();
+			return result;
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Failed to load rules for tenant:" + tenantId, e);
 			throw e;

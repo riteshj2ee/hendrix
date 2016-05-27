@@ -15,6 +15,7 @@
  */
 package io.symcpe.hendrix.api.rest;
 
+import javax.annotation.security.RolesAllowed;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.validation.constraints.NotNull;
@@ -44,6 +45,7 @@ import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Utils;
 import io.symcpe.hendrix.api.dao.RulesManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
+import io.symcpe.hendrix.api.security.ACLConstants;
 import io.symcpe.hendrix.api.storage.Rules;
 import io.symcpe.hendrix.api.storage.Tenant;
 import io.symcpe.wraith.actions.Action;
@@ -64,7 +66,7 @@ public class RulesEndpoint {
 	private static String BUILD_NUMBER;
 	private static String VERSION;
 	private ApplicationManager am;
-	
+
 	public RulesEndpoint(ApplicationManager am) {
 		this.am = am;
 	}
@@ -87,11 +89,12 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
 	public String listRules(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty,
 			@DefaultValue("0") @QueryParam("filter") int filter) {
-		// TODO ACL
 		EntityManager em = am.getEM();
 		try {
 			return RulesManager.getInstance().getRuleContents(em, tenantId, pretty, filter);
@@ -108,9 +111,9 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public short createRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
-		// TODO ACL
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -133,13 +136,13 @@ public class RulesEndpoint {
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public short putRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
 			@NotNull(message = "Rule JSON can't be empty") @Encoded String ruleJson) {
 		EntityManager em = am.getEM();
-		// TODO ACL
 		if (ruleJson != null && ruleJson.length() > Rules.MAX_RULE_LENGTH) {
 			throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Rule is too big").build());
 		}
@@ -215,10 +218,10 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}/enable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public String enableRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
-		// TODO ACL
 		EntityManager em = am.getEM();
 		try {
 			return RulesManager.getInstance().enableDisableRule(em, true, tenantId, ruleId, am).getRuleContent();
@@ -235,9 +238,9 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}/disable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public String disableRule(@NotNull @PathParam(TenantEndpoint.TENANT_ID) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
-		// TODO ACL
 		EntityManager em = am.getEM();
 		try {
 			return RulesManager.getInstance().enableDisableRule(em, false, tenantId, ruleId, am).getRuleContent();
@@ -254,10 +257,11 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}")
 	@GET
 	@Produces({ MediaType.TEXT_HTML })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
 	public String getRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId, @DefaultValue("false") @QueryParam("pretty") boolean pretty) {
-		// TODO ACL
 		Rules rule = null;
 		EntityManager em = am.getEM();
 		try {
@@ -286,10 +290,10 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public void deleteRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
-		// TODO authorize get tenantId
 		EntityManager em = am.getEM();
 		try {
 			RulesManager.getInstance().deleteRule(em, tenantId, ruleId, am);
@@ -306,9 +310,9 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
-	public void deleteAllRule(
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	public void deleteAllRules(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
-		// TODO authorize get tenantId
 		EntityManager em = am.getEM();
 		try {
 			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);
@@ -326,9 +330,9 @@ public class RulesEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/disable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
 	public void disableAllRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
-		// TODO authorize get tenantId
 		EntityManager em = am.getEM();
 		try {
 			RulesManager.getInstance().disableAllRules(em, tenantId, am);

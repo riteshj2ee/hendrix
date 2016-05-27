@@ -92,13 +92,14 @@ public class TestAggregationControllerBolt {
 				new Values(Utils.combineRuleActionId((short) 2, (short) 0), 2, null));
 	}
 
+	@Test
 	public void testRuleSyncTuple() {
 		Map<String, String> conf = new HashMap<>();
 		conf.put(Constants.RULE_GROUP_ACTIVE, "true");
 		conf.put(Constants.RSTORE_TYPE, TopologyTestRulesStore.class.getName());
 		AggregationControllerBolt bolt = new AggregationControllerBolt();
 		SimpleRule rule = new SimpleRule((short) 2, "test", true, new EqualsCondition("test", "test"), new Action[] {
-				new StateAggregationAction((short) 0, "test", 2, new EqualsCondition("test", "test")) });
+				new StateAggregationAction((short) 0, "test", 20, new EqualsCondition("test", "test")) });
 		RuleCommand rc = new RuleCommand("test", false, RuleSerializer.serializeRulesToJSONString(Arrays
 				.asList(rule),
 				false));
@@ -106,8 +107,11 @@ public class TestAggregationControllerBolt {
 		bolt.prepare(conf, null, collector);
 		assertTrue(bolt.isRuleGroupsActive());
 		assertEquals(1, bolt.getRuleGroupMap().size());
-		bolt.execute(MockTupleHelpers.mockRuleTuple(false, "test", RuleSerializer.serializeRuleToJSONString(rule, false)));
-//		assertEquals(2, bolt.getRuleGroupMap().size());
+		rule = new SimpleRule((short) 3, "test", true, new EqualsCondition("test", "test"), new Action[] {
+				new StateAggregationAction((short) 0, "test", 20, new EqualsCondition("test", "test")) });
+		Tuple tuple = MockTupleHelpers.mockRuleTuple(false, "test", RuleSerializer.serializeRuleToJSONString(rule, false));
+		bolt.execute(tuple);
+		assertEquals(2, bolt.getRuleGroupMap().get("test").size());
 		verify(collector, times(1)).ack(tuple);
 	}
 

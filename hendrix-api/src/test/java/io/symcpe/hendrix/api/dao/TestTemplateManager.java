@@ -21,6 +21,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
@@ -47,8 +48,14 @@ import io.symcpe.hendrix.api.DerbyUtil;
 import io.symcpe.hendrix.api.dao.TemplateManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.storage.AlertTemplates;
+import io.symcpe.hendrix.api.storage.Rules;
 import io.symcpe.hendrix.api.storage.Tenant;
+import io.symcpe.wraith.actions.Action;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
+import io.symcpe.wraith.actions.alerts.templated.TemplatedAlertAction;
+import io.symcpe.wraith.conditions.relational.EqualsCondition;
+import io.symcpe.wraith.rules.Rule;
+import io.symcpe.wraith.rules.SimpleRule;
 import io.symcpe.wraith.rules.validator.ValidationException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -103,9 +110,10 @@ public class TestTemplateManager {
 	public void before() {
 		em = emf.createEntityManager();
 		when(am.getEM()).thenReturn(em);
+		when(am.getRuleTopicName()).thenReturn("ruleTopic");
 		when(am.getTemplateTopicName()).thenReturn("templateTopic");
 		when(am.getKafkaProducer()).thenReturn(producer);
-
+		
 		when(producer.send(any())).thenReturn(
 				CompletableFuture.completedFuture(new RecordMetadata(new TopicPartition("templateTopic", 2), 1, 1)));
 	}
@@ -168,5 +176,55 @@ public class TestTemplateManager {
 			fail("Not reachable, bad template must be validated");
 		} catch (ValidationException e) {
 		}
+	}
+	
+	@Test
+	public void testZZDeleteteAllTemplatesBadRequest() throws Exception {
+		AlertTemplate tpl = new AlertTemplate();
+		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
+		AlertTemplates templates = new AlertTemplates();
+		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
+		tpl.setTemplateId(id);
+		tpl.setBody("test");
+		tpl.setDestination("test@xyz.com");
+		tpl.setMedia("mail");
+		tpl.setTemplateName("Test");
+		tpl.setThrottleDuration(2);
+		tpl.setThrottleLimit(2);
+		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am);
+		assertEquals(id, templates.getTemplateId());
+		Rule rul = new SimpleRule((short)0, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
+				new Action[] { new TemplatedAlertAction((short) 0, id) });
+		RulesManager.getInstance().saveRule(em, new Rules(), tenant, rul, am);
+		try {
+			TemplateManager.getInstance().deleteTemplates(em, templates.getTenant(), am);
+			fail("Can't reach here this request should fail");
+		} catch (Exception e) {
+		}
+		tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
+	}
+
+	@Test
+	public void testZZ2DeleteteAllTemplates() throws Exception {
+		AlertTemplate tpl = new AlertTemplate();
+		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
+		AlertTemplates templates = new AlertTemplates();
+		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
+		tpl.setTemplateId(id);
+		tpl.setBody("test");
+		tpl.setDestination("test@xyz.com");
+		tpl.setMedia("mail");
+		tpl.setTemplateName("Test");
+		tpl.setThrottleDuration(2);
+		tpl.setThrottleLimit(2);
+		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am);
+		assertEquals(id, templates.getTemplateId());
+		TemplateManager.getInstance().deleteTemplates(em, templates.getTenant(), am);
+		try {
+			List<AlertTemplates> results = TemplateManager.getInstance().getTemplates(em, templates.getTenant().getTenantId());
+			assertEquals(0, results.size());
+		} catch (Exception e) {
+		}
+		tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
 	}
 }

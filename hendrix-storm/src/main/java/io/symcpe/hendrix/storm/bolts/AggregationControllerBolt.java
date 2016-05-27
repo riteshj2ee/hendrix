@@ -60,6 +60,7 @@ public class AggregationControllerBolt extends BaseRichBolt {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+		this.logger = Logger.getLogger(AggregationControllerBolt.class.getName());
 		this.collector = collector;
 		this.tickCounter = 1;
 		this.ruleGroupsActive = Boolean
@@ -100,7 +101,7 @@ public class AggregationControllerBolt extends BaseRichBolt {
 				for (Rule rule : ruleMap.values()) {
 					sendEmissionsForRule(tuple, null, rule);
 				}
-			}else {
+			} else {
 				for (String ruleGroup : ruleGroupMap.keySet()) {
 					Map<Short, Rule> map = ruleGroupMap.get(ruleGroup);
 					for (Rule rule : map.values()) {
@@ -109,7 +110,8 @@ public class AggregationControllerBolt extends BaseRichBolt {
 				}
 			}
 		} else if (Utils.isRuleSyncTuple(tuple)) {
-			logger.info("Attempting to apply rule update:" + tuple.getValueByField(Constants.FIELD_RULE_CONTENT));
+			logger.info(
+					"Attempting to apply rule update:" + (tuple.getValueByField(Constants.FIELD_RULE_CONTENT) == null));
 			RuleCommand ruleCommand = (RuleCommand) tuple.getValueByField(Constants.FIELD_RULE_CONTENT);
 			try {
 				logger.info("Received rule tuple with rule content:" + ruleCommand.getRuleContent());

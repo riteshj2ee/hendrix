@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
+import backtype.storm.metric.api.MultiCountMetric;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -44,6 +45,7 @@ import io.symcpe.wraith.aggregators.AggregationRejectException;
  */
 public class StateTrackingBolt extends BaseRichBolt {
 
+	private static final String _METRIC_STATE_HIT = "mcm.state.hit";
 	private static final int DEFAULT_STATE_FLUSH_BUFFER_SIZE = 1000;
 	public static final String STATE_FLUSH_BUFFER_SIZE = "state.flush.buffer.size";
 	private static final long serialVersionUID = 1L;
@@ -53,6 +55,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 	private transient List<Tuple> buffer;
 	private transient int bufferSize;
 	private transient UnifiedFactory unifiedFactory;
+	private transient MultiCountMetric stateHit;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
@@ -73,6 +76,10 @@ public class StateTrackingBolt extends BaseRichBolt {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+		stateHit = new MultiCountMetric();
+		if (context != null) {
+			context.registerMetric(_METRIC_STATE_HIT, stateHit, Constants.METRICS_FREQUENCY);
+		}
 	}
 
 	@Override
@@ -85,6 +92,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 						collector.ack(t);
 					}
 				}
+				stateHit.scope(Utils.separateRuleActionId(tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID)).getKey().toString()).incr();
 				if (tuple.getBooleanByField(Constants.FIELD_STATE_TRACK)) {
 					logger.fine("State tracking true:" + tuple);
 					stateTrackingEngine.track(tuple.getLongByField(Constants.FIELD_TIMESTAMP),
@@ -126,8 +134,8 @@ public class StateTrackingBolt extends BaseRichBolt {
 						event.getHeaders().put(Constants.FIELD_ACTION_ID, ruleActionIdSeparates.getValue());
 						collector.emit(Constants.AGGREGATION_OUTPUT_STREAM, tuple, new Values(event));
 					}
-				}else {
-					logger.warning("No state aggregations to emit:"+stateTrackingEngine.getAggregationMap());
+				} else {
+					logger.warning("No state aggregations to emit:" + stateTrackingEngine.getAggregationMap());
 				}
 			} catch (Exception e) {
 				// throw e;
@@ -169,7 +177,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 	protected OutputCollector getCollector() {
 		return collector;
 	}
-	
+
 	/**
 	 * @return engine
 	 */

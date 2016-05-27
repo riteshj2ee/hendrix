@@ -18,7 +18,15 @@ config:
     tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     rstore.sql.table: "rules_table"
     tstore.sql.table: "alert_template"
+    astore.type: "io.symcpe.wraith.silo.redis.RedisAggregationStore"
+    astore.redis.sentinel: "true"
+    astore.redis.host: "${redis.sentinel}"
+    astore.redis.clusterName: "${redis.clusterName}"
     rule.group.active: "true"
+    topology.builtin.metrics.bucket.size.secs: 10
+    topology.metrics.consumer.register:
+      - class: "io.symcpe.hendrix.storm.metrics.HendrixMetricsCollector"
+        parallelism.hint: 1
 #    ui.endpoint: "http://${ui.host.port}/api/receive/"
 
 # Components
@@ -230,6 +238,14 @@ bolts:
       - name: "withProducerProperties"
         args: [ref: "kafkaProducerProps"]
 
+  - id: "aggregationController"
+    className: "io.symcpe.hendrix.storm.bolts.AggregationControllerBolt"
+    parallelism: 1
+    
+  - id: "stateTrackingBolt"
+    className: "io.symcpe.hendrix.storm.bolts.StateTrackingBolt"
+    parallelism: 1
+
 #stream definitions
 # stream definitions define connections between spouts and bolts.
 # note that such connections can be cyclical
@@ -302,6 +318,27 @@ streams:
     grouping:
       type: ALL
       streamId: "syncStream"
+
+  - name: "Rule Translator->Aggregation Controller"
+    from: "ruleComponent"
+    to: "aggregationController"
+    grouping:
+      type: ALL
+      streamId: "syncStream"
+
+  - name: "Aggregation Controller->State Tracker"
+    from: "aggregationController"
+    to: "stateTrackingBolt"
+    grouping:
+      type: ALL
+      streamId: "tickStream"
+
+  - name: "State Tracker->Printer"
+    from: "stateTrackingBolt"
+    to: "printerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "aggregationOutputStream"
 
   - name: "Translator->Error"
     from: "translatorBolt"

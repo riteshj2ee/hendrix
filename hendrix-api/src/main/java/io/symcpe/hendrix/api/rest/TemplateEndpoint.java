@@ -15,6 +15,7 @@
  */
 package io.symcpe.hendrix.api.rest;
 
+import javax.annotation.security.RolesAllowed;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.validation.constraints.NotNull;
@@ -44,6 +45,7 @@ import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Utils;
 import io.symcpe.hendrix.api.dao.TemplateManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
+import io.symcpe.hendrix.api.security.ACLConstants;
 import io.symcpe.hendrix.api.storage.AlertTemplates;
 import io.symcpe.hendrix.api.storage.Tenant;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
@@ -66,10 +68,11 @@ public class TemplateEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
 	public String listTemplates(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty) {
-		// TODO ACL
 		EntityManager em = am.getEM();
 		try {
 			return TemplateManager.getInstance().getTemplateContents(em, tenantId, pretty);
@@ -86,9 +89,9 @@ public class TemplateEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public short createTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
-		// TODO ACL
 		TemplateManager mgr = TemplateManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -111,13 +114,13 @@ public class TemplateEndpoint {
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public short putTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Template ID can't be empty") @PathParam(TEMPLATE_ID) short templateId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
 			@NotNull(message = "Template JSON can't be empty") @Encoded String templateJson) {
 		EntityManager em = am.getEM();
-		// TODO ACL
 		if (templateJson != null && templateJson.length() > AlertTemplates.MAX_TEMPLATE_LENGTH) {
 			throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Template is too big").build());
 		}
@@ -193,11 +196,12 @@ public class TemplateEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + TEMPLATE_ID + "}")
 	@GET
 	@Produces({ MediaType.TEXT_HTML })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
 	public String getTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(TEMPLATE_ID) short templateId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty) {
-		// TODO ACL
 		AlertTemplate template = null;
 		EntityManager em = am.getEM();
 		try {
@@ -217,10 +221,10 @@ public class TemplateEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + TEMPLATE_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	public void deleteTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(TEMPLATE_ID) short templateId) {
-		// TODO authorize get tenantId
 		EntityManager em = am.getEM();
 		try {
 			TemplateManager.getInstance().deleteTemplate(em, tenantId, templateId, am);
@@ -237,9 +241,9 @@ public class TemplateEndpoint {
 	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
 	public void deleteAllTemplates(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
-		// TODO authorize get tenantId
 		EntityManager em = am.getEM();
 		try {
 			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);

@@ -15,11 +15,10 @@
  */
 package io.symcpe.hendrix.api;
 
-import javax.validation.constraints.NotNull;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.dropwizard.Configuration;
+import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
 
 /**
  * Application configuration
@@ -29,8 +28,11 @@ import io.dropwizard.Configuration;
 public class AppConfig extends Configuration {
 
 	@JsonProperty
-	@NotNull
 	private String name;
+	@JsonProperty
+	private boolean enableAuthorization = false;
+	@JsonProperty
+	private String authorizationFilter = BapiAuthorizationFilter.class.getCanonicalName();
 
 	/**
 	 * @return the name
@@ -44,6 +46,34 @@ public class AppConfig extends Configuration {
 	 */
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	/**
+	 * @return the enableAuthorization
+	 */
+	public boolean isEnableAuthorization() {
+		return enableAuthorization;
+	}
+
+	/**
+	 * @param enableAuthorization the enableAuthorization to set
+	 */
+	public void setEnableAuthorization(boolean enableAuthorization) {
+		this.enableAuthorization = enableAuthorization;
+	}
+
+	/**
+	 * @return the authorizationFilter
+	 */
+	public String getAuthorizationFilter() {
+		return authorizationFilter;
+	}
+
+	/**
+	 * @param authorizationFilter the authorizationFilter to set
+	 */
+	public void setAuthorizationFilter(String authorizationFilter) {
+		this.authorizationFilter = authorizationFilter;
 	}
 
 }

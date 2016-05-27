@@ -20,6 +20,7 @@ import java.util.Map;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import backtype.storm.metric.api.CountMetric;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -40,11 +41,15 @@ import io.symcpe.hendrix.storm.validation.ValidationInterceptor;
  */
 public class InterceptionBolt extends BaseRichBolt {
 
+	private static final String _METRIC_INTERCEPTOR_FAIL = "cm.interceptor.fail";
+	private static final String _METRIC_INTERCEPTOR_SUCCESS = "cm.interceptor.success";
 	private static final String INTERCEPTORS = "interceptors";
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
 	private transient ValidationInterceptor interceptor;
-	private Gson gson;
+	private transient Gson gson;
+	private transient CountMetric sucessMetric;
+	private transient CountMetric failMetric;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
@@ -69,6 +74,12 @@ public class InterceptionBolt extends BaseRichBolt {
 			interceptor = new DateInterceptor();
 			interceptor.configure(stormConf);
 		}
+		sucessMetric = new CountMetric();
+		failMetric = new CountMetric();
+		if (context != null) {
+			context.registerMetric(_METRIC_INTERCEPTOR_SUCCESS, sucessMetric, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_INTERCEPTOR_FAIL, failMetric, Constants.METRICS_FREQUENCY);
+		}
 		this.gson = new Gson();
 	}
 
@@ -80,10 +91,19 @@ public class InterceptionBolt extends BaseRichBolt {
 			try {
 				interceptor.validate(json);
 				collector.emit(input, new Values(gson.toJson(json)));
+				if (sucessMetric != null) {
+					sucessMetric.incr();
+				}
 			} catch (ValidationException e) {
+				if (failMetric != null) {
+					failMetric.incr();
+				}
 				StormContextUtil.emitErrorTuple(collector, input, InterceptionBolt.class, jsonStr, e.getMessage(), e);
 			}
 		} catch (Exception e) {
+			if (failMetric != null) {
+				failMetric.incr();
+			}
 			StormContextUtil.emitErrorTuple(collector, input, InterceptionBolt.class, jsonStr, e.getMessage(), e);
 		}
 		collector.ack(input);

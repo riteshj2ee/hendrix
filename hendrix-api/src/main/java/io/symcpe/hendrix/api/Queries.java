@@ -43,6 +43,7 @@ public class Queries {
 	public static final String TEMPLATE_FIND_ALL = "Template.findAll";
 	public static final String TEMPLATE_DELETE_BY_ID = "Template.deleteById";
 	public static final String TEMPLATE_FIND_BY_ID = "Template.findById";
+	public static final String RULES_BY_TEMPLATE_ID_BY_TENANT = "Rules.findByTemplateIdByTenant";
 	
 	private Queries() {
 	}

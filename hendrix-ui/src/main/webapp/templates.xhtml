@@ -55,7 +55,11 @@
 					<p:inputText value="#{atb.template.destination}" />
 					
 					<p:outputLabel value="Media:" />
-					<p:inputText value="#{atb.template.media}" />
+					<p:selectOneMenu value="#{atb.template.media}" style="width:120px">
+						<f:selectItem itemLabel="mail" itemValue="mail" />
+						<f:selectItem itemLabel="http" itemValue="http" />
+						<f:selectItem itemLabel="slack" itemValue="slack" />
+					</p:selectOneMenu>
 					
 					<p:outputLabel value="Subject:" />
 					<p:inputText value="#{atb.template.subject}" />

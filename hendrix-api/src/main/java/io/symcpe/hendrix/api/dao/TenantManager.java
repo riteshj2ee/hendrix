@@ -69,8 +69,10 @@ public class TenantManager {
 			EntityTransaction t = em.getTransaction();
 			try {
 				RulesManager.getInstance().deleteRules(em, tenant, am);
+				TemplateManager.getInstance().deleteTemplates(em, tenant, am);
 				t.begin();
 				tenant.setRulesTables(null);
+				tenant.setTemplates(null);
 				em.remove(tenant);
 				em.flush();
 				t.commit();

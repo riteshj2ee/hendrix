@@ -50,6 +50,7 @@ public class MockTupleHelpers {
 		command.setRuleGroup(ruleGroup);
 		when(tuple.getValue(0)).thenReturn(command);
 		when(tuple.getValueByField(Constants.FIELD_RULE_CONTENT)).thenReturn(command);
+		System.err.println("MockRule:"+command.toString());
 		return tuple;
 	}
 	

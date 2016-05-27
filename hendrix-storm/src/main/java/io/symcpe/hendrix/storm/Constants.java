@@ -25,6 +25,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 	private Constants() {
 	}
 
+	public static final int METRICS_FREQUENCY = 10;
 	public static final String PARALLELISM_ONE = "1";
 	public static final String ALERT_VIEWER_BOLT = "alertViewerBolt";
 	public static final String DEFAULT_TOPIC_NAME = "logTopic";

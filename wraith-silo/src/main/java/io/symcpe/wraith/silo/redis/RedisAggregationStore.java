@@ -41,16 +41,16 @@ import redis.clients.jedis.JedisSentinelPool;
 
 /**
  * @author ambud_sharma
- *
  */
 public class RedisAggregationStore implements AggregationStore {
 
+	private static final String PREFIX_STATES = "states_";
 	private static final String DEFAULT_REDIS_PORT = "6379";
 	private static final String DEFAULT_SENTINEL_PORT = "26379";
-	private static final String RSTORE_REDIS_PORT = "rstore.redis.port";
-	private static final String RSTORE_REDIS_HOST = "rstore.redis.host";
-	private static final String RSTORE_REDIS_MASTER_NAME = "rstore.redis.masterName";
-	private static final String RSTORE_REDIS_SENTINEL = "rstore.redis.sentinel";
+	private static final String ASTORE_REDIS_PORT = "astore.redis.port";
+	private static final String ASTORE_REDIS_HOST = "astore.redis.host";
+	private static final String ASTORE_REDIS_CLUSTER_NAME = "astore.redis.clusterName";
+	private static final String ASTORE_REDIS_SENTINEL = "astore.redis.sentinel";
 	private static final Logger logger = LoggerFactory.getLogger(RedisAggregationStore.class);
 	private JedisSentinelPool sentinel;
 	private Jedis redis;
@@ -61,17 +61,22 @@ public class RedisAggregationStore implements AggregationStore {
 
 	@Override
 	public void initialize(Map<String, String> conf) {
-		this.isSentinel = Boolean.parseBoolean(conf.getOrDefault(RSTORE_REDIS_SENTINEL, "false").toString());
-		this.masterName = isSentinel ? conf.get(RSTORE_REDIS_MASTER_NAME).toString() : null;
-		this.host = conf.get(RSTORE_REDIS_HOST);
+		this.isSentinel = Boolean.parseBoolean(conf.getOrDefault(ASTORE_REDIS_SENTINEL, "false").toString());
+		this.masterName = isSentinel ? conf.get(ASTORE_REDIS_CLUSTER_NAME).toString() : null;
+		this.host = conf.get(ASTORE_REDIS_HOST).toString();
 		this.port = Integer.parseInt(conf
-				.getOrDefault(RSTORE_REDIS_PORT, isSentinel ? DEFAULT_SENTINEL_PORT : DEFAULT_REDIS_PORT).toString());
+				.getOrDefault(ASTORE_REDIS_PORT, isSentinel ? DEFAULT_SENTINEL_PORT : DEFAULT_REDIS_PORT).toString());
 	}
 
 	@Override
 	public void connect() throws IOException {
 		if (isSentinel) {
-			sentinel = new JedisSentinelPool(masterName, new HashSet<>(Arrays.asList(host.split(","))));
+			String[] vals = host.split(",");
+			for (int i = 0; i < vals.length; i++) {
+				vals[i] = vals[i] + ":" + port;
+			}
+			logger.info("Attempting to connect to Redis sentinels:" + Arrays.toString(vals));
+			sentinel = new JedisSentinelPool(masterName, new HashSet<>(Arrays.asList(vals)));
 		} else {
 			redis = new Jedis(host, port);
 		}
@@ -93,9 +98,6 @@ public class RedisAggregationStore implements AggregationStore {
 			redis = sentinel.getResource();
 		}
 		redis.set(buildAggregationKey(taskId, timestamp, entity), String.valueOf(count));
-		if (isSentinel) {
-			redis.close();
-		}
 	}
 
 	@Override
@@ -122,9 +124,6 @@ public class RedisAggregationStore implements AggregationStore {
 		} else if (aggregator.getClass() == CoarseCountingAggregator.class) {
 			putValue(taskId, entity, ((ICardinality) aggregator.getDatastructure()));
 		}
-		if (isSentinel) {
-			redis.close();
-		}
 	}
 
 	@Override
@@ -141,9 +140,6 @@ public class RedisAggregationStore implements AggregationStore {
 			redis = sentinel.getResource();
 		}
 		redis.sadd(taskId + "_" + entity, vals.toArray(new String[1]));
-		if (isSentinel) {
-			redis.close();
-		}
 	}
 
 	public List<String> objectSetToList(Set<Object> values) {
@@ -181,11 +177,17 @@ public class RedisAggregationStore implements AggregationStore {
 
 	@Override
 	public void persistState(int taskId, String key, MutableBoolean value) throws IOException {
+		if (isSentinel) {
+			redis = sentinel.getResource();
+		}
 		redis.set(buildStateKey(taskId, key), String.valueOf(value.isVal()));
 	}
 
 	@Override
 	public Map<String, MutableBoolean> retriveStates(int taskId) throws IOException {
+		if (isSentinel) {
+			redis = sentinel.getResource();
+		}
 		Map<String, MutableBoolean> states = new HashMap<>();
 		String prefix = prefixState(taskId);
 		Set<String> keys = redis.keys(prefix);
@@ -197,6 +199,9 @@ public class RedisAggregationStore implements AggregationStore {
 
 	@Override
 	public void purgeState(int taskId, String key) throws IOException {
+		if (isSentinel) {
+			redis = sentinel.getResource();
+		}
 		redis.del(buildStateKey(taskId, key));
 	}
 
@@ -218,7 +223,7 @@ public class RedisAggregationStore implements AggregationStore {
 	 * @return
 	 */
 	public static String prefixState(int taskId) {
-		return "states_" + taskId + "_";
+		return PREFIX_STATES + taskId + "_";
 	}
 
 	/**
@@ -229,7 +234,8 @@ public class RedisAggregationStore implements AggregationStore {
 	}
 
 	/**
-	 * @param redis the redis to set
+	 * @param redis
+	 *            the redis to set
 	 */
 	protected void setRedis(Jedis redis) {
 		this.redis = redis;

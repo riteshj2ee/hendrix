@@ -114,4 +114,40 @@ public class TestAlertTemplateValidator {
 		} catch (ValidationException e) {
 		}
 	}
+	
+	@Test
+	public void testSlackAlertTemplatePostive() throws ValidationException {
+		AlertTemplateValidator validator = new AlertTemplateValidator();
+		AlertTemplate template = new AlertTemplate((short)2);
+		template.setMedia("slack");
+		template.setSubject("hello");
+		template.setBody("hello $x");
+		template.setTemplateName("Template");
+		template.setDestination("T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX@slack-channel");
+		validator.validate(template);
+		template.setDestination("T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX@slack_channel");
+		validator.validate(template);
+	}
+	
+	@Test
+	public void testSlackAlertTemplateNegative() {
+		AlertTemplateValidator validator = new AlertTemplateValidator();
+		AlertTemplate template = new AlertTemplate((short)2);
+		template.setMedia("slack");
+		template.setSubject("hello");
+		template.setBody("hello $x");
+		template.setTemplateName("Template");
+		template.setDestination("ABC@slack-channel");
+		try {
+			validator.validate(template);
+			fail("Invalid template, can't pass test");
+		} catch (ValidationException e) {
+		}
+		template.setDestination("ANV@slack#channel");
+		try {
+			validator.validate(template);
+			fail("Invalid template, can't pass test");
+		} catch (ValidationException e) {
+		}
+	}
 }

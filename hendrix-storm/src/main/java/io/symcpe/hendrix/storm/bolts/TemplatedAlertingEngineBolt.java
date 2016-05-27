@@ -36,6 +36,9 @@ import org.apache.velocity.tools.generic.DateTool;
 
 import com.google.gson.Gson;
 
+import backtype.storm.metric.api.MeanReducer;
+import backtype.storm.metric.api.MultiCountMetric;
+import backtype.storm.metric.api.MultiReducedMetric;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
@@ -67,6 +70,8 @@ import io.symcpe.wraith.store.TemplateStore;
  */
 public class TemplatedAlertingEngineBolt extends BaseRichBolt implements TemplatedAlertEngine {
 
+	private static final String _METRIC_TEMPLATE_HIT = "mcm.template.hit";
+	private static final String _METRIC_TEMPLATE_EFFICIENCY = "mcm.template.efficiency";
 	private static final String VELOCITY_VAR_DATE = "date";
 	private static final long serialVersionUID = 1L;
 	private static final Logger logger = Logger.getLogger(TemplatedAlertingEngineBolt.class.getName());
@@ -76,6 +81,8 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 	private transient RuntimeServices runtimeServices;
 	private transient Gson gson;
 	private transient boolean multiTenancyActive;
+	private transient MultiReducedMetric templateEfficiency;
+	private transient MultiCountMetric templateHit;
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
@@ -93,6 +100,12 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			logger.log(Level.SEVERE, "Failed to initialize templates for alerts", e);
 			throw new RuntimeException(e);
 		}
+		templateEfficiency = new MultiReducedMetric(new MeanReducer());
+		templateHit = new MultiCountMetric();
+		if (context != null) {
+			context.registerMetric(_METRIC_TEMPLATE_EFFICIENCY, templateEfficiency, Constants.METRICS_FREQUENCY);
+			context.registerMetric(_METRIC_TEMPLATE_HIT, templateHit, Constants.METRICS_FREQUENCY);
+		}
 		logger.info("Templated alerting Engine Bolt initialized");
 	}
 
@@ -109,7 +122,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 				logger.info("Applied template update with template content:" + templateCommand.getTemplate());
 			} catch (Exception e) {
 				// failed to update template
-				System.err.println("Failed to apply template update:" + e.getMessage() + "\t"
+				logger.severe("Failed to apply template update:" + e.getMessage() + "\t"
 						+ tuple.getValueByField(Constants.FIELD_TEMPLATE_CONTENT));
 				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class, tuple.toString(),
 						"Failed to apply template update", e);
@@ -132,15 +145,15 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 						tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID),
 						tuple.getLongByField(Constants.FIELD_TIMESTAMP));
 			}
-			if (alertResult == null) {
+			if (alertResult != null) {
+				collector.emit(Constants.ALERT_STREAM_ID, tuple, new Values(gson.toJson(alertResult)));
+			} else {
 				String eventJson = gson.toJson(((Event) tuple.getValueByField(Constants.FIELD_EVENT)).getHeaders());
 				StormContextUtil.emitErrorTuple(collector, tuple, TemplatedAlertingEngineBolt.class,
 						"Failed to materialize alert due to missing template for rule:"
 								+ tuple.getShortByField(Constants.FIELD_RULE_ID) + ",templateid:"
 								+ tuple.getShortByField(Constants.FIELD_ALERT_TEMPLATE_ID),
 						eventJson, null);
-			} else {
-				collector.emit(Constants.ALERT_STREAM_ID, tuple, new Values(gson.toJson(alertResult)));
 			}
 		}
 		collector.ack(tuple);
@@ -160,8 +173,10 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 	public Alert materialize(Event event, short ruleId, short actionId, String ruleName, short templateId,
 			long timestamp) {
 		Alert alert = new Alert();
+		templateHit.scope(String.valueOf(templateId)).incr();
 		VelocityAlertTemplate template = templateMap.get(templateId);
 		if (template != null) {
+			long time = System.nanoTime();
 			VelocityContext ctx = new VelocityContext();
 			for (Entry<String, Object> entry : event.getHeaders().entrySet()) {
 				ctx.put(entry.getKey(), entry.getValue());
@@ -181,6 +196,8 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			alert.setMedia(template.getMedia());
 			alert.setId(template.getTemplateId());
 			alert.setTimestamp(timestamp);
+			time = System.nanoTime() - time;
+			templateEfficiency.scope(String.valueOf(templateId)).update(time);
 			return alert;
 		} else {
 			return null;
@@ -271,7 +288,7 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			velocityTemplate.initDocument();
 			alertTemplate.setVelocitySubjectTemplate(velocityTemplate);
 		}
-		
+
 		templateMap.put(template.getTemplateId(), alertTemplate);
 	}
 

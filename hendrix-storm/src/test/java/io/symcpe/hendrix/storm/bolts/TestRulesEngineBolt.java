@@ -75,7 +75,7 @@ public class TestRulesEngineBolt {
 		System.out.println("Sending rule:" + ruleString);
 		RulesEngineBolt bolt = new RulesEngineBolt();
 		bolt.prepare(stormConf, null, MockTupleHelpers.mockBasicCollector());
-		bolt.execute(MockTupleHelpers.mockRuleTuple(false, null, ruleString));
+		bolt.execute(MockTupleHelpers.mockRuleTuple(false, "test", ruleString));
 		Map<Short, Rule> rules = bolt.getRulesEngine().getRuleMap();
 
 		assertEquals(1, rules.size());

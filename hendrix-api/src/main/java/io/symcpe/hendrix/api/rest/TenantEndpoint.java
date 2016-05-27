@@ -18,6 +18,7 @@ package io.symcpe.hendrix.api.rest;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.annotation.security.RolesAllowed;
 import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -39,6 +40,7 @@ import javax.ws.rs.core.Response.Status;
 
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
+import io.symcpe.hendrix.api.security.ACLConstants;
 import io.symcpe.hendrix.api.storage.Tenant;
 
 /**
@@ -62,6 +64,7 @@ public class TenantEndpoint {
 	 */
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
 	public List<Tenant> listTenants() {
 		EntityManager em = am.getEM();
 		try {
@@ -80,6 +83,7 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
 	public Tenant getTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
 		EntityManager em = am.getEM();
@@ -98,6 +102,7 @@ public class TenantEndpoint {
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
 	public void createTenant(@NotNull(message="Tenant information can't be empty") Tenant tenant) {
 		if(!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
@@ -130,6 +135,7 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
 	public void deleteTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();
@@ -151,6 +157,7 @@ public class TenantEndpoint {
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
 	public void updateTenant(
 			@NotNull(message="Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull(message="Tenant information can't be empty") Tenant tenant) {

@@ -18,7 +18,6 @@ package io.symcpe.hendrix.api.storage;
 import java.io.Serializable;
 import java.util.List;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -57,10 +56,10 @@ public class Tenant implements Serializable {
 	private String tenantName;
 
 	// bi-directional many-to-one association to RulesTable
-	@OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY) 
+	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY) 
 	private List<Rules> rulesTables;
 	
-	@OneToMany(mappedBy = "tenant", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
 	private List<AlertTemplates> templates;
 
 	public Tenant() {
@@ -139,7 +138,7 @@ public class Tenant implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + ", rulesTables=" + rulesTables + "]";
+		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + "]";
 	}
 
 }

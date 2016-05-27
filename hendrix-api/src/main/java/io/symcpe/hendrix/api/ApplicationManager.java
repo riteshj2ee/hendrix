@@ -32,6 +32,7 @@ import org.apache.commons.daemon.DaemonInitException;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.PartitionInfo;
 import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.validation.ValidationFeature;
 
 import io.dropwizard.Application;
@@ -40,6 +41,7 @@ import io.dropwizard.setup.Environment;
 import io.symcpe.hendrix.api.rest.TemplateEndpoint;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
+import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
 import io.symcpe.hendrix.api.validations.VelocityValidator;
 import io.symcpe.wraith.rules.validator.RuleValidator;
 import io.symcpe.wraith.rules.validator.Validator;
@@ -51,6 +53,11 @@ import io.symcpe.wraith.rules.validator.Validator;
  */
 public class ApplicationManager extends Application<AppConfig> implements Daemon {
 
+	private static final String JAVAX_PERSISTENCE_JDBC_URL = "javax.persistence.jdbc.url";
+	private static final String JAVAX_PERSISTENCE_JDBC_DRIVER = "javax.persistence.jdbc.driver";
+	private static final String JAVAX_PERSISTENCE_JDBC_PASSWORD = "javax.persistence.jdbc.password";
+	private static final String JAVAX_PERSISTENCE_JDBC_USER = "javax.persistence.jdbc.user";
+	private static final String JAVAX_PERSISTENCE_JDBC_DB = "javax.persistence.jdbc.db";
 	public static final boolean LOCAL = Boolean.parseBoolean(System.getProperty("local", "true"));
 	private static final String PROP_CONFIG_FILE = "hendrixConfig";
 	private Properties config;
@@ -76,16 +83,16 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			}
 		}
 		try {
-			Utils.createDatabase(config.getProperty("javax.persistence.jdbc.url"),
-					config.getProperty("javax.persistence.jdbc.db", "hendrix"),
-					config.getProperty("javax.persistence.jdbc.user"),
-					config.getProperty("javax.persistence.jdbc.password"),
-					config.getProperty("javax.persistence.jdbc.driver"));
+			Utils.createDatabase(config.getProperty(JAVAX_PERSISTENCE_JDBC_URL),
+					config.getProperty(JAVAX_PERSISTENCE_JDBC_DB, "hendrix"),
+					config.getProperty(JAVAX_PERSISTENCE_JDBC_USER),
+					config.getProperty(JAVAX_PERSISTENCE_JDBC_PASSWORD),
+					config.getProperty(JAVAX_PERSISTENCE_JDBC_DRIVER));
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		config.setProperty("javax.persistence.jdbc.url", config.getProperty("javax.persistence.jdbc.url")
-				+ config.getProperty("javax.persistence.jdbc.db", "hendrix"));
+		config.setProperty(JAVAX_PERSISTENCE_JDBC_URL, config.getProperty(JAVAX_PERSISTENCE_JDBC_URL)
+				+ config.getProperty(JAVAX_PERSISTENCE_JDBC_DB, "hendrix"));
 		factory = Persistence.createEntityManagerFactory("hendrix", config);
 		EntityManager em = factory.createEntityManager();
 		System.out.println("Rules stats" + em.createNamedQuery("Rules.stats").getResultList());
@@ -129,7 +136,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	public String getRuleTopicName() {
 		return ruleTopicName;
 	}
-	
+
 	public String getTemplateTopicName() {
 		return templateTopicName;
 	}
@@ -148,6 +155,10 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		init(configuration);
 		environment.jersey().property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, false);
 		environment.jersey().register(ValidationFeature.class);
+		if (configuration.isEnableAuthorization()) {
+			environment.jersey().register(new BapiAuthorizationFilter());
+			environment.jersey().register(RolesAllowedDynamicFeature.class);
+		}
 		environment.jersey().register(new RulesEndpoint(this));
 		environment.jersey().register(new TenantEndpoint(this));
 		environment.jersey().register(new TemplateEndpoint(this));

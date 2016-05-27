@@ -92,13 +92,11 @@ public class TestFactory implements EventFactory, StoreFactory {
 
 	@Override
 	public TemplateStore getTemplateStore(String type, Map<String, String> conf) throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public AggregationStore getAggregationStore(String type, Map<String, String> conf) throws Exception {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

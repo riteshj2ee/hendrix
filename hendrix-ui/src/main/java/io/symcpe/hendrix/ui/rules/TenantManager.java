@@ -141,7 +141,6 @@ public class TenantManager {
 
 	public List<Tenant> getTenants() throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		System.out.println("Base url:"+am.getBaseUrl());
 		HttpGet get = new HttpGet(am.getBaseUrl() + TENANT_URL);
 		CloseableHttpResponse resp = client.execute(get);
 		if(Utils.validateStatus(resp)) {

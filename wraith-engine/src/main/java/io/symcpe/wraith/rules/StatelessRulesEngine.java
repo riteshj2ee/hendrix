@@ -197,10 +197,10 @@ public class StatelessRulesEngine<K, C> {
 			logger.debug("Rule:" + rule.getRuleId() + " is deactive");
 			return;
 		}
-		long ruleStartTime = System.currentTimeMillis();
-		long conditionTime = System.currentTimeMillis();
+		long ruleStartTime = System.nanoTime();
+		long conditionTime = System.nanoTime();
 		boolean result = rule.getCondition().matches(event);
-		conditionTime = System.currentTimeMillis() - conditionTime;
+		conditionTime = System.nanoTime() - conditionTime;
 		if (result) {
 			caller.reportRuleHit(rule.getRuleId());
 			List<Action> actions = rule.getActions();
@@ -210,7 +210,7 @@ public class StatelessRulesEngine<K, C> {
 		} else {
 			caller.handleRuleNoMatch(eventCollector, eventContainer, event, rule);
 		}
-		caller.reportRuleEfficiency(rule.getRuleId(), System.currentTimeMillis() - ruleStartTime);
+		caller.reportRuleEfficiency(rule.getRuleId(), System.nanoTime() - ruleStartTime);
 		caller.reportConditionEfficiency(rule.getRuleId(), conditionTime);
 	}
 

@@ -49,9 +49,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.DerbyUtil;
-import io.symcpe.hendrix.api.dao.RulesManager;
-import io.symcpe.hendrix.api.dao.TemplateManager;
-import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.storage.AlertTemplates;
 import io.symcpe.hendrix.api.storage.Rules;
 import io.symcpe.hendrix.api.storage.Tenant;
@@ -77,6 +74,7 @@ public class TestRulesManager {
 	private static final String TENANT_ID_2 = "c341mmd3ifaasdjm23midijjiro";
 	private static final String TENANT_ID_3 = "d341mmd3ifaasdjm23midijjiro";
 	private static final String TENANT_ID_4 = "e341mmd3ifaasdjm23midijjiro";
+	private static final String TENANT_ID_5 = "f341mmd3ifaasdjm23midijjiro";
 	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
 	// private static final String CONNECTION_NC_STRING =
 	// "jdbc:derby:target/rules.db;";
@@ -129,7 +127,12 @@ public class TestRulesManager {
 		tenant.setTenantId(TENANT_ID_3);
 		tenant.setTenantName(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
-		
+
+		tenant = new Tenant();
+		tenant.setTenantId(TENANT_ID_5);
+		tenant.setTenantName(TEST_TENANT);
+		TenantManager.getInstance().createTenant(em, tenant);
+
 		em.close();
 	}
 
@@ -144,7 +147,7 @@ public class TestRulesManager {
 		when(producer.send(any())).thenReturn(
 				CompletableFuture.completedFuture(new RecordMetadata(new TopicPartition("ruleTopic", 2), 1, 1)));
 	}
-	
+
 	@After
 	public void after() {
 		em.close();
@@ -221,12 +224,12 @@ public class TestRulesManager {
 		tenant.setTenantId(TENANT_ID_4);
 		tenant.setTenantName(TEST_TENANT);
 		TenantManager.getInstance().createTenant(emf.createEntityManager(), tenant);
-		
+
 		tenant = TenantManager.getInstance().getTenant(em, TENANT_ID_4);
 		AlertTemplates templates = new AlertTemplates();
 		templateId = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
-				new AlertTemplate((short)0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
-		System.err.println("Saving template:"+templateId);
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+		System.err.println("Saving template:" + templateId);
 	}
 
 	@Test
@@ -299,10 +302,29 @@ public class TestRulesManager {
 		RulesManager.getInstance().deleteRules(em, tenant, am);
 		verify(producer, times(1)).send(any());
 		try {
-			RulesManager.getInstance().getRuleObjects(em, TENANT_ID_4);
-			fail("Can't have any results");
+			List<Rule> results = RulesManager.getInstance().getRuleObjects(em, TENANT_ID_4);
+			assertEquals(0, results.size());
 		} catch (NoResultException e) {
 		}
+		RulesManager.getInstance().getTenant(em, TENANT_ID_4);
+	}
+
+	@Test
+	public void testRuleTemplateBinding() throws Exception {
+		Tenant tenant = RulesManager.getInstance().getTenant(em, TENANT_ID_5);
+		AlertTemplates templates = new AlertTemplates();
+		short templateId = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+		Rule rul = new SimpleRule(ruleId, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
+				new Action[] { new TemplatedAlertAction((short) 0, templateId) });
+		RulesManager.getInstance().saveRule(em, new Rules(), tenant, rul, am);
+		templates = new AlertTemplates();
+		short tmp = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+		rul = new SimpleRule(ruleId, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
+				new Action[] { new TemplatedAlertAction((short) 0, tmp) });
+		List<Short> result = RulesManager.getInstance().getRuleByTemplateId(em, TENANT_ID_5, templateId);
+		assertEquals(1, result.size());
 	}
 
 }

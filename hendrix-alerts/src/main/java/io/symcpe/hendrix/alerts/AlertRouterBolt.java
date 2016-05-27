@@ -51,7 +51,7 @@ public class AlertRouterBolt extends BaseRichBolt {
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		for (String media : Arrays.asList("mail", "http")) {
+		for (String media : Arrays.asList("mail", "http", "slack")) {
 			declarer.declareStream(media, new Fields(Constants.FIELD_ALERT));
 		}
 	}

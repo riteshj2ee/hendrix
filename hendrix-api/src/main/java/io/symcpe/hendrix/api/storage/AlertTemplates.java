@@ -17,7 +17,6 @@ package io.symcpe.hendrix.api.storage;
 
 import java.io.Serializable;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -59,7 +58,7 @@ public class AlertTemplates implements Serializable {
 	private String templateContent;
 
 	// bi-directional many-to-one association to Tenant
-	@ManyToOne(cascade = CascadeType.ALL)
+	@ManyToOne()
 	@JoinColumn(name = "tenant_id")
 	private Tenant tenant;
 	

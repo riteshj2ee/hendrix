@@ -32,7 +32,7 @@ public abstract class Constants {
 	public static final String FIELD_AGGREGATION_VALUE = "_av";
 	public static final String FIELD_ANOMALY_VALUE = "_nv";
 	public static final String FIELD_ANOMALY_SERIES = "_ns";
-	public static final String FIELD_RULE_CONTENT = "rul";
+	public static final String FIELD_RULE_CONTENT = "_rc";
 	public static final String FIELD_TEMPLATE_CONTENT = "tpl";
 	public static final String FIELD_EVENT = "e";
 	public static final String FIELD_ALERT_TARGET = "target";
