@@ -3,7 +3,7 @@ jdk:
   - oraclejdk8
 
 script: "mvn clean verify"
-after_success: "mvn deploy --settings settings.xml"
+after_success: "mvn -Dtravis=true deploy --settings settings.xml"
 
 env:
   global:
