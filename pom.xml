@@ -41,10 +41,9 @@
 		</developer>
 	</developers>
 	<scm>
-		<url>ssh://git@git.symcpe.net:7999/AA/cerberus.git</url>
-		<connection>scm:git:ssh://git@git.symcpe.net:7999/AA/cerberus.git</connection>
-		<developerConnection>scm:git:ssh://git@git.symcpe.net:7999/AA/cerberus.git</developerConnection>
-		<tag>hendrix-parent-0.0.6</tag>
+		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
+		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
+		<url>https://github.com/Symantec/hendrix.git</url>
 	</scm>
 
 	<dependencyManagement>
