@@ -4,7 +4,7 @@
 
 	<groupId>io.symcpe.hendrix</groupId>
 	<artifactId>hendrix-parent</artifactId>
-	<version>0.0.4-SNAPSHOT</version>
+	<version>0.0.6-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>hendrix</name>
@@ -35,12 +35,16 @@
 			<id>asharma</id>
 			<name>Ambud Sharma</name>
 			<organization>Symantec</organization>
+			<roles>
+				<role>Author</role>
+				<role>Committer</role>
+			</roles>
 		</developer>
 	</developers>
 	<scm>
-		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
-		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
-		<url>https://github.com/Symantec/hendrix.git</url>
+		<url>ssh://git@git.symcpe.net:7999/AA/cerberus.git</url>
+		<connection>scm:git:ssh://git@git.symcpe.net:7999/AA/cerberus.git</connection>
+		<developerConnection>scm:git:ssh://git@git.symcpe.net:7999/AA/cerberus.git</developerConnection>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -61,6 +65,72 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<profiles>
+		<profile>
+			<id>deploy-snapshot</id>
+			<activation>
+				<property>
+					<name>travis</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<distributionManagement>
+				<repository>
+					<uniqueVersion>true</uniqueVersion>
+					<id>oss-staging</id>
+					<name>oss-staging</name>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+				</repository>
+				<snapshotRepository>
+					<uniqueVersion>false</uniqueVersion>
+					<id>oss-snapshot</id>
+					<name>oss-snapshot</name>
+					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+				</snapshotRepository>
+			</distributionManagement>
+		</profile>
+		<profile>
+			<id>release-sign-artifacts</id>
+			<activation>
+				<property>
+					<name>performRelease</name>
+					<value>true</value>
+				</property>
+			</activation>
+			<distributionManagement>
+				<repository>
+					<uniqueVersion>true</uniqueVersion>
+					<id>oss-staging</id>
+					<name>oss-staging</name>
+					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+				</repository>
+				<snapshotRepository>
+					<uniqueVersion>false</uniqueVersion>
+					<id>oss-snapshot</id>
+					<name>oss-snapshot</name>
+					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+				</snapshotRepository>
+			</distributionManagement>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+								<phase>verify</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -70,6 +140,23 @@
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.5.2</version>
+				<dependencies>
+					<dependency>
+						<groupId>org.apache.maven.scm</groupId>
+						<artifactId>maven-scm-api</artifactId>
+						<version>1.8.1</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.maven.scm</groupId>
+						<artifactId>maven-scm-provider-gitexe</artifactId>
+						<version>1.8.1</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>

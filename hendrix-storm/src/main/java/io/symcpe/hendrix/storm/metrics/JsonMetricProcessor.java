@@ -79,7 +79,6 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 			tcpSyslogMessageSender.setSyslogServerPort(syslogPort);
 			messageSender = tcpSyslogMessageSender;
 		}
-		messageSender.setDefaultAppName("hendrix");
 		messageSender.setDefaultFacility(Facility.SYSLOG);
 		messageSender.setDefaultSeverity(Severity.INFORMATIONAL);
 		messageSender.setMessageFormat(MessageFormat.RFC_3164);
@@ -90,9 +89,9 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 	public void processDataPoints(Collection<DataPoint> dataPoints) {
 		for (DataPoint point : dataPoints) {
 			JsonObject obj = new JsonObject();
-			obj.addProperty("name", point.name);
 			if (point.name.startsWith("mcm")) {
 				for (Map.Entry<String, Long> entry : ((Map<String, Long>) point.value).entrySet()) {
+					obj.addProperty("name", point.name+"."+entry.getKey());
 					obj.addProperty("value", (Number) entry.getValue());
 					try {
 						messageSender.sendMessage(gson.toJson(obj));
@@ -102,6 +101,7 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 				}
 			} else {
 				if (point.value instanceof Number) {
+					obj.addProperty("name", point.name);
 					obj.addProperty("value", (Number) point.value);
 					try {
 						messageSender.sendMessage(gson.toJson(obj));
