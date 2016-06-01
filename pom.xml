@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>io.symcpe.hendrix</groupId>
@@ -44,8 +45,8 @@
 		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
 		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
 		<url>https://github.com/Symantec/hendrix.git</url>
-	  <tag>HEAD</tag>
-  </scm>
+		<tag>HEAD</tag>
+	</scm>
 
 	<dependencyManagement>
 		<dependencies>
@@ -115,6 +116,10 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
+						<version>1.1</version>
+						<configuration>
+							<useAgent>true</useAgent>
+						</configuration>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
