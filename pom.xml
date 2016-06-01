@@ -163,4 +163,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>Real-time correlation and alerting system for streaming data</description>
 </project>

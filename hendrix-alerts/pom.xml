@@ -146,4 +146,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>Hendrix alerts topology</description>
 </project>

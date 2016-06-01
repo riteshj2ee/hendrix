@@ -95,4 +95,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>An efficient event correlation library</description>
 </project>

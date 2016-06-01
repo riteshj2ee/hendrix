@@ -69,4 +69,5 @@
 		</plugins>
 	</build>
 	<name>wraith silo</name>
+	<description>Wriath state persistence library</description>
 </project>

@@ -238,4 +238,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>Hendrix REST API to support rule and template crud operations</description>
 </project>

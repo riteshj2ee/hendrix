@@ -264,4 +264,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>Hendrix user interface to edit rules and templates</description>
 </project>

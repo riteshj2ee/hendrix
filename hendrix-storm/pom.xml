@@ -166,4 +166,5 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>Hendrix rules topology</description>
 </project>
