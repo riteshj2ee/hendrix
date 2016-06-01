@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>io.symcpe.hendrix</groupId>
 		<artifactId>hendrix-parent</artifactId>
-		<version>0.0.12</version>
+		<version>0.0.13-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>hendrix-alerts</artifactId>
