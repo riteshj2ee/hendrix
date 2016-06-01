@@ -2,8 +2,8 @@ language: java
 jdk:
   - oraclejdk8
 
-script: "mvn clean verify"
-after_success: "mvn -Dtravis=true deploy --settings settings.xml"
+script: "mvn -DSTORM_TEST_TIMEOUT_MS=30000 clean verify"
+after_success: "mvn -DSTORM_TEST_TIMEOUT_MS=30000 -Dtravis=true deploy --settings settings.xml"
 
 env:
   global:
