@@ -332,6 +332,14 @@ streams:
     grouping:
       type: ALL
       streamId: "tickStream"
+      
+  - name: "Rule Engine->State Tracking"
+    from: "ruleEngineBolt"
+    to: "stateTrackingBolt"
+    grouping:
+      type: FIELDS
+      args: ["_ri", "_a"]
+      streamId: stateStream
 
   - name: "State Tracker->Printer"
     from: "stateTrackingBolt"
