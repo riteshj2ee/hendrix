@@ -44,6 +44,9 @@ import io.symcpe.wraith.rules.StatelessRulesEngine;
 import io.symcpe.wraith.store.RulesStore;
 
 /**
+ * An Aggregation controller is responsible for sending synchronously
+ * controlling how aggregations tumbling windows are controlled.
+ * 
  * @author ambud_sharma
  */
 public class AggregationControllerBolt extends BaseRichBolt {
@@ -115,7 +118,7 @@ public class AggregationControllerBolt extends BaseRichBolt {
 			RuleCommand ruleCommand = (RuleCommand) tuple.getValueByField(Constants.FIELD_RULE_CONTENT);
 			try {
 				logger.info("Received rule tuple with rule content:" + ruleCommand.getRuleContent());
-				updateRule(ruleCommand.getRuleGroup(), ruleCommand.getRuleContent(), ruleCommand.isDelete());
+				updateRule(tuple, ruleCommand.getRuleGroup(), ruleCommand.getRuleContent(), ruleCommand.isDelete());
 				logger.info("Applied rule update with rule content:" + ruleCommand.getRuleContent());
 			} catch (Exception e) {
 				// failed to update rule
@@ -130,6 +133,14 @@ public class AggregationControllerBolt extends BaseRichBolt {
 		collector.ack(tuple);
 	}
 
+	/**
+	 * Send emission tuples to aggregation bolts for aggregation actions for a
+	 * given rule
+	 * 
+	 * @param tuple
+	 * @param ruleGroup
+	 * @param rule
+	 */
 	public void sendEmissionsForRule(Tuple tuple, String ruleGroup, Rule rule) {
 		List<AggregationAction> aggregationActions = filterAggregationActions(rule);
 		if (aggregationActions != null) {
@@ -143,7 +154,18 @@ public class AggregationControllerBolt extends BaseRichBolt {
 		}
 	}
 
-	public void updateRule(String ruleGroup, String ruleJson, boolean delete) throws Exception {
+	/**
+	 * Update rule and trigger emissions for that rule so there are no orphan
+	 * entries in aggregation maps since rule update may change the rule
+	 * configuration.
+	 * 
+	 * @param tuple
+	 * @param ruleGroup
+	 * @param ruleJson
+	 * @param delete
+	 * @throws Exception
+	 */
+	public void updateRule(Tuple tuple, String ruleGroup, String ruleJson, boolean delete) throws Exception {
 		Map<Short, Rule> ruleMap = this.ruleMap;
 		if (ruleGroupsActive) {
 			if (ruleGroup != null) {
@@ -159,7 +181,8 @@ public class AggregationControllerBolt extends BaseRichBolt {
 		if (ruleMap == null) {
 			throw new PerformantException("Rule map not found for rule:" + ruleJson + "\trule-group:" + ruleGroup);
 		}
-		StatelessRulesEngine.updateRuleMap(ruleMap, ruleJson, delete);
+		Rule rule = StatelessRulesEngine.updateRuleMap(ruleMap, ruleJson, delete);
+		sendEmissionsForRule(tuple, ruleGroup, rule);
 	}
 
 	public static List<AggregationAction> filterAggregationActions(Rule rule) {

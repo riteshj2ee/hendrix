@@ -107,7 +107,16 @@ public class StatelessRulesEngine<K, C> {
 		}
 	}
 	
-	public static void updateRuleMap(Map<Short, Rule> ruleMap, String ruleJson, boolean delete) throws ValidationException {
+	/**
+	 * Updates rule and returns the old rule
+	 * 
+	 * @param ruleMap
+	 * @param ruleJson
+	 * @param delete
+	 * @return oldRule
+	 * @throws ValidationException
+	 */
+	public static Rule updateRuleMap(Map<Short, Rule> ruleMap, String ruleJson, boolean delete) throws ValidationException {
 		SimpleRule rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
 		try {
 			RuleValidator.getInstance().validate(rule);
@@ -116,9 +125,9 @@ public class StatelessRulesEngine<K, C> {
 			throw e;
 		}
 		if (!delete) {
-			ruleMap.put(rule.getRuleId(), rule);
+			return ruleMap.put(rule.getRuleId(), rule);
 		} else {
-			ruleMap.remove(rule.getRuleId());
+			return ruleMap.remove(rule.getRuleId());
 		}
 	}
 
