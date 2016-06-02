@@ -80,6 +80,14 @@ public final class Utils extends io.symcpe.wraith.Utils {
 		return tuple.getSourceComponent().equals(backtype.storm.Constants.SYSTEM_COMPONENT_ID)
 				&& tuple.getSourceStreamId().equals(backtype.storm.Constants.SYSTEM_TICK_STREAM_ID);
 	}
+	
+	/**
+	 * @param tuple
+	 * @return
+	 */
+	public static boolean isStateTrackingTuple(Tuple tuple) {
+		return tuple.getSourceStreamId().equals(Constants.STATE_STREAM_ID);
+	}
 
 	/**
 	 * Normalize and format Zookeeper connection string
