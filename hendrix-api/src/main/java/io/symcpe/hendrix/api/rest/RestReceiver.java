@@ -25,6 +25,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import io.symcpe.hendrix.api.dao.AlertReceiver;
+
 /**
  * REST endpoint for receiving the actual alert
  * 

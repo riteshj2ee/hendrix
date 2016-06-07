@@ -40,6 +40,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.google.gson.JsonParseException;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Utils;
@@ -56,6 +58,7 @@ import io.symcpe.wraith.rules.validator.ValidationException;
  * @author ambud_sharma
  */
 @Path("/templates")
+@Api
 public class TemplateEndpoint {
 
 	private static final String TEMPLATE_ID = "test";
@@ -70,6 +73,7 @@ public class TemplateEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
 			ACLConstants.READER_ROLE })
+	@ApiOperation(value = "List templates", notes = "List templates for the supplied Tenant ID", response = AlertTemplate.class, responseContainer="List")
 	public String listTemplates(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty) {
@@ -90,6 +94,7 @@ public class TemplateEndpoint {
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Create template", notes = "Create an empty for the supplied Tenant ID", response = Short.class)
 	public short createTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		TemplateManager mgr = TemplateManager.getInstance();
@@ -115,6 +120,7 @@ public class TemplateEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Update template", notes = "Update template for the supplied Tenant ID and Template ID", response = Short.class)
 	public short putTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Template ID can't be empty") @PathParam(TEMPLATE_ID) short templateId,
@@ -198,6 +204,7 @@ public class TemplateEndpoint {
 	@Produces({ MediaType.TEXT_HTML })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
 			ACLConstants.READER_ROLE })
+	@ApiOperation(value = "Get template", notes = "Get template for the supplied Tenant ID and Template ID", response = AlertTemplate.class)
 	public String getTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(TEMPLATE_ID) short templateId,
@@ -222,6 +229,7 @@ public class TemplateEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Delete template", notes = "Delete template for the supplied Tenant ID and Template ID, template can only be deleted if there are no rules associated with them")
 	public void deleteTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(TEMPLATE_ID) short templateId) {
@@ -242,6 +250,7 @@ public class TemplateEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	@ApiOperation(value = "Delete all templates", notes = "Delete all templates for the supplied Tenant ID, templates can only be deleted if there are no rules associated with them")
 	public void deleteAllTemplates(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();

@@ -38,6 +38,8 @@ import org.glassfish.jersey.server.validation.ValidationFeature;
 import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import io.federecio.dropwizard.swagger.SwaggerBundle;
+import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.symcpe.hendrix.api.rest.TemplateEndpoint;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
@@ -100,7 +102,6 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		if (!LOCAL) {
 			initKafkaConnection();
 		}
-
 	}
 
 	public void addRuleValidators(Properties config) {
@@ -147,6 +148,18 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 
 	@Override
 	public void initialize(Bootstrap<AppConfig> bootstrap) {
+		bootstrap.addBundle(new SwaggerBundle<AppConfig>() {
+			@Override
+			protected SwaggerBundleConfiguration getSwaggerBundleConfiguration(AppConfig configuration) {
+				SwaggerBundleConfiguration config = new SwaggerBundleConfiguration();
+				config.setLicense("The Apache Software License, Version 2.0");
+				config.setLicenseUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
+				config.setTitle("Hendrix API");
+				config.setResourcePackage("io.symcpe.hendrix.api.rest");
+				config.setDescription("Hendrix API is allows CRUD operations for Rules, Tenants and Templates in Hendrix");
+				return config;
+			}
+		});
 		super.initialize(bootstrap);
 	}
 

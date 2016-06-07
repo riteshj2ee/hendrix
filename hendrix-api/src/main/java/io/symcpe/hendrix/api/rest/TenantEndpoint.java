@@ -38,6 +38,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import com.wordnik.swagger.annotations.Api;
+
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.security.ACLConstants;
@@ -49,6 +51,7 @@ import io.symcpe.hendrix.api.storage.Tenant;
  * @author ambud_sharma
  */
 @Path("/tenants")
+@Api
 public class TenantEndpoint {
 
 	public static final String TENANT_ID = "tenantId";

@@ -40,6 +40,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import com.google.gson.JsonParseException;
+import com.wordnik.swagger.annotations.Api;
+import com.wordnik.swagger.annotations.ApiOperation;
 
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Utils;
@@ -60,6 +62,7 @@ import io.symcpe.wraith.rules.validator.ValidationException;
  * @author ambud_sharma
  */
 @Path("/rules")
+@Api
 public class RulesEndpoint {
 
 	private static final String RULE_ID = "ruleId";
@@ -91,6 +94,7 @@ public class RulesEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
 			ACLConstants.READER_ROLE })
+	@ApiOperation(value = "List rules", notes = "Will return list of rules for a given Tenant ID", response = Rule.class, responseContainer = "List")
 	public String listRules(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty,
@@ -112,6 +116,7 @@ public class RulesEndpoint {
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID", response = Short.class)
 	public short createRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		RulesManager mgr = RulesManager.getInstance();
@@ -137,6 +142,7 @@ public class RulesEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Update rule", notes = "Will update rule logic for a given Tenant ID and Rule ID", response = Short.class)
 	public short putRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
@@ -219,6 +225,7 @@ public class RulesEndpoint {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Enable rule", notes = "Enable rule for the supplied Tenant ID and Rule ID", response = Rule.class)
 	public String enableRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
@@ -239,6 +246,7 @@ public class RulesEndpoint {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Disable rule", notes = "Disable rule for the supplied Tenant ID and Rule ID", response = Rule.class)
 	public String disableRule(@NotNull @PathParam(TenantEndpoint.TENANT_ID) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
 		EntityManager em = am.getEM();
@@ -259,6 +267,7 @@ public class RulesEndpoint {
 	@Produces({ MediaType.TEXT_HTML })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
 			ACLConstants.READER_ROLE })
+	@ApiOperation(value = "Get rule", notes = "Get rule for the supplied Tenant ID and Rule ID", response = Rule.class)
 	public String getRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId, @DefaultValue("false") @QueryParam("pretty") boolean pretty) {
@@ -291,6 +300,7 @@ public class RulesEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
+	@ApiOperation(value = "Delete rule", notes = "Delete rule for the supplied Tenant ID and Rule ID")
 	public void deleteRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@NotNull @PathParam(RULE_ID) short ruleId) {
@@ -311,6 +321,7 @@ public class RulesEndpoint {
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	@ApiOperation(value = "Delete all rules", notes = "Delete all rules for the supplied Tenant ID")
 	public void deleteAllRules(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();
@@ -331,6 +342,7 @@ public class RulesEndpoint {
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	@ApiOperation(value = "Disable all rules", notes = "Disable all rules for the supplied Tenant ID")
 	public void disableAllRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();
