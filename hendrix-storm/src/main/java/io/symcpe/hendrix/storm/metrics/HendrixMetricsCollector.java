@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import com.timgroup.statsd.NonBlockingStatsDClient;
 import com.timgroup.statsd.StatsDClient;
@@ -34,6 +36,7 @@ import backtype.storm.task.TopologyContext;
  */
 public class HendrixMetricsCollector implements IMetricsConsumer {
 
+	private static final String METRICS_JSON_INSTANCES = "metrics.json.instances";
 	private static final String METRICS_STATSD = "metrics.statsd";
 	private static final String METRICS_PORT = "metrics.port";
 	private static final String METRICS_HOST = "metrics.host";
@@ -44,13 +47,13 @@ public class HendrixMetricsCollector implements IMetricsConsumer {
 	private Set<IMetricsProcessor> metricsProcessors;
 	private StatsDClient statsDClient;
 
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
 	public void prepare(Map stormConf, Object registrationArgument, TopologyContext context,
 			IErrorReporter errorReporter) {
 		metricsProcessors = new HashSet<>();
 		boolean statsd = false;
-		if(stormConf.containsKey(METRICS_STATSD)) {
+		if (stormConf.containsKey(METRICS_STATSD)) {
 			statsd = Boolean.parseBoolean(stormConf.get(METRICS_STATSD).toString());
 		}
 		if (statsd) {
@@ -70,8 +73,17 @@ public class HendrixMetricsCollector implements IMetricsConsumer {
 			metricsProcessors.add(new GaugeMetricsProcessor(statsDClient));
 			metricsProcessors.add(new CountMetricsProcessor(statsDClient));
 			metricsProcessors.add(new MultiCountMetricsProcessor(statsDClient));
-		}else {
-			metricsProcessors.add(new JsonMetricProcessor(stormConf));
+		} else {
+			if (stormConf.containsKey(METRICS_JSON_INSTANCES)) {
+				String[] instances = stormConf.get(METRICS_JSON_INSTANCES).toString().split(",");
+				SortedMap map = new TreeMap<>(stormConf);
+				for (String instance : instances) {
+					SortedMap subMap = map.subMap(instance, instance+Character.MAX_VALUE);
+					metricsProcessors.add(new JsonMetricProcessor(subMap));
+				}
+			} else {
+				metricsProcessors.add(new JsonMetricProcessor(stormConf));
+			}
 		}
 	}
 

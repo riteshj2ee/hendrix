@@ -70,7 +70,7 @@ import io.symcpe.wraith.store.TemplateStore;
  */
 public class TemplatedAlertingEngineBolt extends BaseRichBolt implements TemplatedAlertEngine {
 
-	private static final String _METRIC_TEMPLATE_HIT = "mcm.template.hit";
+	private static final String _METRIC_TEMPLATE_HIT = "mcm.template.hit.count";
 	private static final String _METRIC_TEMPLATE_EFFICIENCY = "mcm.template.efficiency";
 	private static final String VELOCITY_VAR_DATE = "date";
 	private static final long serialVersionUID = 1L;

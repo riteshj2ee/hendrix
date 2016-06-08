@@ -41,6 +41,8 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.symcpe.hendrix.api.rest.TemplateEndpoint;
+import io.symcpe.hendrix.api.dao.PerformanceMonitor;
+import io.symcpe.hendrix.api.rest.PerfMonEndpoint;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
 import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
@@ -68,6 +70,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private String templateTopicName;
 	private KafkaProducer<String, String> producer;
 	private String[] args;
+	private PerformanceMonitor perfMonitor;
 
 	public void init(AppConfig appConfiguration) {
 		config = new Properties(System.getProperties());
@@ -172,9 +175,12 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			environment.jersey().register(new BapiAuthorizationFilter());
 			environment.jersey().register(RolesAllowedDynamicFeature.class);
 		}
+		perfMonitor = new PerformanceMonitor();
+		environment.lifecycle().manage(perfMonitor);
 		environment.jersey().register(new RulesEndpoint(this));
 		environment.jersey().register(new TenantEndpoint(this));
 		environment.jersey().register(new TemplateEndpoint(this));
+		environment.jersey().register(new PerfMonEndpoint(this));
 	}
 
 	@Override
@@ -202,4 +208,10 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	public void destroy() {
 	}
 
+	/**
+	 * @return
+	 */
+	public PerformanceMonitor getPerfMonitor() {
+		return perfMonitor;
+	}
 }

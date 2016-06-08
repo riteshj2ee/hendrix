@@ -53,10 +53,6 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 	@SuppressWarnings("rawtypes")
 	public JsonMetricProcessor(Map stormConf) {
 		logger = Logger.getLogger(JsonMetricProcessor.class.getName());
-		// if (stormConf.containsKey("metrics.output.syslog")) {
-		// syslogOutput =
-		// Boolean.parseBoolean(stormConf.get("metrics.output.syslog").toString());
-		// }
 		if (stormConf.containsKey(METRICS_SYSLOG_UDP)) {
 			syslogUdp = Boolean.parseBoolean(stormConf.get(METRICS_SYSLOG_UDP).toString());
 		}
