@@ -15,36 +15,38 @@
  */
 package io.symcpe.hendrix.api.dao;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Queue;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteQueue;
-import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheAtomicityMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.CollectionConfiguration;
+
+import io.dropwizard.lifecycle.Managed;
+import io.symcpe.hendrix.api.ApplicationManager;
 
 /**
  * Backend for alert receiver functionality
  * 
  * @author ambud_sharma
  */
-public class AlertReceiver implements Serializable {
+public class AlertReceiver implements Managed {
 
 	private static final String CHANNELS = "channels";
-	private static final long serialVersionUID = 1L;
-	private static AlertReceiver instance = new AlertReceiver();
 	private int channelSize = 0;
 	private Ignite ignite;
 	private CollectionConfiguration colCfg;
 	private IgniteCache<String, Integer> channelCache;
 
-	private AlertReceiver() {
-		Ignition.setClientMode(false);
-		ignite = Ignition.start();
+	public AlertReceiver(ApplicationManager am) {
+		this.ignite = am.getIgnite();
+	}
+	
+	@Override
+	public void start() throws Exception {
 		CacheConfiguration<String, Integer> cacheCfg = new CacheConfiguration<>();
 		cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
 		cacheCfg.setName(CHANNELS);
@@ -57,9 +59,9 @@ public class AlertReceiver implements Serializable {
 		colCfg.setBackups(1);
 		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
 	}
-
-	public static AlertReceiver getInstance() {
-		return instance;
+	
+	@Override
+	public void stop() throws Exception {
 	}
 
 	public void addChannel(Short ruleId) {

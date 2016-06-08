@@ -29,6 +29,8 @@ import javax.persistence.Persistence;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
+import org.apache.ignite.Ignite;
+import org.apache.ignite.Ignition;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.PartitionInfo;
 import org.glassfish.jersey.server.ServerProperties;
@@ -41,8 +43,10 @@ import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.symcpe.hendrix.api.rest.TemplateEndpoint;
+import io.symcpe.hendrix.api.dao.AlertReceiver;
 import io.symcpe.hendrix.api.dao.PerformanceMonitor;
 import io.symcpe.hendrix.api.rest.PerfMonEndpoint;
+import io.symcpe.hendrix.api.rest.RestReceiver;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
 import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
@@ -71,6 +75,8 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private KafkaProducer<String, String> producer;
 	private String[] args;
 	private PerformanceMonitor perfMonitor;
+	private Ignite ignite;
+	private AlertReceiver alertReceiver;
 
 	public void init(AppConfig appConfiguration) {
 		config = new Properties(System.getProperties());
@@ -175,11 +181,16 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			environment.jersey().register(new BapiAuthorizationFilter());
 			environment.jersey().register(RolesAllowedDynamicFeature.class);
 		}
-		perfMonitor = new PerformanceMonitor();
+		Ignition.setClientMode(false);
+		ignite = Ignition.start();
+		perfMonitor = new PerformanceMonitor(this);
 		environment.lifecycle().manage(perfMonitor);
+		alertReceiver = new AlertReceiver(this);
+		environment.lifecycle().manage(alertReceiver);
 		environment.jersey().register(new RulesEndpoint(this));
 		environment.jersey().register(new TenantEndpoint(this));
 		environment.jersey().register(new TemplateEndpoint(this));
+		environment.jersey().register(new RestReceiver(this));
 		environment.jersey().register(new PerfMonEndpoint(this));
 	}
 
@@ -213,5 +224,19 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	 */
 	public PerformanceMonitor getPerfMonitor() {
 		return perfMonitor;
+	}
+	
+	/**
+	 * @return
+	 */
+	public Ignite getIgnite() {
+		return ignite;
+	}
+	
+	/**
+	 * @return
+	 */
+	public AlertReceiver getAlertReceiver() {
+		return alertReceiver;
 	}
 }

@@ -25,6 +25,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.dao.AlertReceiver;
 
 /**
@@ -35,12 +36,18 @@ import io.symcpe.hendrix.api.dao.AlertReceiver;
 @Path("/receive")
 public class RestReceiver {
 	
+	private AlertReceiver alertReceiver;
+
+	public RestReceiver(ApplicationManager applicationManager) {
+		alertReceiver = applicationManager.getAlertReceiver();
+	}
+
 	@POST
 	@Path("/{rule}")
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	public boolean receiveEvent(@PathParam("rule") Short ruleId, Map<String, Object> event) {
-		return AlertReceiver.getInstance().publishEvent(ruleId, event);
+		return alertReceiver.publishEvent(ruleId, event);
 	}
 	
 	@GET

@@ -39,7 +39,6 @@ import org.apache.flume.source.SyslogUDPSource;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteQueue;
 import org.apache.ignite.IgniteSet;
-import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.CollectionConfiguration;
 
 import com.google.gson.Gson;
@@ -47,6 +46,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import io.dropwizard.lifecycle.Managed;
+import io.symcpe.hendrix.api.ApplicationManager;
 
 /**
  * Hendrix performance monitor receives performance stats from the topologies
@@ -56,17 +56,19 @@ import io.dropwizard.lifecycle.Managed;
  */
 public class PerformanceMonitor implements Managed {
 
-	private Ignite ignite;
 	private int channelSize;
 	private CollectionConfiguration colCfg;
 	private IgniteSet<String> channelCache;
 	private PerfMonChannel localChannel;
 	private SyslogUDPSource source;
 	private ExecutorService eventProcessor;
+	private Ignite ignite;
 	
+	public PerformanceMonitor(ApplicationManager applicationManager) {
+		ignite = applicationManager.getIgnite();
+	}
+
 	public void initIgniteCache() {
-		Ignition.setClientMode(false);
-		ignite = Ignition.start();
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
