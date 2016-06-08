@@ -77,6 +77,7 @@ public class TestTemplateManager {
 	private static short id;
 
 	static {
+		System.setProperty("org.jboss.logging.provider", "jdk");
 		System.setProperty("derby.stream.error.field", DerbyUtil.class.getCanonicalName() + ".DEV_NULL");
 		System.setProperty("local", "false");
 	}

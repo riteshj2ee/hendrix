@@ -68,6 +68,7 @@ public class TestTenantManager {
 	private ApplicationManager am;
 
 	static {
+		System.setProperty("org.jboss.logging.provider", "jdk");
 		System.setProperty("derby.stream.error.field", DerbyUtil.class.getCanonicalName() + ".DEV_NULL");
 		System.setProperty("local", "false");
 	}

@@ -26,6 +26,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -89,6 +90,7 @@ public class TestRulesManager {
 	private static short templateId;
 
 	static {
+		System.setProperty("org.jboss.logging.provider", "jdk");
 		System.setProperty("derby.stream.error.field", DerbyUtil.class.getCanonicalName() + ".DEV_NULL");
 		System.setProperty("local", "false");
 	}
@@ -98,6 +100,7 @@ public class TestRulesManager {
 
 	@BeforeClass
 	public static void beforeClass() throws Exception {
+		java.util.logging.Logger.getLogger("org.hibernate").setLevel(Level.OFF);
 		Properties config = new Properties(System.getProperties());
 		File db = new File(TARGET_RULES_DB);
 		if (db.exists()) {

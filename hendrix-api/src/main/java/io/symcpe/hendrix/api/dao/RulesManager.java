@@ -133,10 +133,10 @@ public class RulesManager {
 			logger.info("Completed Transaction for rule " + dbRule.getRuleId() + ":" + dbRule.getRuleContent() + "");
 			return dbRule.getRuleId();
 		} catch (Exception e) {
-			e.printStackTrace();
 			if (em.getTransaction().isActive()) {
 				em.getTransaction().rollback();
 			}
+			logger.log(Level.SEVERE, "Failed to save rule", e);
 			throw e;
 		}
 	}
