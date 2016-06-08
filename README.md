@@ -1,4 +1,5 @@
-# hendrix
+# Hendrix
+[![Build Status](https://travis-ci.org/Symantec/hendrix.svg?branch=master)](https://travis-ci.org/Symantec/hendrix)
 
 ## Project Description
 Hendrix is a Real-time alert generation system for the Cloud. We currently support Rule based definition of alerts and provide a platform / design pattern for high performance
