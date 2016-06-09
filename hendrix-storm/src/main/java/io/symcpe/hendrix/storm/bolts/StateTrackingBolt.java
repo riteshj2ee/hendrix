@@ -137,15 +137,12 @@ public class StateTrackingBolt extends BaseRichBolt {
 		String ruleActionId = tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID);
 		Entry<Short, Short> ruleActionIdSeparates = Utils.separateRuleActionId(ruleActionId);
 		try {
-			List<Entry<String, Long>> aggregateHeaders = new ArrayList<>();
+			List<Map<String, Object>> aggregateHeaders = new ArrayList<>();
 			emitAndResetAggregates((int) tuple.getIntegerByField(Constants.FIELD_AGGREGATION_WINDOW), ruleActionId,
 					aggregateHeaders);
 			if (!aggregateHeaders.isEmpty()) {
-				for (Entry<String, Long> result : aggregateHeaders) {
-					String[] keyParts = Utils.splitMapKey(result.getKey());
-					Event event = unifiedFactory.buildEvent();
-					event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
-					event.getHeaders().put(Constants.FIELD_TIMESTAMP, System.currentTimeMillis());
+				for (Map<String, Object> result : aggregateHeaders) {
+					Event event = unifiedFactory.buildEvent(result);
 					event.getHeaders().put(Constants.FIELD_RULE_ID, ruleActionIdSeparates.getKey());
 					event.getHeaders().put(Constants.FIELD_ACTION_ID, ruleActionIdSeparates.getValue());
 					collector.emit(Constants.AGGREGATION_OUTPUT_STREAM, tuple, new Values(event));
@@ -201,7 +198,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 	 * @throws IOException
 	 */
 	public void emitAndResetAggregates(int aggregationWindow, String ruleActionId,
-			List<Entry<String, Long>> aggregateHeaders) throws IOException {
+			List<Map<String, Object>> aggregateHeaders) throws IOException {
 		if (stateTrackingEngine.containsRuleActionId(ruleActionId)) {
 			stateTrackingEngine.emit(aggregationWindow, ruleActionId, aggregateHeaders);
 		}
