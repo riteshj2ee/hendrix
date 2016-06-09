@@ -73,4 +73,9 @@ public class UnifiedFactory implements StoreFactory, EventFactory {
 		return store;
 	}
 
+	@Override
+	public Event buildEvent(Map<String, Object> headers) {
+		return new HendrixEvent(headers);
+	}
+
 }

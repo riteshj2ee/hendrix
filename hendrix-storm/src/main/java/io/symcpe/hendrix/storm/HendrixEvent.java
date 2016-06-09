@@ -36,6 +36,10 @@ public class HendrixEvent implements Event {
 		headers = new HashMap<>();
 	}
 	
+	public HendrixEvent(Map<String, Object> headers) {
+		this.headers = headers;
+	}
+
 	@Override
 	public Map<String, Object> getHeaders() {
 		return headers;
