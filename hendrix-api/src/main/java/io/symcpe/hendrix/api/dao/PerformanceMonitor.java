@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -88,7 +89,7 @@ public class PerformanceMonitor implements Managed {
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
 		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
-		
+
 		cfg = new CollectionConfiguration();
 		cfg.setBackups(1);
 		cfg.setCacheMode(CacheMode.REPLICATED);
@@ -159,14 +160,14 @@ public class PerformanceMonitor implements Managed {
 			IgniteSet<String> set = ignite.set(seriesName + "_" + tenantId, cfg);
 			set.add(ruleId);
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
-			if(queue.size()>=channelSize) {
+			if (queue.size() >= channelSize) {
 				queue.remove();
 			}
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
-		}else if(seriesName.startsWith("cm")) {
+		} else if (seriesName.startsWith("cm")) {
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
-			if(queue.size()>=channelSize) {
+			if (queue.size() >= channelSize) {
 				queue.remove();
 			}
 		}
@@ -177,17 +178,33 @@ public class PerformanceMonitor implements Managed {
 	 * @param tenantId
 	 * @return
 	 */
-	public Map<String, List<Point>> getSeriesForTenant(String seriesName, String tenantId) {
+	public Map<String, List<Point>> getSeriesForTenant(String seriesName, String tenantId, int filterSeconds) {
 		Map<String, List<Point>> efficiencySeries = new HashMap<>();
 		Set<String> set = seriesLookup.get(seriesName);
+		long ts = -1;
 		if (set != null && !set.isEmpty()) {
 			for (String series : set) {
 				if (series.contains(tenantId)) {
 					IgniteSet<String> rules = ignite.set(series, cfg);
 					for (String ruleId : rules) {
 						IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
-						efficiencySeries.put(ruleId, queueToList(queue));
+						List<Point> list = queueToList(queue);
+						if (list.size() > 0) {
+							long tts = list.get(list.size() - 1).getKey();
+							if (tts > ts) {
+								ts = tts;
+							}
+							efficiencySeries.put(ruleId, list);
+						}
 					}
+				}
+			}
+			for (Iterator<Entry<String, List<Point>>> iterator = efficiencySeries.entrySet().iterator(); iterator
+					.hasNext();) {
+				Entry<String, List<Point>> entry = iterator.next();
+				if (entry.getValue().size() > 0 && entry.getValue().get(entry.getValue().size() - 1)
+						.getKey() < (ts - ((long) filterSeconds) * 1000)) {
+					iterator.remove();
 				}
 			}
 		} else {
@@ -195,7 +212,7 @@ public class PerformanceMonitor implements Managed {
 		}
 		return efficiencySeries;
 	}
-	
+
 	/**
 	 * @param seriesName
 	 * @return

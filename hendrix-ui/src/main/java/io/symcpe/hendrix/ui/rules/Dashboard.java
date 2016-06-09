@@ -18,8 +18,10 @@ package io.symcpe.hendrix.ui.rules;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Map.Entry;
+import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
@@ -78,17 +80,18 @@ public class Dashboard implements Serializable {
 		topRules = new PieChartModel();
 
 		ruleEfficiency = new LineChartModel();
-		ruleEfficiency.getAxis(AxisType.Y).setLabel("Execute Time (ms)");
+		ruleEfficiency.getAxis(AxisType.Y).setLabel("Execute Time (ns)");
+		ruleEfficiency.setLegendPosition("e");
 
 		hitCount = new LineChartModel();
 		hitCount.getAxis(AxisType.Y).setLabel("Count");
-		
+
 		throughput = new LineChartModel();
-		throughput.getAxis(AxisType.Y).setLabel("Count");
+		throughput.getAxis(AxisType.Y).setLabel("Events Per Second (EPS)");
 
 		loadGraphs();
 	}
-	
+
 	public void loadGraphs() {
 		ruleEfficiency.clear();
 		hitCount.clear();
@@ -97,7 +100,7 @@ public class Dashboard implements Serializable {
 		initializePerformanceMetric("efficiency", ruleEfficiency);
 		initializePerformanceMetric("hits", hitCount);
 		initializeThroughputMetrics("sthroughput", throughput);
-//		initializeThroughputMetrics("fthroughput", throughput);
+		// initializeThroughputMetrics("fthroughput", throughput);
 	}
 
 	private void initializeTopRules() {
@@ -108,7 +111,7 @@ public class Dashboard implements Serializable {
 	private void initializePerformanceMetric(String metricName, LineChartModel model) {
 		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName + "/" + ub.getTenant().getTenantId());
-		Date date = null;
+		long ts = -1;
 		try {
 			CloseableHttpResponse response = client.execute(get);
 			String string = EntityUtils.toString(response.getEntity());
@@ -118,7 +121,10 @@ public class Dashboard implements Serializable {
 				LineChartSeries series = new LineChartSeries(entry.getKey());
 				for (JsonElement element : entry.getValue().getAsJsonArray()) {
 					JsonObject point = element.getAsJsonObject();
-					date = new Date(point.get("key").getAsLong());
+					Date date = new Date(point.get("key").getAsLong());
+					if (date.getTime() > ts) {
+						ts = date.getTime();
+					}
 					series.set(formatter.format(date), point.get("value").getAsNumber());
 				}
 				model.addSeries(series);
@@ -127,19 +133,22 @@ public class Dashboard implements Serializable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (date != null) {
+		if (ts != -1) {
 			DateAxis axis = new DateAxis("Time");
 			axis.setTickAngle(-50);
-			axis.setMax(formatter.format(date));
+			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("utc"));
+			cal.setTime(new Date(ts));
+			cal.set(Calendar.MINUTE, -5);
 			axis.setTickFormat("%H:%#M:%S");
+			axis.setMax(formatter.format(new Date(ts)));
 			model.getAxes().put(AxisType.X, axis);
-		}else {
+		} else {
 			LineChartSeries lineChartSeries = new LineChartSeries("None");
 			lineChartSeries.set(0, 0);
 			model.addSeries(lineChartSeries);
 		}
 	}
-	
+
 	private void initializeThroughputMetrics(String metricName, LineChartModel model) {
 		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName);

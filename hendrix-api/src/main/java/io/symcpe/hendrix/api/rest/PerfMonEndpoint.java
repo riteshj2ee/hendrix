@@ -18,10 +18,12 @@ package io.symcpe.hendrix.api.rest;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
 import io.symcpe.hendrix.api.ApplicationManager;
@@ -44,29 +46,31 @@ public class PerfMonEndpoint {
 	@Path("/efficiency/{tenantId}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Map<String, List<Point>> getRuleEfficiency(@PathParam("tenantId") String tenantId) {
-		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.efficiency", tenantId);
+	public Map<String, List<Point>> getRuleEfficiency(@PathParam("tenantId") String tenantId,
+			@DefaultValue("100") @QueryParam("filter") int filterSeoncds) {
+		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.efficiency", tenantId, filterSeoncds);
 	}
-	
+
 	@Path("/hits/{tenantId}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Map<String, List<Point>> getRulePerformance(@PathParam("tenantId") String tenantId) {
-		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.hit.count", tenantId);
+	public Map<String, List<Point>> getRulePerformance(@PathParam("tenantId") String tenantId,
+			@DefaultValue("100") @QueryParam("filter") int filterSeoncds) {
+		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.hit.count", tenantId, filterSeoncds);
 	}
-	
+
 	@Path("/sthroughput")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public List<Point> getSuccessThroughput() {
 		return am.getPerfMonitor().getSeries("cm.interceptor.success");
 	}
-	
+
 	@Path("/fthroughput")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public List<Point> getFailureThroughput() {
 		return am.getPerfMonitor().getSeries("cm.interceptor.fail");
 	}
-	
+
 }

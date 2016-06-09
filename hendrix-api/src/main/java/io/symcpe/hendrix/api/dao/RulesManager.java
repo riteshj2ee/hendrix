@@ -216,6 +216,7 @@ public class RulesManager {
 				sendRuleToKafka(true, rule.getTenant().getTenantId(), ruleContent, am);
 			}
 			transaction.commit();
+//			am.getPerfMonitor().deleteSeries();
 			logger.info("Deleted rule:" + ruleId);
 		} catch (Exception e) {
 			if (transaction.isActive()) {

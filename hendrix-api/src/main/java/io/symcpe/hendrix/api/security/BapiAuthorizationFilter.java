@@ -17,8 +17,9 @@ package io.symcpe.hendrix.api.security;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -51,9 +52,22 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
 			return;
 		}
+		String path = requestContext.getUriInfo().getPath();
 		String username = headers.getFirst(USERNAME);
-		final Set<String> roles = new HashSet<>(Arrays.asList(headers.getFirst(USER_ROLE).toLowerCase().split(",")));
-		logger.fine("Authenticated request for path:"+requestContext.getUriInfo().getPath()+" from user:"+username+"\troles:"+roles);
+		String tenantId = path.split("/")[2];
+		Set<String> roles = null;
+		for (Entry<String, List<String>> entry : headers.entrySet()) {
+			if(entry.getKey().startsWith("Role")) {
+				if(tenantId.equalsIgnoreCase(entry.getKey().split("_")[1])) {
+					roles = new HashSet<>(entry.getValue());
+				}
+			}
+		}
+		if(roles==null || roles.isEmpty()) {
+			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
+			return;
+		}
+		logger.fine("Authenticated request for path:"+path+" from user:"+username+"\troles:"+roles);
 		requestContext.setSecurityContext(new BapiSecurityContext(username, roles));
 	}
 	
