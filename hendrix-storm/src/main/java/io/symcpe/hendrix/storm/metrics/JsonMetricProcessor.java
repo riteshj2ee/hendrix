@@ -32,6 +32,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
 import backtype.storm.metric.api.IMetricsConsumer.DataPoint;
+import io.symcpe.hendrix.storm.bolts.RulesEngineBolt;
 
 /**
  * To receive metrics over syslog
@@ -87,7 +88,10 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 			JsonObject obj = new JsonObject();
 			if (point.name.startsWith("mcm")) {
 				for (Map.Entry<String, Long> entry : ((Map<String, Long>) point.value).entrySet()) {
+					String[] split = entry.getKey().split(RulesEngineBolt.TENANTID_SEPARATOR);
 					obj.addProperty("name", point.name+"."+entry.getKey());
+					obj.addProperty("ruleId", split[1]);
+					obj.addProperty("tenantId", split[0]);
 					obj.addProperty("value", (Number) entry.getValue());
 					try {
 						messageSender.sendMessage(gson.toJson(obj));

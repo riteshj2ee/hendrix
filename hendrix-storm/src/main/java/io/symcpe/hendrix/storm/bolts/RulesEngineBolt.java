@@ -50,8 +50,8 @@ import io.symcpe.wraith.rules.StatelessRulesEngine;
  */
 public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<Tuple, OutputCollector> {
 
+	public static final String TENANTID_SEPARATOR = "_";
 	private static final long serialVersionUID = 1L;
-	public static final String RULE_VALUE_SEPARATOR = "_";
 	public static final String _METRIC_RULE_HIT_COUNT = "mcm.rule.hit.count";
 	public static final String _METRIC_RULE_NO_HIT_COUNT = "mcm.rule.nohit.count";
 	public static final String _METRIC_CONDITION_EFFICIENCY = "mcm.condition.efficiency";
@@ -174,18 +174,30 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	}
 
 	@Override
-	public void reportConditionEfficiency(short ruleId, long executeTime) {
-		conditionEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
+	public void reportConditionEfficiency(String ruleGroup, short ruleId, long executeTime) {
+		if (multiTenancyActive) {
+			conditionEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId))).update(executeTime);
+		} else {
+			conditionEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
+		}
 	}
 
 	@Override
-	public void reportRuleEfficiency(short ruleId, long executeTime) {
-		ruleEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
+	public void reportRuleEfficiency(String ruleGroup, short ruleId, long executeTime) {
+		if (multiTenancyActive) {
+			ruleEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId))).update(executeTime);
+		} else {
+			ruleEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
+		}
 	}
 
 	@Override
-	public void reportRuleHit(short ruleId) {
-		ruleHitCount.scope(String.valueOf(ruleId)).incr();
+	public void reportRuleHit(String ruleGroup, short ruleId) {
+		if (multiTenancyActive) {
+			ruleHitCount.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId))).incr();
+		} else {
+			ruleHitCount.scope(String.valueOf(ruleId)).incr();
+		}
 	}
 
 	@Override

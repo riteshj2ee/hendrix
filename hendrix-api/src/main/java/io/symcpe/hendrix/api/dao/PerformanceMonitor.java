@@ -19,10 +19,12 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -37,8 +39,10 @@ import org.apache.flume.channel.ChannelProcessor;
 import org.apache.flume.lifecycle.LifecycleState;
 import org.apache.flume.source.SyslogUDPSource;
 import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteQueue;
-import org.apache.ignite.IgniteSet;
+import org.apache.ignite.cache.CacheAtomicityMode;
+import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.CollectionConfiguration;
 
 import com.google.gson.Gson;
@@ -47,6 +51,7 @@ import com.google.gson.JsonObject;
 
 import io.dropwizard.lifecycle.Managed;
 import io.symcpe.hendrix.api.ApplicationManager;
+import io.symcpe.hendrix.api.storage.Point;
 
 /**
  * Hendrix performance monitor receives performance stats from the topologies
@@ -58,22 +63,23 @@ public class PerformanceMonitor implements Managed {
 
 	private int channelSize;
 	private CollectionConfiguration colCfg;
-	private IgniteSet<String> channelCache;
+	private IgniteCache<String, Set<String>> channelCache;
 	private PerfMonChannel localChannel;
 	private SyslogUDPSource source;
 	private ExecutorService eventProcessor;
 	private Ignite ignite;
-	
+
 	public PerformanceMonitor(ApplicationManager applicationManager) {
 		ignite = applicationManager.getIgnite();
 	}
 
 	public void initIgniteCache() {
-		colCfg = new CollectionConfiguration();
-		colCfg.setCollocated(true);
-		colCfg.setBackups(1);
-		channelCache = ignite.set("ruleEfficiency", colCfg);
-		
+		CacheConfiguration<String, Set<String>> cacheCfg = new CacheConfiguration<>();
+		cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
+		cacheCfg.setName("ruleEfficiency");
+		cacheCfg.setBackups(2);
+		channelCache = ignite.getOrCreateCache(cacheCfg);
+
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
@@ -85,9 +91,9 @@ public class PerformanceMonitor implements Managed {
 		source = new SyslogUDPSource();
 		localChannel = new PerfMonChannel();
 		localChannel.start();
-		eventProcessor.submit(()->{
+		eventProcessor.submit(() -> {
 			Event event = null;
-			while(true) {
+			while (true) {
 				try {
 					event = localChannel.take();
 					event(event);
@@ -131,37 +137,52 @@ public class PerformanceMonitor implements Managed {
 		JsonElement b = gson.fromJson(message, JsonElement.class);
 		JsonObject obj = b.getAsJsonObject();
 		String seriesName = obj.get("name").getAsString();
-		if(seriesName.startsWith("mcm.rule.efficiency")) {
-			channelCache.add(seriesName);
+		String tenantId = obj.get("tenantId").getAsString();
+		String ruleId = obj.get("ruleId").getAsString();
+		if (seriesName.startsWith("mcm.rule.efficiency")) {
+			Set<String> set = channelCache.get(tenantId);
+			if (set == null) {
+				set = new HashSet<>();
+				set.add(ruleId);
+				channelCache.put(tenantId, set);
+			} else if (!set.contains(ruleId)) {
+				set.add(ruleId);
+				channelCache.put(tenantId, set);
+			}
 		}
-		IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
+		IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
 		queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
 	}
 
 	/**
 	 * @return
 	 */
-	public Map<String, List<Entry<Long, Number>>> getRuleEfficiencySeries() {
-		Map<String, List<Entry<Long, Number>>> efficiencySeries = new HashMap<>();
-		for (String seriesName : channelCache) {
-			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
-			efficiencySeries.put(seriesName, queueToList(queue));
+	public Map<String, List<Point>> getRuleEfficiencySeries(String tenantId) {
+		Map<String, List<Point>> efficiencySeries = new HashMap<>();
+		Set<String> set = channelCache.get(tenantId);
+		if (set != null && !set.isEmpty()) {
+			for (String ruleId : set) {
+				IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
+				efficiencySeries.put(ruleId, queueToList(queue));
+			}
+		} else {
+			System.out.println("Perf stats not found for tenantId:" + tenantId);
 		}
 		return efficiencySeries;
 	}
-	
+
 	/**
 	 * @param queue
 	 * @return
 	 */
-	public List<Entry<Long, Number>> queueToList(Queue<Entry<Long, Number>> queue) {
-		List<Entry<Long, Number>> list = new ArrayList<>();
+	public List<Point> queueToList(Queue<Entry<Long, Number>> queue) {
+		List<Point> list = new ArrayList<>();
 		for (Entry<Long, Number> entry : queue) {
-			list.add(entry);
+			list.add(new Point(entry.getKey(), entry.getValue()));
 		}
 		return list;
 	}
-	
+
 	public static class LocalChannelSelector implements ChannelSelector {
 
 		private List<Channel> channels;
@@ -198,18 +219,18 @@ public class PerformanceMonitor implements Managed {
 		public List<Channel> getAllChannels() {
 			return channels;
 		}
-		
+
 	}
-	
+
 	public static class PerfMonChannel implements Channel {
-		
+
 		private ArrayBlockingQueue<Event> eventQueue;
 
 		private LifecycleState state;
-		
+
 		public PerfMonChannel() {
 		}
-		
+
 		@Override
 		public void start() {
 			eventQueue = new ArrayBlockingQueue<>(1000);
@@ -258,6 +279,6 @@ public class PerformanceMonitor implements Managed {
 		public Transaction getTransaction() {
 			return new org.apache.flume.channel.PseudoTxnMemoryChannel.NoOpTransaction();
 		}
-		
+
 	}
 }

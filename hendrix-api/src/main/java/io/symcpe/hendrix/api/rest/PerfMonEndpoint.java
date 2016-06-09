@@ -17,14 +17,15 @@ package io.symcpe.hendrix.api.rest;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import io.symcpe.hendrix.api.ApplicationManager;
+import io.symcpe.hendrix.api.storage.Point;
 
 /**
  * To report rule performance characteristics
@@ -40,10 +41,11 @@ public class PerfMonEndpoint {
 		this.am = applicationManager;
 	}
 
+	@Path("{tenantId}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	public Map<String, List<Entry<Long, Number>>> getRulePerformance() {
-		return am.getPerfMonitor().getRuleEfficiencySeries();
+	public Map<String, List<Point>> getRulePerformance(@PathParam("tenantId") String tenantId) {
+		return am.getPerfMonitor().getRuleEfficiencySeries(tenantId);
 	}
 
 }
