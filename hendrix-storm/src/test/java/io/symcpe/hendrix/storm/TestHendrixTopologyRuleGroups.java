@@ -57,7 +57,7 @@ public class TestHendrixTopologyRuleGroups {
 		properties.clear();
 	}
 
-	@Test
+//	@Test
 	public void testHendrixTopology() throws Exception {
 		for (String file : new String[] { "topology-test1" }) {
 
