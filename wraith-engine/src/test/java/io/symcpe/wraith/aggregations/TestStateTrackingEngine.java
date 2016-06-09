@@ -15,14 +15,17 @@
  */
 package io.symcpe.wraith.aggregations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -96,7 +99,7 @@ public class TestStateTrackingEngine {
 			engine.track(1461272082000L, 10, raId, "series1");
 			engine.track(1461272083000L, 10, raId, "series1");
 			engine.track(1461272084000L, 10, raId, "series1");
-			List<Entry<String, Long>> emits = new ArrayList<>();
+			List<Map<String, Object>> emits = new ArrayList<>();
 			engine.emit(10, raId, emits);
 			assertEquals(0, emits.size());
 			engine.emit(10, raId, emits);
@@ -125,7 +128,7 @@ public class TestStateTrackingEngine {
 		assertEquals(2, engine.getFlushAggregationMap().size());
 		engine.flush();
 		assertEquals(2, TestStateAggregationStore.store.size());
-		List<Entry<String, Long>> emits = new ArrayList<>();
+		List<Map<String, Object>> emits = new ArrayList<>();
 		engine.emit(10, raId, emits);
 		assertEquals(1, emits.size());
 		assertEquals(1, engine.getAggregationMap().size());

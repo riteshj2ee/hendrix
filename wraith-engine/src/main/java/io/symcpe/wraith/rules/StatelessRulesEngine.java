@@ -168,7 +168,7 @@ public class StatelessRulesEngine<K, C> {
 		if (!ruleGroupsActive) {
 			for (Short ruleId : ruleMap.keySet()) {
 				Rule rule = ruleMap.get(ruleId);
-				evaluateEventAgainstRule(rule, eventCollector, eventContainer, event);
+				evaluateEventAgainstRule(null, rule, eventCollector, eventContainer, event);
 			}
 		}
 	}
@@ -184,11 +184,12 @@ public class StatelessRulesEngine<K, C> {
 	 */
 	public void evaluateEventAgainstGroupedRules(C eventCollector, K eventContainer, Event event) {
 		if (ruleGroupsActive) {
-			Map<Short, Rule> rules = ruleGroupMap.get(event.getHeaders().get(Constants.FIELD_RULE_GROUP));
+			String ruleGroup = event.getHeaders().get(Constants.FIELD_RULE_GROUP).toString();
+			Map<Short, Rule> rules = ruleGroupMap.get(ruleGroup);
 			if (rules != null) {
 				for (Short ruleId : rules.keySet()) {
 					Rule rule = rules.get(ruleId);
-					evaluateEventAgainstRule(rule, eventCollector, eventContainer, event);
+					evaluateEventAgainstRule(ruleGroup, rule, eventCollector, eventContainer, event);
 				}
 			}
 		}
@@ -201,7 +202,7 @@ public class StatelessRulesEngine<K, C> {
 	 * @param eventContainer
 	 * @param event
 	 */
-	public void evaluateEventAgainstRule(Rule rule, C eventCollector, K eventContainer, Event event) {
+	public void evaluateEventAgainstRule(String ruleGroup, Rule rule, C eventCollector, K eventContainer, Event event) {
 		if (!rule.isActive()) {
 			logger.debug("Rule:" + rule.getRuleId() + " is deactive");
 			return;
@@ -211,7 +212,7 @@ public class StatelessRulesEngine<K, C> {
 		boolean result = rule.getCondition().matches(event);
 		conditionTime = System.nanoTime() - conditionTime;
 		if (result) {
-			caller.reportRuleHit(rule.getRuleId());
+			caller.reportRuleHit(ruleGroup, rule.getRuleId());
 			List<Action> actions = rule.getActions();
 			for (Action action : actions) {
 				applyRuleAction(eventCollector, eventContainer, event, rule, action);
@@ -219,8 +220,8 @@ public class StatelessRulesEngine<K, C> {
 		} else {
 			caller.handleRuleNoMatch(eventCollector, eventContainer, event, rule);
 		}
-		caller.reportRuleEfficiency(rule.getRuleId(), System.nanoTime() - ruleStartTime);
-		caller.reportConditionEfficiency(rule.getRuleId(), conditionTime);
+		caller.reportRuleEfficiency(ruleGroup, rule.getRuleId(), System.nanoTime() - ruleStartTime);
+		caller.reportConditionEfficiency(ruleGroup, rule.getRuleId(), conditionTime);
 	}
 
 	/**

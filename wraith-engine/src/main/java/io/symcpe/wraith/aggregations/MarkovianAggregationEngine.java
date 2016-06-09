@@ -17,7 +17,7 @@ package io.symcpe.wraith.aggregations;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 
 /**
  * Markovian Aggregation Engine. An aggregation engine that adheres to the
@@ -28,6 +28,6 @@ import java.util.Map.Entry;
  */
 public interface MarkovianAggregationEngine extends AggregationEngine {
 
-	public void emit(int aggregationWindow, String ruleActionId, List<Entry<String, Long>> emits) throws IOException;
+	public void emit(int aggregationWindow, String ruleActionId, List<Map<String, Object>> emits) throws IOException;
 
 }

@@ -80,7 +80,7 @@ public interface RulesEngineCaller<K, C> {
 	 * 
 	 * @param ruleId
 	 */
-	public void reportRuleHit(short ruleId);
+	public void reportRuleHit(String ruleGroup, short ruleId);
 
 	/**
 	 * Report time taken to execute the supplied rule id <br>
@@ -90,7 +90,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param ruleId
 	 * @param executeTime
 	 */
-	public void reportRuleEfficiency(short ruleId, long executeTime);
+	public void reportRuleEfficiency(String ruleGroup, short ruleId, long executeTime);
 
 	/**
 	 * Report time taken to execute the condition for the supplied rule id <br>
@@ -100,7 +100,7 @@ public interface RulesEngineCaller<K, C> {
 	 * @param ruleId
 	 * @param executeTime
 	 */
-	public void reportConditionEfficiency(short ruleId, long executeTime);
+	public void reportConditionEfficiency(String ruleGroup, short ruleId, long executeTime);
 
 	/**
 	 * Handle emission of an aggregation event

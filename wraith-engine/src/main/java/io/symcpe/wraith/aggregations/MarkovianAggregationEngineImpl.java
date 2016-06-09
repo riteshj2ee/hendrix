@@ -16,7 +16,6 @@
 package io.symcpe.wraith.aggregations;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -154,7 +153,7 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	 * @param ruleActionId
 	 * @throws IOException
 	 */
-	public void emit(int aggregationWindow, String ruleActionId, List<Entry<String, Long>> emits)
+	public void emit(int aggregationWindow, String ruleActionId, List<Map<String, Object>> emits)
 			throws IOException {
 		flush();
 		SortedMap<String, Aggregator> map = getAggregationMap().subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
@@ -175,8 +174,10 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		for (Iterator<Entry<String, Aggregator>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, Aggregator> entry = iterator.next();
 			if (template instanceof CountingAggregator) {
-				emits.add(new AbstractMap.SimpleEntry<String, Long>(entry.getKey(),
-						((CountingAggregator) entry.getValue()).getCardinality()));
+				Map<String, Object> header = new HashMap<>();
+				header.put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
+				header.put(Constants.FIELD_AGGREGATION_VALUE, ((CountingAggregator) entry.getValue()).getCardinality());
+				emits.add(header);
 			}
 			getFlushAggregationMap().remove(entry.getKey());
 			iterator.remove();

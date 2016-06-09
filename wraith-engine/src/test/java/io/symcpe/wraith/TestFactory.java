@@ -100,4 +100,9 @@ public class TestFactory implements EventFactory, StoreFactory {
 		return null;
 	}
 
+	@Override
+	public Event buildEvent(Map<String, Object> headers) {
+		return new TestEvent(headers);
+	}
+
 }

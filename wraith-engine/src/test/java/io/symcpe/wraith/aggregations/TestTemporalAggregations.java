@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.SortedMap;
 import java.util.stream.Collectors;
 
@@ -75,7 +74,7 @@ public class TestTemporalAggregations {
 				}
 			}
 			assertEquals(30, map.size());
-			List<Entry<String, Long>> result = new ArrayList<>();
+			List<Map<String, Object>> result = new ArrayList<>();
 			aggregationEngine.emit(aggregationWindow, ruleActionId, result);
 			System.out.println(k + "\t" + result.size() + "\t" + map.size() + "\n"
 					+ map.keySet().stream().map(key -> CountingEngine.extractTsFromAggregationKey(key))

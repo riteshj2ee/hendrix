@@ -35,6 +35,10 @@ public class TestEvent implements Event {
 		this.headers = new HashMap<String, Object>();
 	}
 
+	public TestEvent(Map<String, Object> headers) {
+		this.headers = headers;
+	}
+
 	@Override
 	public Map<String, Object> getHeaders() {
 		return headers;

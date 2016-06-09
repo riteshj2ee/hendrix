@@ -16,7 +16,6 @@
 package io.symcpe.wraith.aggregations;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -121,7 +120,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	}
 
 	@Override
-	public void emit(int aggregationWindow, String ruleActionId, List<Entry<String, Long>> emits) throws IOException {
+	public void emit(int aggregationWindow, String ruleActionId, List<Map<String, Object>> aggregateHeaders) throws IOException {
 		flush();
 		SortedMap<String, MutableBoolean> map = getAggregationMap().subMap(
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
@@ -142,7 +141,12 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 		for (Iterator<Entry<String, MutableBoolean>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, MutableBoolean> entry = iterator.next();
 			if (entry.getValue().isVal()) {
-				emits.add(new AbstractMap.SimpleEntry<String, Long>(entry.getKey(), 1L));
+				Map<String, Object> headers = new HashMap<>();
+				String[] keyParts = Utils.splitMapKey(entry.getKey());
+				long ts = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(entry.getKey());
+				headers.put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
+				headers.put(Constants.FIELD_TIMESTAMP, ts*1000);
+				aggregateHeaders.add(headers);
 			}
 			if (store != null) {
 				store.purgeState(taskId, entry.getKey());
