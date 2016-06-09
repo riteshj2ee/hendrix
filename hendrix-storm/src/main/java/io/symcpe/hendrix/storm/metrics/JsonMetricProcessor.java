@@ -89,6 +89,7 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 			if (point.name.startsWith("mcm")) {
 				for (Map.Entry<String, Long> entry : ((Map<String, Long>) point.value).entrySet()) {
 					String[] split = entry.getKey().split(RulesEngineBolt.TENANTID_SEPARATOR);
+					obj.addProperty("seriesName", point.name);
 					obj.addProperty("name", point.name+"."+entry.getKey());
 					obj.addProperty("ruleId", split[1]);
 					obj.addProperty("tenantId", split[0]);
@@ -101,7 +102,7 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 				}
 			} else {
 				if (point.value instanceof Number) {
-					obj.addProperty("name", point.name);
+					obj.addProperty("seriesName", point.name);
 					obj.addProperty("value", (Number) point.value);
 					try {
 						messageSender.sendMessage(gson.toJson(obj));

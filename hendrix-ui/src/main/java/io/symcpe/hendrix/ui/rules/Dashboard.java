@@ -38,6 +38,7 @@ import org.primefaces.model.chart.LineChartSeries;
 import org.primefaces.model.chart.PieChartModel;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
@@ -63,6 +64,8 @@ public class Dashboard implements Serializable {
 	private ApplicationManager am;
 	@ManagedProperty(value = "#{ub}")
 	private UserBean ub;
+	private LineChartModel hitCount;
+	private LineChartModel throughput;
 
 	public Dashboard() {
 	}
@@ -76,9 +79,25 @@ public class Dashboard implements Serializable {
 
 		ruleEfficiency = new LineChartModel();
 		ruleEfficiency.getAxis(AxisType.Y).setLabel("Execute Time (ms)");
-	    
+
+		hitCount = new LineChartModel();
+		hitCount.getAxis(AxisType.Y).setLabel("Count");
+		
+		throughput = new LineChartModel();
+		throughput.getAxis(AxisType.Y).setLabel("Count");
+
+		loadGraphs();
+	}
+	
+	public void loadGraphs() {
+		ruleEfficiency.clear();
+		hitCount.clear();
+		throughput.clear();
 		initializeTopRules();
-		initializeRuleEfficiency();
+		initializePerformanceMetric("efficiency", ruleEfficiency);
+		initializePerformanceMetric("hits", hitCount);
+		initializeThroughputMetrics("sthroughput", throughput);
+//		initializeThroughputMetrics("fthroughput", throughput);
 	}
 
 	private void initializeTopRules() {
@@ -86,9 +105,9 @@ public class Dashboard implements Serializable {
 		topRules.setLegendPosition("w");
 	}
 
-	private void initializeRuleEfficiency() {
+	private void initializePerformanceMetric(String metricName, LineChartModel model) {
 		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + ub.getTenant().getTenantId());
+		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName + "/" + ub.getTenant().getTenantId());
 		Date date = null;
 		try {
 			CloseableHttpResponse response = client.execute(get);
@@ -97,23 +116,57 @@ public class Dashboard implements Serializable {
 			JsonObject rules = gson.fromJson(string, JsonObject.class);
 			for (Entry<String, JsonElement> entry : rules.entrySet()) {
 				LineChartSeries series = new LineChartSeries(entry.getKey());
-				
 				for (JsonElement element : entry.getValue().getAsJsonArray()) {
 					JsonObject point = element.getAsJsonObject();
 					date = new Date(point.get("key").getAsLong());
 					series.set(formatter.format(date), point.get("value").getAsNumber());
 				}
-				ruleEfficiency.addSeries(series);
+				model.addSeries(series);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		DateAxis axis = new DateAxis("Time");
-	    axis.setTickAngle(-50);
-	    axis.setMax(formatter.format(date));
-	    axis.setTickFormat("%H:%#M:%S");
-	    ruleEfficiency.getAxes().put(AxisType.X, axis);
+		if (date != null) {
+			DateAxis axis = new DateAxis("Time");
+			axis.setTickAngle(-50);
+			axis.setMax(formatter.format(date));
+			axis.setTickFormat("%H:%#M:%S");
+			model.getAxes().put(AxisType.X, axis);
+		}else {
+			LineChartSeries lineChartSeries = new LineChartSeries("None");
+			lineChartSeries.set(0, 0);
+			model.addSeries(lineChartSeries);
+		}
+	}
+	
+	private void initializeThroughputMetrics(String metricName, LineChartModel model) {
+		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName);
+		Date date = null;
+		try {
+			CloseableHttpResponse response = client.execute(get);
+			String throughput = EntityUtils.toString(response.getEntity());
+			Gson gson = new Gson();
+			JsonArray metrics = gson.fromJson(throughput, JsonArray.class);
+			LineChartSeries series = new LineChartSeries(metricName);
+			for (JsonElement entry : metrics) {
+				JsonObject point = entry.getAsJsonObject();
+				date = new Date(point.get("key").getAsLong());
+				series.set(formatter.format(date), point.get("value").getAsNumber());
+			}
+			model.addSeries(series);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (date != null) {
+			DateAxis axis = new DateAxis("Time");
+			axis.setTickAngle(-50);
+			axis.setMax(formatter.format(date));
+			axis.setTickFormat("%H:%#M:%S");
+			model.getAxes().put(AxisType.X, axis);
+		}
 	}
 
 	private void initLinearModel() {
@@ -194,6 +247,20 @@ public class Dashboard implements Serializable {
 	 */
 	public void setAm(ApplicationManager am) {
 		this.am = am;
+	}
+
+	/**
+	 * @return the hitCount
+	 */
+	public LineChartModel getHitCount() {
+		return hitCount;
+	}
+
+	/**
+	 * @return the throughput
+	 */
+	public LineChartModel getThroughput() {
+		return throughput;
 	}
 
 }

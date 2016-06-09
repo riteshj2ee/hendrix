@@ -41,11 +41,32 @@ public class PerfMonEndpoint {
 		this.am = applicationManager;
 	}
 
-	@Path("{tenantId}")
+	@Path("/efficiency/{tenantId}")
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Map<String, List<Point>> getRuleEfficiency(@PathParam("tenantId") String tenantId) {
+		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.efficiency", tenantId);
+	}
+	
+	@Path("/hits/{tenantId}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	public Map<String, List<Point>> getRulePerformance(@PathParam("tenantId") String tenantId) {
-		return am.getPerfMonitor().getRuleEfficiencySeries(tenantId);
+		return am.getPerfMonitor().getSeriesForTenant("mcm.rule.hit.count", tenantId);
 	}
-
+	
+	@Path("/sthroughput")
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	public List<Point> getSuccessThroughput() {
+		return am.getPerfMonitor().getSeries("cm.interceptor.success");
+	}
+	
+	@Path("/fthroughput")
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	public List<Point> getFailureThroughput() {
+		return am.getPerfMonitor().getSeries("cm.interceptor.fail");
+	}
+	
 }

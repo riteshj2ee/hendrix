@@ -41,7 +41,9 @@ import org.apache.flume.source.SyslogUDPSource;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteQueue;
+import org.apache.ignite.IgniteSet;
 import org.apache.ignite.cache.CacheAtomicityMode;
+import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.CollectionConfiguration;
 
@@ -62,28 +64,34 @@ import io.symcpe.hendrix.api.storage.Point;
 public class PerformanceMonitor implements Managed {
 
 	private int channelSize;
-	private CollectionConfiguration colCfg;
-	private IgniteCache<String, Set<String>> channelCache;
+	private IgniteCache<String, Set<String>> seriesLookup;
 	private PerfMonChannel localChannel;
 	private SyslogUDPSource source;
 	private ExecutorService eventProcessor;
 	private Ignite ignite;
+	private CacheConfiguration<String, Set<String>> cacheCfg;
+	private CollectionConfiguration cfg;
+	private CollectionConfiguration colCfg;
 
 	public PerformanceMonitor(ApplicationManager applicationManager) {
 		ignite = applicationManager.getIgnite();
 	}
 
 	public void initIgniteCache() {
-		CacheConfiguration<String, Set<String>> cacheCfg = new CacheConfiguration<>();
+		cacheCfg = new CacheConfiguration<>();
 		cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
 		cacheCfg.setName("ruleEfficiency");
 		cacheCfg.setBackups(2);
-		channelCache = ignite.getOrCreateCache(cacheCfg);
+		seriesLookup = ignite.getOrCreateCache(cacheCfg);
 
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
 		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
+		
+		cfg = new CollectionConfiguration();
+		cfg.setBackups(1);
+		cfg.setCacheMode(CacheMode.REPLICATED);
 	}
 
 	public void initSyslogServer() {
@@ -136,39 +144,64 @@ public class PerformanceMonitor implements Managed {
 		Gson gson = new Gson();
 		JsonElement b = gson.fromJson(message, JsonElement.class);
 		JsonObject obj = b.getAsJsonObject();
-		String seriesName = obj.get("name").getAsString();
-		String tenantId = obj.get("tenantId").getAsString();
-		String ruleId = obj.get("ruleId").getAsString();
-		if (seriesName.startsWith("mcm.rule.efficiency")) {
-			Set<String> set = channelCache.get(tenantId);
-			if (set == null) {
-				set = new HashSet<>();
-				set.add(ruleId);
-				channelCache.put(tenantId, set);
-			} else if (!set.contains(ruleId)) {
-				set.add(ruleId);
-				channelCache.put(tenantId, set);
+		String seriesName = obj.get("seriesName").getAsString();
+		if (seriesName.startsWith("mcm")) {
+			String tenantId = obj.get("tenantId").getAsString();
+			String ruleId = obj.get("ruleId").getAsString();
+			Set<String> tenants = seriesLookup.get(seriesName);
+			if (tenants == null) {
+				tenants = new HashSet<>();
+				seriesLookup.put(seriesName, tenants);
+			}
+			if (tenants.add(seriesName + "_" + tenantId)) {
+				seriesLookup.put(seriesName, tenants);
+			}
+			IgniteSet<String> set = ignite.set(seriesName + "_" + tenantId, cfg);
+			set.add(ruleId);
+			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
+			if(queue.size()>=channelSize) {
+				queue.remove();
+			}
+			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
+		}else if(seriesName.startsWith("cm")) {
+			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
+			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
+			if(queue.size()>=channelSize) {
+				queue.remove();
 			}
 		}
-		IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
-		queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
 	}
 
 	/**
+	 * @param seriesName
+	 * @param tenantId
 	 * @return
 	 */
-	public Map<String, List<Point>> getRuleEfficiencySeries(String tenantId) {
+	public Map<String, List<Point>> getSeriesForTenant(String seriesName, String tenantId) {
 		Map<String, List<Point>> efficiencySeries = new HashMap<>();
-		Set<String> set = channelCache.get(tenantId);
+		Set<String> set = seriesLookup.get(seriesName);
 		if (set != null && !set.isEmpty()) {
-			for (String ruleId : set) {
-				IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
-				efficiencySeries.put(ruleId, queueToList(queue));
+			for (String series : set) {
+				if (series.contains(tenantId)) {
+					IgniteSet<String> rules = ignite.set(series, cfg);
+					for (String ruleId : rules) {
+						IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
+						efficiencySeries.put(ruleId, queueToList(queue));
+					}
+				}
 			}
 		} else {
 			System.out.println("Perf stats not found for tenantId:" + tenantId);
 		}
 		return efficiencySeries;
+	}
+	
+	/**
+	 * @param seriesName
+	 * @return
+	 */
+	public List<Point> getSeries(String seriesName) {
+		return queueToList(ignite.queue(seriesName, channelSize, colCfg));
 	}
 
 	/**
@@ -281,4 +314,5 @@ public class PerformanceMonitor implements Managed {
 		}
 
 	}
+
 }
