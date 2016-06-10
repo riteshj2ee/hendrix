@@ -26,6 +26,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.Event;
+import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.MutableBoolean;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.aggregators.AggregationRejectException;
@@ -46,8 +48,10 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	private AggregationStore store;
 	private int taskId;
 	private StoreFactory factory;
+	private EventFactory eventFactory;
 
-	public StateTrackingEngine(StoreFactory factory) {
+	public StateTrackingEngine(EventFactory eventFactory, StoreFactory factory) {
+		this.eventFactory = eventFactory;
 		this.factory = factory;
 	}
 
@@ -120,7 +124,7 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 	}
 
 	@Override
-	public void emit(int aggregationWindow, String ruleActionId, List<Map<String, Object>> aggregateHeaders) throws IOException {
+	public void emit(int aggregationWindow, String ruleActionId, List<Event> events) throws IOException {
 		flush();
 		SortedMap<String, MutableBoolean> map = getAggregationMap().subMap(
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
@@ -141,12 +145,12 @@ public class StateTrackingEngine implements MarkovianAggregationEngine {
 		for (Iterator<Entry<String, MutableBoolean>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, MutableBoolean> entry = iterator.next();
 			if (entry.getValue().isVal()) {
-				Map<String, Object> headers = new HashMap<>();
+				Event event = eventFactory.buildEvent();
 				String[] keyParts = Utils.splitMapKey(entry.getKey());
 				long ts = MarkovianAggregationEngineImpl.extractTsFromAggregationKey(entry.getKey());
-				headers.put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
-				headers.put(Constants.FIELD_TIMESTAMP, ts*1000);
-				aggregateHeaders.add(headers);
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, keyParts[keyParts.length - 1]);
+				event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts*1000);
+				events.add(event);
 			}
 			if (store != null) {
 				store.purgeState(taskId, entry.getKey());

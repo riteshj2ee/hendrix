@@ -73,7 +73,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 		}
 		this.buffer = new ArrayList<>(bufferSize);
 		this.unifiedFactory = new UnifiedFactory();
-		this.stateTrackingEngine = new StateTrackingEngine(unifiedFactory);
+		this.stateTrackingEngine = new StateTrackingEngine(unifiedFactory, unifiedFactory);
 		int taskId = context.getThisTaskIndex();
 		try {
 			stateTrackingEngine.initialize(stormConf, taskId);
@@ -137,12 +137,11 @@ public class StateTrackingBolt extends BaseRichBolt {
 		String ruleActionId = tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID);
 		Entry<Short, Short> ruleActionIdSeparates = Utils.separateRuleActionId(ruleActionId);
 		try {
-			List<Map<String, Object>> aggregateHeaders = new ArrayList<>();
+			List<Event> aggregateHeaders = new ArrayList<>();
 			emitAndResetAggregates((int) tuple.getIntegerByField(Constants.FIELD_AGGREGATION_WINDOW), ruleActionId,
 					aggregateHeaders);
 			if (!aggregateHeaders.isEmpty()) {
-				for (Map<String, Object> result : aggregateHeaders) {
-					Event event = unifiedFactory.buildEvent(result);
+				for (Event event : aggregateHeaders) {
 					event.getHeaders().put(Constants.FIELD_RULE_ID, ruleActionIdSeparates.getKey());
 					event.getHeaders().put(Constants.FIELD_ACTION_ID, ruleActionIdSeparates.getValue());
 					collector.emit(Constants.AGGREGATION_OUTPUT_STREAM, tuple, new Values(event));
@@ -198,7 +197,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 	 * @throws IOException
 	 */
 	public void emitAndResetAggregates(int aggregationWindow, String ruleActionId,
-			List<Map<String, Object>> aggregateHeaders) throws IOException {
+			List<Event> aggregateHeaders) throws IOException {
 		if (stateTrackingEngine.containsRuleActionId(ruleActionId)) {
 			stateTrackingEngine.emit(aggregationWindow, ruleActionId, aggregateHeaders);
 		}

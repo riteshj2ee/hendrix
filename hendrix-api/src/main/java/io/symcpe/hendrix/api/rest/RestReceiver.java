@@ -16,6 +16,7 @@
 package io.symcpe.hendrix.api.rest;
 
 import java.util.Map;
+import java.util.Queue;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -48,6 +49,26 @@ public class RestReceiver {
 	@Produces({ MediaType.APPLICATION_JSON })
 	public boolean receiveEvent(@PathParam("rule") Short ruleId, Map<String, Object> event) {
 		return alertReceiver.publishEvent(ruleId, event);
+	}
+	
+	@POST
+	@Path("/open/{rule}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public void openChannel(@PathParam("rule") Short ruleId) {
+		alertReceiver.openChannel(ruleId);
+	}
+	
+	@POST
+	@Path("/close/{rule}")
+	public void closeChannel(@PathParam("rule") Short ruleId) {
+		alertReceiver.closeChannel(ruleId);
+	}
+	
+	@GET
+	@Path("/events/{rule}")
+	@Produces({ MediaType.APPLICATION_JSON })
+	public Queue<Map<String, Object>> getEvents(@PathParam("rule") Short ruleId) {
+		return alertReceiver.getChannel(ruleId);
 	}
 	
 	@GET

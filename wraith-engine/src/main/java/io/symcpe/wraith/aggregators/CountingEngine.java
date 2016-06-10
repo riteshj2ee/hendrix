@@ -18,7 +18,9 @@ package io.symcpe.wraith.aggregators;
 import java.util.Map;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.aggregations.MarkovianAggregationEngineImpl;
+import io.symcpe.wraith.store.StoreFactory;
 
 /**
  * {@link CountingEngine} aggregates the value, group values by a key either put
@@ -36,6 +38,10 @@ import io.symcpe.wraith.aggregations.MarkovianAggregationEngineImpl;
  * @author ambud_sharma
  */
 public class CountingEngine extends MarkovianAggregationEngineImpl {
+
+	public CountingEngine(EventFactory eventFactory, StoreFactory storeFactory) {
+		super(eventFactory, storeFactory);
+	}
 
 	/**
 	 * Aggregator settings can be initialized with supplied configuration

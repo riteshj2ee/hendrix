@@ -30,11 +30,13 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.clearspring.analytics.stream.cardinality.ICardinality;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.Event;
 import io.symcpe.wraith.MutableBoolean;
 import io.symcpe.wraith.TestFactory;
 import io.symcpe.wraith.Utils;
@@ -48,6 +50,13 @@ import io.symcpe.wraith.store.TemplateStore;
  * @author ambud_sharma
  */
 public class TestStateTrackingEngine {
+	
+	private TestFactory factory;
+
+	@Before
+	public void before() {
+		factory = new TestFactory();
+	}
 
 	@Test
 	public void testKeyBucketing() {
@@ -63,7 +72,7 @@ public class TestStateTrackingEngine {
 
 	@Test
 	public void testTracking() throws Exception {
-		StateTrackingEngine engine = new StateTrackingEngine(new TestFactory());
+		StateTrackingEngine engine = new StateTrackingEngine(factory, new TestStateFactory());
 		engine.initialize(new HashMap<>(), 1);
 		engine.track(1461272081000L, 10, Utils.combineRuleActionId((short) 2, (short) 3), "series1");
 		engine.track(1461272082000L, 10, Utils.combineRuleActionId((short) 2, (short) 3), "series1");
@@ -89,7 +98,7 @@ public class TestStateTrackingEngine {
 
 	@Test
 	public void testStateDataRejection() throws Exception {
-		StateTrackingEngine engine = new StateTrackingEngine(new TestFactory());
+		StateTrackingEngine engine = new StateTrackingEngine(factory, new TestStateFactory());
 		String raId = Utils.combineRuleActionId((short) 2, (short) 3);
 		Map<String, String> conf = new HashMap<>();
 		conf.put(Constants.AGGREGATION_JITTER_TOLERANCE, "0");
@@ -99,7 +108,7 @@ public class TestStateTrackingEngine {
 			engine.track(1461272082000L, 10, raId, "series1");
 			engine.track(1461272083000L, 10, raId, "series1");
 			engine.track(1461272084000L, 10, raId, "series1");
-			List<Map<String, Object>> emits = new ArrayList<>();
+			List<Event> emits = new ArrayList<>();
 			engine.emit(10, raId, emits);
 			assertEquals(0, emits.size());
 			engine.emit(10, raId, emits);
@@ -112,7 +121,7 @@ public class TestStateTrackingEngine {
 
 	@Test
 	public void testStoreFlush() throws Exception {
-		StateTrackingEngine engine = new StateTrackingEngine(new TestStateFactory());
+		StateTrackingEngine engine = new StateTrackingEngine(factory, new TestStateFactory());
 		String raId = Utils.combineRuleActionId((short) 2, (short) 3);
 		Map<String, String> conf = new HashMap<>();
 		conf.put(Constants.ASTORE_TYPE, "io.symcpe.wraith.aggregations.TestStateTrackingEngine.TestStateAggregationStore");
@@ -128,13 +137,13 @@ public class TestStateTrackingEngine {
 		assertEquals(2, engine.getFlushAggregationMap().size());
 		engine.flush();
 		assertEquals(2, TestStateAggregationStore.store.size());
-		List<Map<String, Object>> emits = new ArrayList<>();
+		List<Event> emits = new ArrayList<>();
 		engine.emit(10, raId, emits);
 		assertEquals(1, emits.size());
 		assertEquals(1, engine.getAggregationMap().size());
 		assertEquals(1, engine.getFlushAggregationMap().size());
 		assertEquals(1, TestStateAggregationStore.store.size());
-		engine = new StateTrackingEngine(new TestStateFactory());
+		engine = new StateTrackingEngine(factory, new TestStateFactory());
 		engine.initialize(conf, 1);
 		assertEquals(1, engine.getAggregationMap().size());
 		assertEquals(0, engine.getFlushAggregationMap().size());

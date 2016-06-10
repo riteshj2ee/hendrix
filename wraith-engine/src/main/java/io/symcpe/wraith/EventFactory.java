@@ -15,8 +15,6 @@
  */
 package io.symcpe.wraith;
 
-import java.util.Map;
-
 /**
  * Factory blueprint to build events
  * 
@@ -26,6 +24,4 @@ public interface EventFactory {
 	
 	public Event buildEvent();
 	
-	public Event buildEvent(Map<String, Object> headers);
-
 }

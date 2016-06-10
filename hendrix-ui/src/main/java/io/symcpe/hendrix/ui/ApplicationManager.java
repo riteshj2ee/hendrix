@@ -26,6 +26,7 @@ import javax.annotation.PostConstruct;
 import javax.faces.bean.ApplicationScoped;
 import javax.faces.bean.ManagedBean;
 
+import io.symcpe.hendrix.ui.alerts.AlertReceiver;
 import io.symcpe.hendrix.ui.rules.RulesManager;
 import io.symcpe.hendrix.ui.rules.TemplateManager;
 import io.symcpe.hendrix.ui.rules.TenantManager;
@@ -72,6 +73,7 @@ public class ApplicationManager implements Serializable {
 				throw new RuntimeException("Default configuration file not loaded", e);
 			}
 		}
+		AlertReceiver.getInstance().setAm(this);
 		RulesManager.getInstance().init(this);
 		TenantManager.getInstance().init(this);
 		TemplateManager.getInstance().init(this);

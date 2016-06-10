@@ -25,6 +25,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 	private Constants() {
 	}
 
+	public static final int AVG_EVENT_FIELD_COUNT = Integer.parseInt(System.getProperty("event.field.count", "40"));
 	public static final int METRICS_FREQUENCY = 10;
 	public static final String PARALLELISM_ONE = "1";
 	public static final String ALERT_VIEWER_BOLT = "alertViewerBolt";

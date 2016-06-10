@@ -26,12 +26,15 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.Event;
+import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.aggregators.AggregationRejectException;
 import io.symcpe.wraith.aggregators.Aggregator;
 import io.symcpe.wraith.aggregators.CountingAggregator;
 import io.symcpe.wraith.aggregators.StaleDataException;
 import io.symcpe.wraith.store.AggregationStore;
+import io.symcpe.wraith.store.StoreFactory;
 
 /**
  * {@link MarkovianAggregationEngineImpl} aggregates the value, group values by a key either
@@ -59,6 +62,14 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	private Aggregator template;
 	private AggregationStore store;
 	private int taskId;
+	private EventFactory eventFactory;
+	@SuppressWarnings("unused")
+	private StoreFactory storeFactory;
+	
+	public MarkovianAggregationEngineImpl(EventFactory eventFactory, StoreFactory storeFactory) {
+		this.eventFactory = eventFactory;
+		this.storeFactory = storeFactory;
+	}
 
 	/**
 	 * {@link Aggregator} settings can be initialized with supplied
@@ -72,6 +83,7 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	public void initialize(Map<String, String> conf, int taskId) throws Exception {
 		this.taskId = taskId;
 		lastEmittedBucketMap = new HashMap<String, Integer>();
+//		storeFactory.getAggregationStore(type, conf)
 		aggregationMap = new TreeMap<>();
 		flushAggregationMap = new TreeMap<>();
 		jitterTolerance = Integer.parseInt(conf.getOrDefault(Constants.AGGREGATION_JITTER_TOLERANCE, "10")) * 1000;
@@ -153,7 +165,7 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	 * @param ruleActionId
 	 * @throws IOException
 	 */
-	public void emit(int aggregationWindow, String ruleActionId, List<Map<String, Object>> emits)
+	public void emit(int aggregationWindow, String ruleActionId, List<Event> emits)
 			throws IOException {
 		flush();
 		SortedMap<String, Aggregator> map = getAggregationMap().subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
@@ -174,10 +186,10 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		for (Iterator<Entry<String, Aggregator>> iterator = set.iterator(); iterator.hasNext();) {
 			Entry<String, Aggregator> entry = iterator.next();
 			if (template instanceof CountingAggregator) {
-				Map<String, Object> header = new HashMap<>();
-				header.put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
-				header.put(Constants.FIELD_AGGREGATION_VALUE, ((CountingAggregator) entry.getValue()).getCardinality());
-				emits.add(header);
+				Event event = eventFactory.buildEvent();
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, ((CountingAggregator) entry.getValue()).getCardinality());
+				emits.add(event);
 			}
 			getFlushAggregationMap().remove(entry.getKey());
 			iterator.remove();

@@ -16,8 +16,8 @@
 package io.symcpe.hendrix.storm;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.symcpe.wraith.Event;
 
@@ -27,16 +27,16 @@ import io.symcpe.wraith.Event;
  * @author ambud_sharma
  */
 public class HendrixEvent implements Event {
-	
+
 	private static final long serialVersionUID = 1L;
 	private Map<String, Object> headers;
 	private byte[] body;
-	
+
 	HendrixEvent() {
-		headers = new HashMap<>();
+		headers = new ConcurrentHashMap<>(Constants.AVG_EVENT_FIELD_COUNT);
 	}
-	
-	public HendrixEvent(Map<String, Object> headers) {
+
+	HendrixEvent(Map<String, Object> headers) {
 		this.headers = headers;
 	}
 
@@ -62,6 +62,10 @@ public class HendrixEvent implements Event {
 	@Override
 	public void setHeaders(Map<String, Object> headers) {
 		this.headers = headers;
+	}
+	
+	public static Map<String, Object> getMapInstance() {
+		return new ConcurrentHashMap<>(Constants.AVG_EVENT_FIELD_COUNT);
 	}
 
 }

@@ -68,7 +68,12 @@ public class AlertViewer implements Serializable {
 
 	public void openChannel() {
 		if (ruleId != -1) {
-			receiver.addChannel(ruleId);
+			try {
+				receiver.addChannel(ruleId);
+			} catch (Exception e) {
+				FacesContext.getCurrentInstance().addMessage(null,
+						new FacesMessage("Channel fail to open for ruleid:"+ruleId));
+			}
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage("Channel opened for ruleid:"+ruleId));
 		} else {
@@ -79,7 +84,12 @@ public class AlertViewer implements Serializable {
 
 	public void closeChannel() {
 		if (ruleId != -1) {
-			receiver.closeChannel(ruleId);
+			try {
+				receiver.closeChannel(ruleId);
+			} catch (Exception e) {
+				FacesContext.getCurrentInstance().addMessage(null,
+						new FacesMessage("Channel fail to close for ruleid:"+ruleId));
+			}
 		}
 	}
 
@@ -105,7 +115,11 @@ public class AlertViewer implements Serializable {
 		if (ruleId<1) {
 			return new LinkedList<>();
 		} else {
-			Queue<Map<String, Object>> channel = receiver.getChannel(ruleId);
+			Queue<Map<String, Object>> channel = null;
+			try {
+				channel = receiver.getChannel(ruleId);
+			} catch (Exception e) {
+			}
 			if(channel==null) {
 				return new LinkedList<>();
 			}else {

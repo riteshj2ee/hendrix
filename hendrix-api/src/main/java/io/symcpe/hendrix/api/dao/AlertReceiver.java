@@ -58,13 +58,14 @@ public class AlertReceiver implements Managed {
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
 		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
+		System.out.println("Starting alert receiver");
 	}
 	
 	@Override
 	public void stop() throws Exception {
 	}
 
-	public void addChannel(Short ruleId) {
+	public void openChannel(Short ruleId) {
 		if (ruleId != null) {
 			String ruleIdStr = String.valueOf(ruleId);
 			if (!channelCache.containsKey(ruleIdStr)) {

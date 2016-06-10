@@ -88,16 +88,18 @@ public class JsonMetricProcessor implements IMetricsProcessor {
 			JsonObject obj = new JsonObject();
 			if (point.name.startsWith("mcm")) {
 				for (Map.Entry<String, Long> entry : ((Map<String, Long>) point.value).entrySet()) {
-					String[] split = entry.getKey().split(RulesEngineBolt.TENANTID_SEPARATOR);
-					obj.addProperty("seriesName", point.name);
-					obj.addProperty("name", point.name+"."+entry.getKey());
-					obj.addProperty("ruleId", split[1]);
-					obj.addProperty("tenantId", split[0]);
-					obj.addProperty("value", (Number) entry.getValue());
 					try {
+						obj.addProperty("seriesName", point.name);
+						obj.addProperty("name", point.name + "." + entry.getKey());
+						if (point.name.contains("rule")) {
+							String[] split = entry.getKey().split(RulesEngineBolt.TENANTID_SEPARATOR);
+							obj.addProperty("ruleId", split[1]);
+							obj.addProperty("tenantId", split[0]);
+						}
+						obj.addProperty("value", (Number) entry.getValue());
 						messageSender.sendMessage(gson.toJson(obj));
-					} catch (IOException e) {
-						logger.log(Level.SEVERE, "Exception sending instrumentation metrics", e);
+					} catch (Exception e) {
+						logger.log(Level.SEVERE, "Exception parsin/sending instrumentation metrics", e);
 					}
 				}
 			} else {

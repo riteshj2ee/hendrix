@@ -84,7 +84,7 @@ public class TestInterceptionBolt {
 				return new ArrayList<>();
 			}
 		}));
-		when(input.getString(0)).thenReturn("{\"@timestamp\":\"2016-04-21T20:54:41.103Z\"}");
+		when(input.getString(0)).thenReturn("{\"@timestamp\":\"2016-04-21T20:54:41.103Z\",\"tenant_id\":\"asdas\"}");
 		bolt.execute(input);
 		String result = processedEventContainer.get().get(0).toString();
 		

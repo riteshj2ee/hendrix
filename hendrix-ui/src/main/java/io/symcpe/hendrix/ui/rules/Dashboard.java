@@ -18,10 +18,8 @@ package io.symcpe.hendrix.ui.rules;
 import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Map.Entry;
-import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 import javax.faces.bean.ManagedBean;
@@ -136,9 +134,6 @@ public class Dashboard implements Serializable {
 		if (ts != -1) {
 			DateAxis axis = new DateAxis("Time");
 			axis.setTickAngle(-50);
-			Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("utc"));
-			cal.setTime(new Date(ts));
-			cal.set(Calendar.MINUTE, -5);
 			axis.setTickFormat("%H:%#M:%S");
 			axis.setMax(formatter.format(new Date(ts)));
 			model.getAxes().put(AxisType.X, axis);

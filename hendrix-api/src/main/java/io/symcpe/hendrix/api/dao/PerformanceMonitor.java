@@ -146,7 +146,7 @@ public class PerformanceMonitor implements Managed {
 		JsonElement b = gson.fromJson(message, JsonElement.class);
 		JsonObject obj = b.getAsJsonObject();
 		String seriesName = obj.get("seriesName").getAsString();
-		if (seriesName.startsWith("mcm")) {
+		if (seriesName.startsWith("mcm") && seriesName.contains("rule")) {
 			String tenantId = obj.get("tenantId").getAsString();
 			String ruleId = obj.get("ruleId").getAsString();
 			Set<String> tenants = seriesLookup.get(seriesName);
@@ -163,7 +163,7 @@ public class PerformanceMonitor implements Managed {
 			if (queue.size() >= channelSize) {
 				queue.remove();
 			}
-			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
+			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(), obj.get("value").getAsNumber()));
 		} else if (seriesName.startsWith("cm")) {
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));

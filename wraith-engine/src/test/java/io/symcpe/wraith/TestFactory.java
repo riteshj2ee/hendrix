@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.symcpe.wraith.Event;
-import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleSerializer;
 import io.symcpe.wraith.store.AggregationStore;
@@ -98,11 +96,6 @@ public class TestFactory implements EventFactory, StoreFactory {
 	@Override
 	public AggregationStore getAggregationStore(String type, Map<String, String> conf) throws Exception {
 		return null;
-	}
-
-	@Override
-	public Event buildEvent(Map<String, Object> headers) {
-		return new TestEvent(headers);
 	}
 
 }

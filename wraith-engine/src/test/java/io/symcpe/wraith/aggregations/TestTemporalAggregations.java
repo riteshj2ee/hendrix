@@ -28,6 +28,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import io.symcpe.wraith.Constants;
+import io.symcpe.wraith.Event;
+import io.symcpe.wraith.TestFactory;
 import io.symcpe.wraith.Utils;
 import io.symcpe.wraith.aggregators.AggregationRejectException;
 import io.symcpe.wraith.aggregators.Aggregator;
@@ -38,16 +40,18 @@ public class TestTemporalAggregations {
 
 	private static final String AGGREGATION_KEY = "1233_hello";
 	private Map<String, String> conf;
+	private TestFactory factory;
 
 	@Before
 	public void before() {
 		conf = new HashMap<>();
+		factory = new TestFactory();
 	}
 
 	@Test
 	public void testTemporalEmits() throws Exception {
 		for (int k = 0; k < 10; k++) {
-			CountingEngine aggregationEngine = new CountingEngine();
+			CountingEngine aggregationEngine = new CountingEngine(factory, factory);
 			conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
 			conf.put(Constants.AGGREGATION_JITTER_TOLERANCE, String.valueOf(k * 10));
 			aggregationEngine.initialize(conf, 1);
@@ -74,7 +78,7 @@ public class TestTemporalAggregations {
 				}
 			}
 			assertEquals(30, map.size());
-			List<Map<String, Object>> result = new ArrayList<>();
+			List<Event> result = new ArrayList<>();
 			aggregationEngine.emit(aggregationWindow, ruleActionId, result);
 			System.out.println(k + "\t" + result.size() + "\t" + map.size() + "\n"
 					+ map.keySet().stream().map(key -> CountingEngine.extractTsFromAggregationKey(key))
