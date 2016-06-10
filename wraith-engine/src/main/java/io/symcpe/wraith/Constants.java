@@ -29,7 +29,7 @@ public abstract class Constants {
 	public static final String FIELD_STATE_TRACK = "_st";
 	public static final String FIELD_AGGREGATION_KEY = "_a";
 	public static final String FIELD_AGGREGATION_TYPE = "_at";
-	public static final String FIELD_AGGREGATION_VALUE = "_av";
+	public static final String FIELD_AGGREGATION_VALUE = "_v";
 	public static final String FIELD_ANOMALY_VALUE = "_nv";
 	public static final String FIELD_ANOMALY_SERIES = "_ns";
 	public static final String FIELD_RULE_CONTENT = "_rc";
