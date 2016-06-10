@@ -9,16 +9,22 @@
 	<ui:define name="title"></ui:define>
 	<ui:define name="body">
 		<h:form style="width: 100%; max-height: 90%; float:left">
-			<p:poll autoStart="true" listener="#{dash.loadGraphs}" update="chEfficiency, chThroughput" interval="10" />
-			<p:panelGrid columns="2" style="width:100%">
-				<p:panel header="Rule Efficiency">
-					<p:chart id="chEfficiency" type="line" style="height:300px;padding:5px" responsive="true" model="#{dash.ruleEfficiency}"></p:chart>
-				</p:panel>
+			<p:poll autoStart="true" listener="#{dash.loadGraphs}"
+				update="chEfficiency, chThroughput" interval="10" />
+			<p:panelGrid columns="1" style="width:100%">
 				<p:panel header="Event Flow Rate (EPS)">
-					<p:chart id="chThroughput" type="line" style="height:300px;padding:5px" responsive="true" model="#{dash.throughput}"></p:chart>
+					<p:chart id="chThroughput" type="line"
+						style="height:300px;padding:5px" responsive="true"
+						model="#{dash.throughput}"></p:chart>
 				</p:panel>
+
 			</p:panelGrid>
-			<p:panelGrid columns="2" style="width:100%">
+			<p:panelGrid columns="1" style="width:100%">
+				<p:panel header="Rule Efficiency">
+					<p:chart id="chEfficiency" type="line"
+						style="height:300px;padding:5px" responsive="true"
+						model="#{dash.ruleEfficiency}"></p:chart>
+				</p:panel>
 			</p:panelGrid>
 		</h:form>
 	</ui:define>
