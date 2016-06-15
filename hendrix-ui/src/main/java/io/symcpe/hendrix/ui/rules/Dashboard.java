@@ -123,6 +123,7 @@ public class Dashboard implements Serializable {
 					if (date.getTime() > ts) {
 						ts = date.getTime();
 					}
+					System.out.println("Perf:"+element);
 					series.set(formatter.format(date), point.get("value").getAsNumber());
 				}
 				model.addSeries(series);
@@ -131,13 +132,14 @@ public class Dashboard implements Serializable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if (ts != -1) {
+		if (ts > 0) {
 			DateAxis axis = new DateAxis("Time");
 			axis.setTickAngle(-50);
 			axis.setTickFormat("%H:%#M:%S");
 			axis.setMax(formatter.format(new Date(ts)));
 			model.getAxes().put(AxisType.X, axis);
 		} else {
+			model.clear();
 			LineChartSeries lineChartSeries = new LineChartSeries("None");
 			lineChartSeries.set(0, 0);
 			model.addSeries(lineChartSeries);
@@ -157,6 +159,7 @@ public class Dashboard implements Serializable {
 			for (JsonElement entry : metrics) {
 				JsonObject point = entry.getAsJsonObject();
 				date = new Date(point.get("key").getAsLong());
+				System.out.println("Throughput:"+entry);
 				series.set(formatter.format(date), point.get("value").getAsNumber());
 			}
 			model.addSeries(series);
@@ -171,6 +174,7 @@ public class Dashboard implements Serializable {
 			axis.setTickFormat("%H:%#M:%S");
 			model.getAxes().put(AxisType.X, axis);
 		} else {
+			model.clear();
 			LineChartSeries lineChartSeries = new LineChartSeries("None");
 			lineChartSeries.set(0, 0);
 			model.addSeries(lineChartSeries);
