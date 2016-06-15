@@ -163,7 +163,9 @@ public class PerformanceMonitor implements Managed {
 			if (queue.size() >= channelSize) {
 				queue.remove();
 			}
-			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(), obj.get("value").getAsNumber()));
+			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(),
+					obj.get("value").getAsNumber()));
+			System.out.println("Processed event:" + obj);
 		} else if (seriesName.startsWith("cm")) {
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));

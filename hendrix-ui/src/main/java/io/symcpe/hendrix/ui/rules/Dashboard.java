@@ -170,6 +170,10 @@ public class Dashboard implements Serializable {
 			axis.setMax(formatter.format(date));
 			axis.setTickFormat("%H:%#M:%S");
 			model.getAxes().put(AxisType.X, axis);
+		} else {
+			LineChartSeries lineChartSeries = new LineChartSeries("None");
+			lineChartSeries.set(0, 0);
+			model.addSeries(lineChartSeries);
 		}
 	}
 
