@@ -17,6 +17,7 @@ package io.symcpe.hendrix.api.dao;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
@@ -35,6 +36,9 @@ import io.symcpe.hendrix.api.ApplicationManager;
  */
 public class AlertReceiver implements Managed {
 
+	private static final String DEFAULT_CHANNEL_CAPACITY = "100";
+	private static final String CHANNEL_CAPACITY = "channel.capacity";
+	private static final Logger logger = Logger.getLogger(AlertReceiver.class.getName());
 	private static final String CHANNELS = "channels";
 	private int channelSize = 0;
 	private Ignite ignite;
@@ -45,26 +49,33 @@ public class AlertReceiver implements Managed {
 		this.ignite = am.getIgnite();
 	}
 	
-	@Override
-	public void start() throws Exception {
+	public void initializeCache() throws Exception {
 		CacheConfiguration<String, Integer> cacheCfg = new CacheConfiguration<>();
 		cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
 		cacheCfg.setName(CHANNELS);
 		cacheCfg.setBackups(2);
 		channelCache = ignite.getOrCreateCache(cacheCfg);
-		System.out.println("Channel cache:"+channelCache);
+		logger.info("Channel cache:"+channelCache);
 
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
-		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
-		System.out.println("Starting alert receiver");
+		channelSize = Integer.parseInt(System.getProperty(CHANNEL_CAPACITY, DEFAULT_CHANNEL_CAPACITY));
+		logger.info("Starting alert receiver");
+	}
+	
+	@Override
+	public void start() throws Exception {
+		initializeCache();
 	}
 	
 	@Override
 	public void stop() throws Exception {
 	}
 
+	/**
+	 * @param ruleId
+	 */
 	public void openChannel(Short ruleId) {
 		if (ruleId != null) {
 			String ruleIdStr = String.valueOf(ruleId);
@@ -72,18 +83,23 @@ public class AlertReceiver implements Managed {
 				IgniteQueue<Map<String, Object>> queue = ignite.queue(ruleIdStr, channelSize, colCfg);
 				if (queue != null) {
 					channelCache.put(ruleIdStr, 1);
-					System.out.println("Adding channel for :" + ruleId);
+					logger.info("Adding channel for :" + ruleId);
 				} else {
-					System.out.println("Failed to create channel for rule:" + ruleId);
+					logger.info("Failed to create channel for rule:" + ruleId);
 				}
 			} else {
 				Integer result = channelCache.get(ruleIdStr);
 				channelCache.put(ruleIdStr, result+1);
-				System.out.println("Channel for rule:" + ruleId + " is already open");
+				logger.info("Channel for rule:" + ruleId + " is already open");
 			}
 		}
 	}
 
+	/**
+	 * @param ruleId
+	 * @param event
+	 * @return
+	 */
 	public boolean publishEvent(short ruleId, Map<String, Object> event) {
 		if (channelCache.containsKey(String.valueOf(ruleId))) {
 			IgniteQueue<Object> channel = ignite.queue(String.valueOf(ruleId), channelSize, colCfg);
@@ -127,7 +143,7 @@ public class AlertReceiver implements Managed {
 		String ruleIdStr = String.valueOf(ruleId);
 		if(channelCache.containsKey(ruleIdStr)) {
 			Integer val = channelCache.get(ruleIdStr);
-			if(val>0) {
+			if(val>1) {
 				channelCache.put(ruleIdStr, val-1);
 			}else {
 				channelCache.remove(ruleIdStr);
@@ -137,6 +153,27 @@ public class AlertReceiver implements Managed {
 		}else {
 			// do nothing
 		}
+	}
+
+	/**
+	 * @return the ignite
+	 */
+	protected Ignite getIgnite() {
+		return ignite;
+	}
+
+	/**
+	 * @return the colCfg
+	 */
+	protected CollectionConfiguration getColCfg() {
+		return colCfg;
+	}
+
+	/**
+	 * @return the channelCache
+	 */
+	protected IgniteCache<String, Integer> getChannelCache() {
+		return channelCache;
 	}
 
 }

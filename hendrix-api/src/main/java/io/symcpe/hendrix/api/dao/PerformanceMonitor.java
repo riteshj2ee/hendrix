@@ -68,12 +68,12 @@ public class PerformanceMonitor implements Managed {
 	private static final String RULE_ID = "ruleId";
 	private static final String TIMESTAMP = "timestamp";
 	private static final String TENANT_ID = "tenantId";
-	private static final String DEFAULT_CHANNEL_CAPACITY = "100";
-	private static final String CHANNEL_CAPACITY = "channel.capacity";
+	private static final String DEFAULT_SERIES_CAPACITY = "100";
+	private static final String SERIES_CAPACITY = "series.capacity";
 	private static final String SERIES_NAME = "seriesName";
 	private static final String MCM_METRICS = "mcmMetrics";
 	private static Logger logger = Logger.getLogger(PerformanceMonitor.class.getName());
-	private int channelSize;
+	private int seriesSize;
 	private IgniteCache<String, Set<String>> seriesLookup;
 	private PerfMonChannel localChannel;
 	private SyslogUDPSource source;
@@ -97,7 +97,7 @@ public class PerformanceMonitor implements Managed {
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
-		channelSize = Integer.parseInt(System.getProperty(CHANNEL_CAPACITY, DEFAULT_CHANNEL_CAPACITY));
+		seriesSize = Integer.parseInt(System.getProperty(SERIES_CAPACITY, DEFAULT_SERIES_CAPACITY));
 
 		cfg = new CollectionConfiguration();
 		cfg.setBackups(1);
@@ -169,17 +169,17 @@ public class PerformanceMonitor implements Managed {
 			}
 			IgniteSet<String> set = ignite.set(seriesName + "_" + tenantId, cfg);
 			set.add(ruleId);
-			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
-			if (queue.size() >= channelSize) {
+			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, seriesSize, colCfg);
+			if (queue.size() >= seriesSize) {
 				queue.remove();
 			}
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(),
 					obj.get("value").getAsNumber()));
 			logger.info("Processed event:" + obj);
 		} else if (seriesName.startsWith("cm")) {
-			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
+			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, seriesSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
-			if (queue.size() >= channelSize) {
+			if (queue.size() >= seriesSize) {
 				queue.remove();
 			}
 		}
@@ -199,7 +199,7 @@ public class PerformanceMonitor implements Managed {
 				if (series.contains(tenantId)) {
 					IgniteSet<String> rules = ignite.set(series, cfg);
 					for (String ruleId : rules) {
-						IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, channelSize, colCfg);
+						IgniteQueue<Entry<Long, Number>> queue = ignite.queue(ruleId, seriesSize, colCfg);
 						List<Point> list = queueToList(queue);
 						if (list.size() > 0) {
 							long tts = list.get(list.size() - 1).getKey();
@@ -230,7 +230,7 @@ public class PerformanceMonitor implements Managed {
 	 * @return
 	 */
 	public List<Point> getSeries(String seriesName) {
-		return queueToList(ignite.queue(seriesName, channelSize, colCfg));
+		return queueToList(ignite.queue(seriesName, seriesSize, colCfg));
 	}
 
 	/**
@@ -278,6 +278,13 @@ public class PerformanceMonitor implements Managed {
 	 */
 	protected CollectionConfiguration getColCfg() {
 		return colCfg;
+	}
+
+	/**
+	 * @return the seriesSize
+	 */
+	protected int getSeriesSize() {
+		return seriesSize;
 	}
 
 	public static class LocalChannelSelector implements ChannelSelector {

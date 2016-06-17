@@ -47,6 +47,8 @@ import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.storage.Point;
 
 /**
+ * Tests for performance monitor
+ * 
  * @author ambud_sharma
  */
 @RunWith(MockitoJUnitRunner.class)
@@ -78,8 +80,10 @@ public class TestPerformanceMonitor {
 	@Test
 	public void testInitCache() {
 		PerformanceMonitor mon = new PerformanceMonitor(am);
+		System.setProperty("series.capacity", "1000");
 		mon.initIgniteCache();
 		assertEquals(ignite, mon.getIgnite());
+		assertEquals(1000, mon.getSeriesSize());
 	}
 
 	@SuppressWarnings("unchecked")
