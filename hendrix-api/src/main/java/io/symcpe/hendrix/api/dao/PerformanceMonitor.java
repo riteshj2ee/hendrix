@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import org.apache.flume.Channel;
 import org.apache.flume.ChannelException;
@@ -64,6 +65,14 @@ import io.symcpe.hendrix.api.storage.Point;
  */
 public class PerformanceMonitor implements Managed {
 
+	private static final String RULE_ID = "ruleId";
+	private static final String TIMESTAMP = "timestamp";
+	private static final String TENANT_ID = "tenantId";
+	private static final String DEFAULT_CHANNEL_CAPACITY = "100";
+	private static final String CHANNEL_CAPACITY = "channel.capacity";
+	private static final String SERIES_NAME = "seriesName";
+	private static final String MCM_METRICS = "mcmMetrics";
+	private static Logger logger = Logger.getLogger(PerformanceMonitor.class.getName());
 	private int channelSize;
 	private IgniteCache<String, Set<String>> seriesLookup;
 	private PerfMonChannel localChannel;
@@ -74,25 +83,26 @@ public class PerformanceMonitor implements Managed {
 	private CollectionConfiguration cfg;
 	private CollectionConfiguration colCfg;
 
-	public PerformanceMonitor(ApplicationManager applicationManager) {
-		ignite = applicationManager.getIgnite();
+	public PerformanceMonitor(ApplicationManager am) {
+		ignite = am.getIgnite();
 	}
 
 	public void initIgniteCache() {
 		cacheCfg = new CacheConfiguration<>();
 		cacheCfg.setAtomicityMode(CacheAtomicityMode.TRANSACTIONAL);
-		cacheCfg.setName("ruleEfficiency");
+		cacheCfg.setName(MCM_METRICS);
 		cacheCfg.setBackups(2);
 		seriesLookup = ignite.getOrCreateCache(cacheCfg);
 
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
-		channelSize = Integer.parseInt(System.getProperty("channel.capacity", "100"));
+		channelSize = Integer.parseInt(System.getProperty(CHANNEL_CAPACITY, DEFAULT_CHANNEL_CAPACITY));
 
 		cfg = new CollectionConfiguration();
 		cfg.setBackups(1);
 		cfg.setCacheMode(CacheMode.REPLICATED);
+		logger.info("Initialized Ignite cache for performance monitoring");
 	}
 
 	public void initSyslogServer() {
@@ -105,7 +115,7 @@ public class PerformanceMonitor implements Managed {
 			while (true) {
 				try {
 					event = localChannel.take();
-					event(event);
+					processEvent(event);
 					Thread.sleep(10);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -122,7 +132,7 @@ public class PerformanceMonitor implements Managed {
 		context.put("port", "5140");
 		source.configure(context);
 		source.start();
-		System.err.println("Syslog server initalized");
+		logger.info("Syslog server initalized");
 	}
 
 	@Override
@@ -137,18 +147,18 @@ public class PerformanceMonitor implements Managed {
 		eventProcessor.shutdownNow();
 	}
 
-	public void event(Event event) throws Exception {
-		long ts = Long.parseLong(event.getHeaders().get("timestamp"));
+	public void processEvent(Event event) throws Exception {
+		long ts = Long.parseLong(event.getHeaders().get(TIMESTAMP));
 		String message = new String(event.getBody());
 		message = message.substring(message.indexOf('{'));
 		// Send the Event to the external repository.
 		Gson gson = new Gson();
 		JsonElement b = gson.fromJson(message, JsonElement.class);
 		JsonObject obj = b.getAsJsonObject();
-		String seriesName = obj.get("seriesName").getAsString();
+		String seriesName = obj.get(SERIES_NAME).getAsString();
 		if (seriesName.startsWith("mcm") && seriesName.contains("rule")) {
-			String tenantId = obj.get("tenantId").getAsString();
-			String ruleId = obj.get("ruleId").getAsString();
+			String tenantId = obj.get(TENANT_ID).getAsString();
+			String ruleId = obj.get(RULE_ID).getAsString();
 			Set<String> tenants = seriesLookup.get(seriesName);
 			if (tenants == null) {
 				tenants = new HashSet<>();
@@ -165,7 +175,7 @@ public class PerformanceMonitor implements Managed {
 			}
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(),
 					obj.get("value").getAsNumber()));
-			System.out.println("Processed event:" + obj);
+			logger.info("Processed event:" + obj);
 		} else if (seriesName.startsWith("cm")) {
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, channelSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
@@ -233,6 +243,41 @@ public class PerformanceMonitor implements Managed {
 			list.add(new Point(entry.getKey(), entry.getValue()));
 		}
 		return list;
+	}
+
+	/**
+	 * @return the seriesLookup
+	 */
+	protected IgniteCache<String, Set<String>> getSeriesLookup() {
+		return seriesLookup;
+	}
+
+	/**
+	 * @return the ignite
+	 */
+	protected Ignite getIgnite() {
+		return ignite;
+	}
+
+	/**
+	 * @return the cacheCfg
+	 */
+	protected CacheConfiguration<String, Set<String>> getCacheCfg() {
+		return cacheCfg;
+	}
+
+	/**
+	 * @return the cfg
+	 */
+	protected CollectionConfiguration getCfg() {
+		return cfg;
+	}
+
+	/**
+	 * @return the colCfg
+	 */
+	protected CollectionConfiguration getColCfg() {
+		return colCfg;
 	}
 
 	public static class LocalChannelSelector implements ChannelSelector {
