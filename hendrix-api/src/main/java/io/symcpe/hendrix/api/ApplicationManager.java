@@ -66,7 +66,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private static final String JAVAX_PERSISTENCE_JDBC_PASSWORD = "javax.persistence.jdbc.password";
 	private static final String JAVAX_PERSISTENCE_JDBC_USER = "javax.persistence.jdbc.user";
 	private static final String JAVAX_PERSISTENCE_JDBC_DB = "javax.persistence.jdbc.db";
-	public static final boolean LOCAL = Boolean.parseBoolean(System.getProperty("local", "true"));
+	public static final boolean LOCAL = Boolean.parseBoolean(System.getProperty("local", "false"));
 	private static final String PROP_CONFIG_FILE = "hendrixConfig";
 	private Properties config;
 	private EntityManagerFactory factory;

@@ -30,10 +30,7 @@ supervisor:
   links: 
     - nimbus:nimbus
     - zookeeper:zk
-    - kafka:kafka
-    - mysql:mysql
-    - api:api
-stormui:
+ui:
   image: wurstmeister/storm-ui
   ports:
     - "8084:8080"
@@ -47,26 +44,8 @@ kafka:
       - "9092"
     links:
       - zookeeper:zookeeper
+      - supervisor:supervisor
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-mysql:
-    image: mysql:5.7.12
-    ports:
-      - "53306:3306"
-    environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
-api:
-    image: "localhost:5000/hendrix-api:${HVERSION}"
-    ports:
-      - "9000:9000"
-    links:
-      - kafka:kafka
-      - mysql:mysql
-ui:
-    image: "localhost:5000/hendrix-ui:${HVERSION}"
-    ports:
-      - "8080:8080"
-    links:
-      - api:api
