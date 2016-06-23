@@ -120,7 +120,7 @@ public class Utils {
 			Class.forName(driver);
 
 			// STEP 3: Open a connection
-			System.out.println("Connecting to database...");
+			System.out.println("Connecting to database with connection string:"+dbConnectionString);
 			conn = DriverManager.getConnection(dbConnectionString, user, pass);
 
 			// STEP 4: Execute a query

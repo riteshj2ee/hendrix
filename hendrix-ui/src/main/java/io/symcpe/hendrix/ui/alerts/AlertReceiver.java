@@ -62,6 +62,7 @@ public class AlertReceiver implements Serializable {
 	 * @param ruleId
 	 * @return
 	 */
+	@SuppressWarnings("unchecked")
 	public Queue<Map<String, Object>> getChannel(short ruleId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + "/receive/events/" + ruleId);

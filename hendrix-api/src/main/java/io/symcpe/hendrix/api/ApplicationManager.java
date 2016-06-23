@@ -86,7 +86,13 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			} catch (IOException e) {
 				throw new RuntimeException("Configuration file not loaded", e);
 			}
-		} else {
+		} else if (System.getProperty(PROP_CONFIG_FILE)!=null) {
+			try {
+				config.load(new FileInputStream(System.getProperty(PROP_CONFIG_FILE)));
+			} catch (IOException e) {
+				throw new RuntimeException("Configuration file not loaded", e);
+			}
+		}else {
 			try {
 				config.load(ApplicationManager.class.getClassLoader().getResourceAsStream("default-config.properties"));
 			} catch (IOException e) {

@@ -7,7 +7,11 @@ RUN mkdir -p /opt/hendrix/
 
 ADD ./api.jar /usr/local/hendrix/api.jar
 ADD ./config.yaml /opt/hendrix/
+ADD ./template.properties /opt/hendrix/
+ADD ./run.sh /opt/hendrix/
 
-RUN ls -lg /usr/local/hendrix/
- 
-CMD java -jar /usr/local/hendrix/api.jar server /opt/hendrix/config.yaml
+RUN apt-get -y update
+RUN apt-get -y --force-yes install gettext mysql-client
+RUN chmod +x /opt/hendrix/*.sh
+
+CMD /opt/hendrix/run.sh
