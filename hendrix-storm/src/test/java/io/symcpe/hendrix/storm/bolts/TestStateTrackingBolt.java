@@ -99,6 +99,7 @@ public class TestStateTrackingBolt {
 		when(tuple.getSourceStreamId()).thenReturn(Constants.STATE_STREAM_ID);
 		when(tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID))
 				.thenReturn(Utils.combineRuleActionId((short) 2, (short) 2));
+		when(tuple.getStringByField(Constants.FIELD_RULE_GROUP)).thenReturn("test");
 		when(tuple.getIntegerByField(Constants.FIELD_AGGREGATION_WINDOW)).thenReturn(10);
 		when(tuple.getStringByField(Constants.FIELD_AGGREGATION_KEY)).thenReturn("series1");
 		when(tuple.getBooleanByField(Constants.FIELD_STATE_TRACK)).thenReturn(true);
