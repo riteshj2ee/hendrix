@@ -165,16 +165,20 @@
 					</p:inputText>
 				</p:outputPanel>
 				<p:outputPanel rendered="#{ab.stateAction(action.getClass())}">
-					<p:inputText placeholder="Aggregation Key" value="#{action.aggregationKey}"
-						styleClass="conditionInput" style="width:120px">
+					<p:inputText placeholder="Aggregation Key"
+						value="#{action.aggregationKey}" styleClass="conditionInput"
+						style="width:120px">
 						<p:ajax async="true" process="@this" event="change" update="@form" />
 					</p:inputText>
-					<p:inputText placeholder="Aggregation Window (in seconds)" value="#{action.aggregationWindow}"
-						styleClass="conditionInput" style="width:120px">
+					<p:inputText placeholder="Aggregation Window (in seconds)"
+						value="#{action.aggregationWindow}" styleClass="conditionInput"
+						style="width:120px">
 						<p:ajax async="true" process="@this" event="change" update="@form" />
 					</p:inputText>
-					<p:inputText placeholder="Condition (JSON)" value="#{action.stateCondition}" converter="conditionConverter"
-						styleClass="conditionInput" style="width:400px" alt="Condition (JSON)">
+					<p:inputText placeholder="Condition (JSON)"
+						value="#{action.stateCondition}" converter="conditionConverter"
+						styleClass="conditionInput" style="width:400px"
+						alt="Condition (JSON)">
 						<p:ajax async="true" process="@this" event="change" update="@form" />
 					</p:inputText>
 				</p:outputPanel>

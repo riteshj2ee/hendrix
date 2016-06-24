@@ -171,12 +171,14 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	@Override
 	public void handleRuleNoMatch(OutputCollector eventCollector, Tuple eventContainer, Event inputEvent, Rule rule) {
 		ruleNoHitCount.scope(String.valueOf(rule.getRuleId())).incr();
+		System.out.println("Rule:" + rule.getRuleId() + " didn't match:" + inputEvent);
 	}
 
 	@Override
 	public void reportConditionEfficiency(String ruleGroup, short ruleId, long executeTime) {
 		if (multiTenancyActive) {
-			conditionEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId))).update(executeTime);
+			conditionEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId)))
+					.update(executeTime);
 		} else {
 			conditionEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
 		}
@@ -185,7 +187,8 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	@Override
 	public void reportRuleEfficiency(String ruleGroup, short ruleId, long executeTime) {
 		if (multiTenancyActive) {
-			ruleEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId))).update(executeTime);
+			ruleEfficiency.scope(Utils.concat(ruleGroup, TENANTID_SEPARATOR, String.valueOf(ruleId)))
+					.update(executeTime);
 		} else {
 			ruleEfficiency.scope(String.valueOf(ruleId)).update(executeTime);
 		}

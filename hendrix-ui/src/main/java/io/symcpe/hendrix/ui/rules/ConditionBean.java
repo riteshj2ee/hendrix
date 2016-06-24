@@ -62,10 +62,11 @@ public class ConditionBean implements Serializable {
 
 	private String headerKey = "";
 	private String matchValue = "";
+	private boolean numeric =  true;
 	private TreeNode root;
 	private TreeNode selectedNode;
 	private String conditionType;
-	@ManagedProperty(value="#{rb}")
+	@ManagedProperty(value = "#{rb}")
 	private RulesBean ruleBean;
 
 	public ConditionBean() {
@@ -196,23 +197,23 @@ public class ConditionBean implements Serializable {
 			}
 		}
 	}
-	
+
 	public void buildTreeFromRule() {
 		Rule rule = ruleBean.getCurrRule();
-		if(rule!=null && rule.getCondition()!=null) {
+		if (rule != null && rule.getCondition() != null) {
 			root.getChildren().clear();
 			buildSubTreeFromCondition(rule.getCondition(), root);
 		}
 	}
-	
+
 	public void buildSubTreeFromCondition(Condition condition, TreeNode node) {
-		if(condition instanceof ComplexCondition) {
+		if (condition instanceof ComplexCondition) {
 			TreeNode subNode = new DefaultTreeNode(condition, node);
 			node.getChildren().add(subNode);
-			for(Condition childCondition:((ComplexCondition)condition).getConditions()) {
+			for (Condition childCondition : ((ComplexCondition) condition).getConditions()) {
 				buildSubTreeFromCondition(childCondition, subNode);
 			}
-		}else {
+		} else {
 			node.getChildren().add(new DefaultTreeNode(condition, node));
 		}
 	}
@@ -224,6 +225,10 @@ public class ConditionBean implements Serializable {
 
 	public boolean isComplex(TreeNode node) {
 		return (node.getData() instanceof ComplexCondition);
+	}
+
+	public boolean isEquals(TreeNode node) {
+		return (node.getData() instanceof EqualsCondition);
 	}
 
 	public void changeSimpleCondition() {
@@ -239,7 +244,11 @@ public class ConditionBean implements Serializable {
 			}
 			switch (conditionType) {
 			case "eq":
-				selectedNode = new DefaultTreeNode(new EqualsCondition(headerKey, matchValue), parent);
+				if (numVal != Double.MIN_VALUE) {
+					selectedNode = new DefaultTreeNode(new EqualsCondition(headerKey, numVal), parent);
+				}else {
+					selectedNode = new DefaultTreeNode(new EqualsCondition(headerKey, matchValue), parent);
+				}
 				break;
 			case "gte":
 				selectedNode = new DefaultTreeNode(new GreaterThanEqualToCondition(headerKey, numVal), parent);
@@ -257,8 +266,8 @@ public class ConditionBean implements Serializable {
 				selectedNode = new DefaultTreeNode(new JavaRegexCondition(headerKey, matchValue), parent);
 				break;
 			}
-			if(selectedNode==null || parent==null) {
-				logger.severe("Invalid situation:"+parent);
+			if (selectedNode == null || parent == null) {
+				logger.severe("Invalid situation:" + parent);
 				return;
 			}
 			parent.getChildren().add(index, selectedNode);
@@ -270,9 +279,9 @@ public class ConditionBean implements Serializable {
 	public static double parseToNumber(String value) {
 		return Double.parseDouble(value);
 	}
-	
+
 	public void buildCondition() {
-		if(root!=null && root.getChildCount()>0) {
+		if (root != null && root.getChildCount() > 0) {
 			TreeNode baseCondition = root.getChildren().get(0);
 			Condition condition = extractSubConditions(baseCondition);
 			selectedNode = baseCondition;
@@ -285,15 +294,15 @@ public class ConditionBean implements Serializable {
 			ruleBean.getCurrRule().setCondition(condition);
 		}
 	}
-	
+
 	public Condition extractSubConditions(TreeNode node) {
-		Condition condition = (Condition)node.getData();
-		if(condition instanceof ComplexCondition) {
+		Condition condition = (Condition) node.getData();
+		if (condition instanceof ComplexCondition) {
 			List<Condition> conditions = new ArrayList<>();
-			for(TreeNode child:node.getChildren()) {
+			for (TreeNode child : node.getChildren()) {
 				conditions.add(extractSubConditions(child));
 			}
-			((ComplexCondition)condition).setConditions(conditions);
+			((ComplexCondition) condition).setConditions(conditions);
 		}
 		return condition;
 	}
@@ -394,7 +403,7 @@ public class ConditionBean implements Serializable {
 	public void setConditionType(String conditionType) {
 		this.conditionType = conditionType;
 	}
-	
+
 	/**
 	 * @return the ruleBean
 	 */
@@ -403,7 +412,8 @@ public class ConditionBean implements Serializable {
 	}
 
 	/**
-	 * @param ruleBean the ruleBean to set
+	 * @param ruleBean
+	 *            the ruleBean to set
 	 */
 	public void setRuleBean(RulesBean ruleBean) {
 		this.ruleBean = ruleBean;
@@ -425,6 +435,21 @@ public class ConditionBean implements Serializable {
 		ArrayList<String> list = new ArrayList<>(Utils.COMPLEX_CONDITIONS.values());
 		Collections.sort(list);
 		return list;
+	}
+
+	/**
+	 * @return the numeric
+	 */
+	public boolean isNumeric() {
+		return numeric;
+	}
+
+	/**
+	 * @param numeric
+	 *            the numeric to set
+	 */
+	public void setNumeric(boolean numeric) {
+		this.numeric = numeric;
 	}
 
 }

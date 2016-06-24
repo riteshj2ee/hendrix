@@ -135,6 +135,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 
 	protected void performEmits(Tuple tuple) {
 		String ruleActionId = tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID);
+		String ruleGroup = tuple.getStringByField(Constants.FIELD_RULE_GROUP);
 		Entry<Short, Short> ruleActionIdSeparates = Utils.separateRuleActionId(ruleActionId);
 		try {
 			List<Event> aggregateHeaders = new ArrayList<>();
@@ -142,6 +143,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 					aggregateHeaders);
 			if (!aggregateHeaders.isEmpty()) {
 				for (Event event : aggregateHeaders) {
+					event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
 					event.getHeaders().put(Constants.FIELD_RULE_ID, ruleActionIdSeparates.getKey());
 					event.getHeaders().put(Constants.FIELD_ACTION_ID, ruleActionIdSeparates.getValue());
 					collector.emit(Constants.AGGREGATION_OUTPUT_STREAM, tuple, new Values(event));
