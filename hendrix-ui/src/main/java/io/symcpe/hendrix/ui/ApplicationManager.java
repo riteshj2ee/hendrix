@@ -59,7 +59,6 @@ public class ApplicationManager implements Serializable {
 	@PostConstruct
 	public void init() {
 		config = new Properties(System.getProperties());
-		baseUrl = config.getProperty(API_URL, "http://localhost:9000/api");
 		if (System.getenv(PROP_CONFIG_FILE) != null) {
 			try {
 				config.load(new FileInputStream(System.getenv(PROP_CONFIG_FILE)));
@@ -73,6 +72,7 @@ public class ApplicationManager implements Serializable {
 				throw new RuntimeException("Default configuration file not loaded", e);
 			}
 		}
+		baseUrl = config.getProperty(API_URL, "http://localhost:9000/api");
 		AlertReceiver.getInstance().setAm(this);
 		RulesManager.getInstance().init(this);
 		TenantManager.getInstance().init(this);

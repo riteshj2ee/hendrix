@@ -54,13 +54,15 @@ services:
     depends_on:
       - nimbus
   kafka:
-      image: wurstmeister/kafka:0.9.0.1
+      image: wurstmeister/kafka:0.8.2.2
       ports:
         - "9092"
       links:
         - zookeeper:zookeeper
       environment:
+        KAFKA_ADVERTISED_PORT: 9092
         KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+        HOSTNAME_COMMAND: hostname
       volumes:
         - /var/run/docker.sock:/var/run/docker.sock
       depends_on:
@@ -92,5 +94,7 @@ services:
         - "8080:8080"
       links:
         - api:api
+      environment:
+        API_SERVER: api:9000
       depends_on:
         - api

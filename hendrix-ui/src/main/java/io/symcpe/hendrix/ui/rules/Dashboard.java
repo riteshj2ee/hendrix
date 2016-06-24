@@ -108,29 +108,31 @@ public class Dashboard implements Serializable {
 
 	private void initializePerformanceMetric(String metricName, LineChartModel model) {
 		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName + "/" + ub.getTenant().getTenantId());
 		long ts = -1;
-		try {
-			CloseableHttpResponse response = client.execute(get);
-			String string = EntityUtils.toString(response.getEntity());
-			Gson gson = new Gson();
-			JsonObject rules = gson.fromJson(string, JsonObject.class);
-			for (Entry<String, JsonElement> entry : rules.entrySet()) {
-				LineChartSeries series = new LineChartSeries(entry.getKey());
-				for (JsonElement element : entry.getValue().getAsJsonArray()) {
-					JsonObject point = element.getAsJsonObject();
-					Date date = new Date(point.get("key").getAsLong());
-					if (date.getTime() > ts) {
-						ts = date.getTime();
+		if (ub.getTenant() != null) {
+			HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName + "/" + ub.getTenant().getTenantId());
+			try {
+				CloseableHttpResponse response = client.execute(get);
+				String string = EntityUtils.toString(response.getEntity());
+				Gson gson = new Gson();
+				JsonObject rules = gson.fromJson(string, JsonObject.class);
+				for (Entry<String, JsonElement> entry : rules.entrySet()) {
+					LineChartSeries series = new LineChartSeries(entry.getKey());
+					for (JsonElement element : entry.getValue().getAsJsonArray()) {
+						JsonObject point = element.getAsJsonObject();
+						Date date = new Date(point.get("key").getAsLong());
+						if (date.getTime() > ts) {
+							ts = date.getTime();
+						}
+						System.out.println("Perf:" + element);
+						series.set(formatter.format(date), point.get("value").getAsNumber());
 					}
-					System.out.println("Perf:"+element);
-					series.set(formatter.format(date), point.get("value").getAsNumber());
+					model.addSeries(series);
 				}
-				model.addSeries(series);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		if (ts > 0) {
 			DateAxis axis = new DateAxis("Time");
@@ -159,7 +161,7 @@ public class Dashboard implements Serializable {
 			for (JsonElement entry : metrics) {
 				JsonObject point = entry.getAsJsonObject();
 				date = new Date(point.get("key").getAsLong());
-				System.out.println("Throughput:"+entry);
+				System.out.println("Throughput:" + entry);
 				series.set(formatter.format(date), point.get("value").getAsNumber());
 			}
 			model.addSeries(series);
