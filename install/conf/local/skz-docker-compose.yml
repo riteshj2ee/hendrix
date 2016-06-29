@@ -21,7 +21,7 @@ nimbus:
     - "49627:6627"
     - "22"
   links: 
-    - zookeeper:zk
+    - zookeeper:zookeeper
 supervisor:
   image: wurstmeister/storm-supervisor
   ports:
@@ -29,7 +29,7 @@ supervisor:
     - "22"
   links: 
     - nimbus:nimbus
-    - zookeeper:zk
+    - zookeeper:zookeeper
 ui:
   image: wurstmeister/storm-ui
   ports:
@@ -44,8 +44,10 @@ kafka:
       - "9092"
     links:
       - zookeeper:zookeeper
-      - supervisor:supervisor
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_PORT: 9092
+      HOSTNAME_COMMAND: hostname
+      KAFKA_CREATE_TOPICS: "logTopic:1:1"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
