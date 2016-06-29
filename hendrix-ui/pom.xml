@@ -255,7 +255,7 @@
 					</defineStatements>
 					<mappings>
 						<mapping>
-							<directory></directory>
+							<directory>/var/lib/tomcat/webapps/</directory>
 							<filemode>755</filemode>
 							<sources>
 								<source>
