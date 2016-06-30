@@ -205,7 +205,7 @@
 		</dependency>
 	</dependencies>
 	<build>
-		<finalName>ui</finalName>
+		<finalName>ROOT</finalName>
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
@@ -259,7 +259,7 @@
 							<filemode>755</filemode>
 							<sources>
 								<source>
-									<location>target/ROOT.jar</location>
+									<location>target/ROOT.war</location>
 								</source>
 							</sources>
 						</mapping>
