@@ -50,4 +50,12 @@ tar xf storm.tar.gz
 
 while ! nc -z localhost 49627;do echo "Checking nimbus availability";sleep 1;done
 
+while ! `./storm/bin/storm list -c nimbus.thrift.port=49627 2>&1 | grep -q "No topologies"`;do echo "Waiting for Storm Nimbus to come online";sleep 1s; done || echo "Deploying topology now" 
+
 ./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yaml --filter ../conf/remote/config.properties
+
+OS=`uname -s`
+
+if [[ $OS=="Darwin" ]]; then 
+	open http://localhost:8084
+fi

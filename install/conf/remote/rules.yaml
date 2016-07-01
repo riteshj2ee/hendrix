@@ -18,10 +18,10 @@ config:
     tstore.type: "io.symcpe.wraith.silo.sql.SQLRulesStore"
     rstore.sql.table: "rules_table"
     tstore.sql.table: "alert_template"
-    astore.type: "io.symcpe.wraith.silo.redis.RedisAggregationStore"
-    astore.redis.sentinel: "true"
-    astore.redis.host: "${redis.sentinel}"
-    astore.redis.clusterName: "${redis.clusterName}"
+#    astore.type: "io.symcpe.wraith.silo.redis.RedisAggregationStore"
+#    astore.redis.sentinel: "true"
+#    astore.redis.host: "${redis.sentinel}"
+#    astore.redis.clusterName: "${redis.clusterName}"
     rule.group.active: "true"
     topology.builtin.metrics.bucket.size.secs: 10
     topology.metrics.consumer.register:
