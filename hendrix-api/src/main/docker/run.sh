@@ -4,7 +4,12 @@
 # 
 # Purpose: Run script for API
 #
+
 #export MYSQL_ADDRESS=`getent hosts $MYSQL_ADDRESS | awk '{ print $1 }'`
+
+while ! nc -z $MYSQL_HOST $MYSQL_PORT;do echo "Checking mysql connectivity";sleep 1;done
+
+while ! nc -z $KAFKA_HOST $KAFKA_PORT;do echo "Checking kafka connectivity";sleep 1;done
 
 envsubst < /opt/hendrix/template.properties > /opt/hendrix/config.properties
 
