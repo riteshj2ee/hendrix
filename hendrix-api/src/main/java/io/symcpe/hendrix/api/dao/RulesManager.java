@@ -153,6 +153,7 @@ public class RulesManager {
 		if (!ApplicationManager.LOCAL) {
 			KafkaProducer<String, String> producer = am.getKafkaProducer();
 			producer.send(new ProducerRecord<String, String>(am.getRuleTopicName(), cmdJson)).get();
+			logger.info("Wrote rule update to Kafka");
 		} else {
 			PrintWriter pr = new PrintWriter(
 					new FileWriter(HENDRIX_RULE_UPDATES_TXT.replaceFirst("^~", System.getProperty("user.home")), true));

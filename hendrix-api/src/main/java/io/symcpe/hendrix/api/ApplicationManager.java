@@ -32,7 +32,6 @@ import org.apache.commons.daemon.DaemonInitException;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.common.PartitionInfo;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.server.validation.ValidationFeature;
@@ -42,12 +41,12 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
-import io.symcpe.hendrix.api.rest.TemplateEndpoint;
 import io.symcpe.hendrix.api.dao.AlertReceiver;
 import io.symcpe.hendrix.api.dao.PerformanceMonitor;
 import io.symcpe.hendrix.api.rest.PerfMonEndpoint;
 import io.symcpe.hendrix.api.rest.RestReceiver;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
+import io.symcpe.hendrix.api.rest.TemplateEndpoint;
 import io.symcpe.hendrix.api.rest.TenantEndpoint;
 import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
 import io.symcpe.hendrix.api.validations.VelocityValidator;
@@ -128,11 +127,6 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		ruleTopicName = config.getProperty("rule.topic.name", "ruleTopic");
 		templateTopicName = config.getProperty("template.topic.name", "templateTopic");
 		producer = new KafkaProducer<>(config);
-		System.out.println("Validating kafka connectivity");
-		List<PartitionInfo> partitions = producer.partitionsFor(ruleTopicName);
-		for (PartitionInfo partitionInfo : partitions) {
-			System.out.println(partitionInfo.topic() + "\t" + partitionInfo.leader().toString());
-		}
 	}
 
 	public EntityManager getEM() {
