@@ -21,7 +21,7 @@
 		<module>hendrix-api</module>
 		<module>install</module>
 		<module>wraith-silo</module>
-		<module>nifi-lmm-interceptor</module>
+		<module>hendrix-helpers</module>
 	</modules>
 
 	<licenses>

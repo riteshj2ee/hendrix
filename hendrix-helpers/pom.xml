@@ -1,0 +1,22 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>io.symcpe.hendrix</groupId>
+		<artifactId>hendrix-parent</artifactId>
+		<version>0.0.19-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>hendrix-helpers</artifactId>
+	<packaging>pom</packaging>
+
+	<name>hendrix-helpers</name>
+	
+	<modules>
+		<module>nifi-lmm-interceptor</module>
+	</modules>
+
+
+</project>
