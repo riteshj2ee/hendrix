@@ -16,7 +16,7 @@
 	
 	<modules>
 		<module>nifi-lmm-interceptor</module>
-		<module>hendrix-flume-stats</module>
+		<module>flume-hendrix-stats</module>
 	</modules>
 
 </project>
