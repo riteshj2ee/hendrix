@@ -57,9 +57,7 @@ docker-compose -p hendrix -f ../conf/local/docker-compose.yml scale supervisor=3
 
 while ! nc -z localhost 49627;do echo "Checking nimbus availability";sleep 1;done
 
-while ! `./storm/bin/storm list -c nimbus.thrift.port=49627 2>&1 | grep -q "No topologies"`;do echo "Waiting for Storm Nimbus to come online";sleep 1s; done || echo "Deploying topology now"
-
-#./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yaml --filter ../conf/remote/config.properties
+while ! `./storm/bin/storm list -c nimbus.thrift.port=49627 2>&1 | grep -q "No topologies"`;do echo "Waiting for Storm Nimbus to come online";sleep 1s; done || echo "Now deploying topology"
 
 kafka/bin/kafka-topics.sh --describe --zookeeper localhost:2181 
 
@@ -68,6 +66,8 @@ kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic templateTo
 
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic logTopic --replication-factor 2 --partitions 5
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic metricTopic --replication-factor 2 --partitions 5
+
+./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yaml --filter ../conf/remote/config.properties
 
 ../scripts/create-tenant-template-rules.sh 
 
