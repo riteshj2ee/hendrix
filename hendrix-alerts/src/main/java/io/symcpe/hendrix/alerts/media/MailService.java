@@ -62,7 +62,10 @@ public class MailService {
 		logger = Logger.getLogger(MailService.class);
 		session = createSession(conf);
 		from = conf.get(MAIL_SMTP_FROM).toString();
-		boolean useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
+		boolean useSsl = false;
+		if(conf.containsKey(MAIL_SMTP_STARTTLS_ENABLE)) {
+			useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
+		}
 		String transportString = useSsl ? "smtps" : "smtp";
 		try {
 			SMTPTransport transport = (SMTPTransport) session.getTransport(transportString);
