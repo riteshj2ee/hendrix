@@ -135,7 +135,10 @@ public class MailService {
 				properties.setProperty(entry.getKey(), entry.getValue().toString());
 			}
 		}
-		boolean useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
+		boolean useSsl = false;
+		if(conf.containsKey(MAIL_SMTP_STARTTLS_ENABLE)) {
+			useSsl = Boolean.parseBoolean(conf.get(MAIL_SMTP_STARTTLS_ENABLE).toString());
+		}
 		if (useSsl) {
 			Security.addProvider(new com.sun.net.ssl.internal.ssl.Provider());
 		}
