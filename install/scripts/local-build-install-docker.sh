@@ -67,7 +67,7 @@ kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic templateTo
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic logTopic --replication-factor 2 --partitions 5
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic metricTopic --replication-factor 2 --partitions 5
 
-./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yaml --filter ../conf/remote/config.properties
+./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yml --filter ../conf/remote/config.properties
 
 ../scripts/create-tenant-template-rules.sh 
 
