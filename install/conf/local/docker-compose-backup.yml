@@ -11,72 +11,82 @@
 version: '2'
 services:
   zookeeper:
-      image: wurstmeister/zookeeper
-      ports: 
-        - "2181:2181"
+    image: ambuds/zookeeper
+    ports: 
+      - "2181:2181"
   nimbus:
-      image: wurstmeister/storm-nimbus
-      ports:
-        - "49773:3773"
-        - "49772:3772"
-        - "49627:6627"
-      links: 
-        - zookeeper:zk
+    image: ambuds/storm-nimbus
+    ports:
+      - "49773:3773"
+      - "49772:3772"
+      - "49627:6627"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - zookeeper
   supervisor:
-      image: wurstmeister/storm-supervisor
-      ports:
-        - "8000"
-      links: 
-        - nimbus:nimbus
-        - zookeeper:zk
-        - kafka:kafka
-  sui:
-      image: wurstmeister/storm-ui
-      ports:
-        - "8084:8080"
-      links: 
-        - nimbus:nimbus
-        - zookeeper:zk
+    image: ambuds/storm-supervisor
+    ports:
+      - "8000"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - nimbus
+  stormui:
+    image: ambuds/storm-ui
+    ports:
+      - "8084:8080"
+    environment:
+      ZOOKEEPER_HOST: zookeeper
+      ZOOKEEPER_PORT: 2181
+      NIMBUS: nimbus
+    depends_on:
+      - nimbus
   kafka:
-        image: wurstmeister/kafka:0.8.2.2
-        ports:
-          - "9092"
-        links:
-          - zookeeper:zookeeper
-        environment:
-          KAFKA_ADVERTISED_PORT: 9092
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-          HOSTNAME_COMMAND: hostname -i
-          KAFKA_CREATE_TOPICS: "logTopic:1:1,rulesTopic:1:1,templatesTopic:1:1"
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
+    image: wurstmeister/kafka:0.8.2.2
+    ports:
+      - "9092"
+    links:
+      - zookeeper:zookeeper
+    environment:
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      HOSTNAME_COMMAND: hostname -i
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - zookeeper         
   mysqls:
-        image: mysql:5.7.12
-        ports:
-          - "53306:3306"
-        environment:
-          MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    image: mysql:5.7.12
+    ports:
+      - "53306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
   api:
-        image: "hendrix-api:${HVERSION}"
-        ports:
-          - "9000:9000"
-        environment:
-          KAFKA_HOST: kafka
-          KAFKA_PORT: 9092
-          KAFKA_ADDRESS: kafka:9092
-          MYSQL_HOST: mysqls
-          MYSQL_PORT: 3306
-          MYSQL_ADDRESS: mysqls:3306
-          MYSQL_ROOT_USERNAME: root
-          MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
-        links:
-          - kafka:kafka
-          - mysqls:mysqls
+    image: "hendrix-api:${HVERSION}"
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_HOST: kafka
+      KAFKA_PORT: 9092
+      KAFKA_ADDRESS: kafka:9092
+      MYSQL_HOST: mysqls
+      MYSQL_PORT: 3306
+      MYSQL_ADDRESS: mysqls:3306
+      MYSQL_ROOT_USERNAME: root
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    depends_on:
+      - kafka
+      - mysqls
   ui:
-        image: "hendrix-ui:${HVERSION}"
-        ports:
-          - "8080:8080"
-        links:
-          - api:api
-        environment:
-          API_SERVER: api:9000
+    image: "hendrix-ui:${HVERSION}"
+    ports:
+      - "8080:8080"
+    environment:
+      API_SERVER: api:9000
+    depends_on:
+      - api

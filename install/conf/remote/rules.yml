@@ -28,6 +28,9 @@ config:
       - class: "io.symcpe.hendrix.storm.metrics.HendrixMetricsCollector"
         parallelism.hint: 1
 #    ui.endpoint: "http://${ui.host.port}/api/receive/"
+    metrics.syslog.destination: "${api.host}"
+    metrics.syslog.port: "5140"
+     
 
 # Components
 # Components are analagous to Spring beans. They are meant to be used as constructor,
@@ -173,22 +176,26 @@ spouts:
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "logSpoutConfig"
+    parallelism: 5
 
   - id: "metricSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "metricSpoutConfig"
+    parallelism: 5
 
   - id: "ruleSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "ruleSpoutConfig"
+    parallelism: 1
 
   - id: "templateSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "templateSpoutConfig"
-
+    parallelism: 1
+    
 # bolt definitions
 bolts:
   - id: "interceptionBolt"
