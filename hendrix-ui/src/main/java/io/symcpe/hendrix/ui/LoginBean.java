@@ -17,6 +17,7 @@ package io.symcpe.hendrix.ui;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Map.Entry;
 
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
@@ -41,6 +42,8 @@ public class LoginBean implements Serializable {
 	private String pwd;
 	private String msg;
 	private String user;
+	private String token;
+	private String hmac;
 
 	public String getPwd() {
 		return pwd;
@@ -69,14 +72,31 @@ public class LoginBean implements Serializable {
 	// validate login
 	public String validateUsernamePassword() {
 		String response = "unauthenticated";
-		boolean valid = LoginDAO.authenticate(user, pwd);
+		boolean valid = false;
+		if (!am.isEnableAuth()) {
+			valid = LoginDAO.authenticate(user, pwd);
+		} else {
+			System.out.println("Using Bapi Login module");
+			try {
+				Entry<String, String> result = BapiLoginDAO.authenticate(am.getAuthUrl(), user, pwd);
+				if (result != null) {
+					token = result.getKey();
+					hmac = result.getValue();
+					valid = true;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_FATAL,
+						"Not Authorized", "Unable to perform authentication against Bapi"));
+			}
+		}
 		if (valid) {
 			if (authorize(user)) {
 				HttpSession session = SessionUtil.getSession();
 				session.setAttribute("username", user);
 				response = "authenticated";
 				authenticated = true;
-			}else {
+			} else {
 				FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN,
 						"Not Authorized", "This account is not authorized to access any tenant"));
 			}
@@ -97,11 +117,12 @@ public class LoginBean implements Serializable {
 	}
 
 	public boolean authorize(String user) {
-//		EntityManager em = am.getEM();
-		long groupCounts = 1;//((Number)em.createNamedQuery("Tenant.findCountByUser").setParameter("user", user).getSingleResult()).longValue();
-		if(groupCounts<1) {
+		// EntityManager em = am.getEM();
+		long groupCounts = 1;// ((Number)em.createNamedQuery("Tenant.findCountByUser").setParameter("user",
+								// user).getSingleResult()).longValue();
+		if (groupCounts < 1) {
 			return false;
-		}else {
+		} else {
 			return true;
 		}
 	}
@@ -126,6 +147,36 @@ public class LoginBean implements Serializable {
 	 */
 	public void setAm(ApplicationManager am) {
 		this.am = am;
+	}
+
+	/**
+	 * @return the token
+	 */
+	public String getToken() {
+		return token;
+	}
+
+	/**
+	 * @param token
+	 *            the token to set
+	 */
+	public void setToken(String token) {
+		this.token = token;
+	}
+
+	/**
+	 * @return the hmac
+	 */
+	public String getHmac() {
+		return hmac;
+	}
+
+	/**
+	 * @param hmac
+	 *            the hmac to set
+	 */
+	public void setHmac(String hmac) {
+		this.hmac = hmac;
 	}
 
 }

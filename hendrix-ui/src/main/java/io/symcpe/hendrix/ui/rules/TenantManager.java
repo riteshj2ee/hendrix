@@ -35,6 +35,8 @@ import org.apache.http.util.EntityUtils;
 import com.google.gson.Gson;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
+import io.symcpe.hendrix.ui.BapiLoginDAO;
+import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.Utils;
 import io.symcpe.hendrix.ui.storage.Tenant;
 
@@ -61,7 +63,7 @@ public class TenantManager {
 		this.am = am;
 	}
 
-	public void createTenant(Tenant tenant) throws Exception {
+	public void createTenant(UserBean ub, Tenant tenant) throws Exception {
 		if (tenant == null) {
 			throw new NullPointerException("Tenant can't be empty");
 		}
@@ -72,6 +74,10 @@ public class TenantManager {
 			StringEntity entity = new StringEntity(gson.toJson(tenant), ContentType.APPLICATION_JSON);
 			HttpPost post = new HttpPost(am.getBaseUrl() + TENANT_URL);
 			post.setEntity(entity);
+			if(am.isEnableAuth()) {
+				post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(post);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:"+resp.getStatusLine().getStatusCode());
@@ -82,12 +88,16 @@ public class TenantManager {
 		}
 	}
 
-	public Tenant deleteTenant(String tenantId) throws Exception {
-		Tenant tenant = getTenant(tenantId);
+	public Tenant deleteTenant(UserBean ub, String tenantId) throws Exception {
+		Tenant tenant = getTenant(ub, tenantId);
 		if (tenant != null) {
 			try {
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 				HttpDelete delete = new HttpDelete(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+				if(am.isEnableAuth()) {
+					delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+					delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+				}
 				CloseableHttpResponse resp = client.execute(delete);
 				if (!Utils.validateStatus(resp)) {
 					throw new Exception("status code:"+resp.getStatusLine().getStatusCode());
@@ -102,14 +112,18 @@ public class TenantManager {
 		}
 	}
 
-	public Tenant updateTenant(String tenantId, String tenantName) throws Exception {
-		Tenant tenant = getTenant(tenantId);
+	public Tenant updateTenant(UserBean ub, String tenantId, String tenantName) throws Exception {
+		Tenant tenant = getTenant(ub, tenantId);
 		if (tenant != null) {
 			try {
 				Gson gson = new Gson();
 				tenant.setTenantName(tenantName);
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 				HttpPut put = new HttpPut(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+				if(am.isEnableAuth()) {
+					put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+					put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+				}
 				StringEntity entity = new StringEntity(gson.toJson(tenant), ContentType.APPLICATION_JSON);
 				put.setEntity(entity);
 				CloseableHttpResponse resp = client.execute(put);
@@ -126,9 +140,13 @@ public class TenantManager {
 		}
 	}
 
-	public Tenant getTenant(String tenantId) throws Exception {
+	public Tenant getTenant(UserBean ub, String tenantId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + TENANT_URL + "/" + tenantId);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(get);
 		if(Utils.validateStatus(resp)) {
 			String result = EntityUtils.toString(resp.getEntity());
@@ -139,16 +157,20 @@ public class TenantManager {
 		}
 	}
 
-	public List<Tenant> getTenants() throws Exception {
+	public List<Tenant> getTenants(UserBean ub) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + TENANT_URL);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(get);
 		if(Utils.validateStatus(resp)) {
 			String result = EntityUtils.toString(resp.getEntity());
 			Gson gson = new Gson();
 			return Arrays.asList(gson.fromJson(result, Tenant[].class));
 		}else {
-			throw new Exception("Tenant not found");
+			throw new Exception("Tenant not found:"+resp.toString()+"\t"+am.isEnableAuth()+"\thmac:"+ub.getHmac()+"\ttoken:"+ub.getToken());
 		}
 	}
 

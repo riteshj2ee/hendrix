@@ -43,6 +43,8 @@ public class UserBean implements Serializable {
 	private String userId;
 	private Tenant tenant;
 	private List<Tenant> tenants;
+	private String token;
+	private String hmac;
 
 	public UserBean() {
 	}
@@ -50,6 +52,10 @@ public class UserBean implements Serializable {
 	@PostConstruct
 	public void init() {
 		userId = lb.getUser();
+		if (am.isEnableAuth()) {
+			token = lb.getToken();
+			hmac = lb.getHmac();
+		}
 		try {
 			loadGroups();
 		} catch (Exception e) {
@@ -58,7 +64,7 @@ public class UserBean implements Serializable {
 	}
 
 	protected void loadGroups() throws Exception {
-		List<Tenant> results = TenantManager.getInstance().getTenants();
+		List<Tenant> results = TenantManager.getInstance().getTenants(this);
 		if (results.size() > 0) {
 			tenants = results;
 			tenant = results.get(0);
@@ -144,6 +150,36 @@ public class UserBean implements Serializable {
 	 */
 	public void setTenants(List<Tenant> tenants) {
 		this.tenants = tenants;
+	}
+
+	/**
+	 * @return the token
+	 */
+	public String getToken() {
+		return token;
+	}
+
+	/**
+	 * @param token
+	 *            the token to set
+	 */
+	public void setToken(String token) {
+		this.token = token;
+	}
+
+	/**
+	 * @return the hmac
+	 */
+	public String getHmac() {
+		return hmac;
+	}
+
+	/**
+	 * @param hmac
+	 *            the hmac to set
+	 */
+	public void setHmac(String hmac) {
+		this.hmac = hmac;
 	}
 
 }

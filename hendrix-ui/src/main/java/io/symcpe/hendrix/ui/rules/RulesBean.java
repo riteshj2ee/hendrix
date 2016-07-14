@@ -82,7 +82,7 @@ public class RulesBean implements Serializable {
 
 	public void addRule() {
 		try {
-			short ruleId = RulesManager.getInstance().createNewRule(ub.getTenant());
+			short ruleId = RulesManager.getInstance().createNewRule(ub, ub.getTenant());
 			if (ruleId > 0) {
 				changeCurrentRule(ruleId);
 			}
@@ -97,7 +97,7 @@ public class RulesBean implements Serializable {
 			return;
 		}
 		try {
-			short ruleId = RulesManager.getInstance().saveRule(ub.getTenant(), currRule);
+			short ruleId = RulesManager.getInstance().saveRule(ub, ub.getTenant(), currRule);
 			if (ruleId > 0) {
 				FacesContext.getCurrentInstance().addMessage(null,
 						new FacesMessage("Rule " + currRule.getName() + " successfully saved"));
@@ -135,7 +135,7 @@ public class RulesBean implements Serializable {
 	 */
 	public List<Rule> getRules() {
 		try {
-			return RulesManager.getInstance().getRuleObjects(ub.getTenant().getTenantId());
+			return RulesManager.getInstance().getRuleObjects(ub, ub.getTenant().getTenantId());
 		} catch (Exception e) {
 			return new ArrayList<>();
 		}
@@ -173,11 +173,11 @@ public class RulesBean implements Serializable {
 
 	public void enableDisableRule(short ruleId) {
 		try {
-			Rule ruleObj = RulesManager.getInstance().getRule(ub.getTenant().getTenantId(), ruleId);
+			Rule ruleObj = RulesManager.getInstance().getRule(ub, ub.getTenant().getTenantId(), ruleId);
 			if (ruleObj.isActive()) {
-				RulesManager.getInstance().enableDisableRule(false, ub.getTenant().getTenantId(), ruleId);
+				RulesManager.getInstance().enableDisableRule(ub, false, ub.getTenant().getTenantId(), ruleId);
 			} else {
-				RulesManager.getInstance().enableDisableRule(true, ub.getTenant().getTenantId(), ruleId);
+				RulesManager.getInstance().enableDisableRule(ub, true, ub.getTenant().getTenantId(), ruleId);
 			}
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Couldn'tenable disable rule:" + ruleId, e);
@@ -186,7 +186,7 @@ public class RulesBean implements Serializable {
 
 	public void deleteRule(short ruleId) {
 		try {
-			RulesManager.getInstance().deleteRule(ub.getTenant().getTenantId(), ruleId);
+			RulesManager.getInstance().deleteRule(ub, ub.getTenant().getTenantId(), ruleId);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Couldn't delete rule:" + ruleId, e);
 		}
@@ -210,7 +210,7 @@ public class RulesBean implements Serializable {
 	public void changeCurrentRule(Short ruleId) {
 		if (ruleId != null) {
 			try {
-				currRule = RulesManager.getInstance().getRule(ub.getTenant().getTenantId(), ruleId);
+				currRule = RulesManager.getInstance().getRule(ub, ub.getTenant().getTenantId(), ruleId);
 			} catch (Exception e) {
 				e.printStackTrace();
 				return;

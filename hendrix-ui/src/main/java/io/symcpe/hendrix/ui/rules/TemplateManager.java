@@ -35,6 +35,8 @@ import org.apache.http.util.EntityUtils;
 import com.google.gson.Gson;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
+import io.symcpe.hendrix.ui.BapiLoginDAO;
+import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.Utils;
 import io.symcpe.hendrix.ui.storage.Tenant;
 import io.symcpe.wraith.actions.alerts.templated.AlertTemplate;
@@ -63,7 +65,7 @@ public class TemplateManager {
 		this.am = am;
 	}
 
-	public short createTemplate(Tenant tenant) throws Exception {
+	public short createTemplate(UserBean ub, Tenant tenant) throws Exception {
 		if (tenant == null) {
 			throw new NullPointerException("Template can't be empty");
 		}
@@ -71,6 +73,10 @@ public class TemplateManager {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpPost post = new HttpPost(am.getBaseUrl() + TEMPLATE_URL + "/" + tenant.getTenantId());
+			if(am.isEnableAuth()) {
+				post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(post);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
@@ -82,13 +88,17 @@ public class TemplateManager {
 		}
 	}
 
-	public AlertTemplate deleteTemplate(String tenantId, short templateId) throws Exception {
-		AlertTemplate template = getTemplate(tenantId, templateId);
+	public AlertTemplate deleteTemplate(UserBean ub, String tenantId, short templateId) throws Exception {
+		AlertTemplate template = getTemplate(ub, tenantId, templateId);
 		if (template != null) {
 			try {
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 						am.getRequestTimeout());
 				HttpDelete delete = new HttpDelete(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + templateId);
+				if(am.isEnableAuth()) {
+					delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+					delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+				}
 				CloseableHttpResponse resp = client.execute(delete);
 				if (!Utils.validateStatus(resp)) {
 					throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
@@ -103,13 +113,17 @@ public class TemplateManager {
 		}
 	}
 
-	public AlertTemplate updateTemplate(String tenantId, AlertTemplate template) throws Exception {
+	public AlertTemplate updateTemplate(UserBean ub, String tenantId, AlertTemplate template) throws Exception {
 		if (template != null) {
 			try {
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 						am.getRequestTimeout());
 				HttpPut put = new HttpPut(
 						am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + template.getTemplateId());
+				if(am.isEnableAuth()) {
+					put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+					put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+				}
 				StringEntity entity = new StringEntity(AlertTemplateSerializer.serialize(template, false),
 						ContentType.APPLICATION_JSON);
 				put.setEntity(entity);
@@ -128,9 +142,13 @@ public class TemplateManager {
 		}
 	}
 
-	public AlertTemplate getTemplate(String tenantId, short templateId) throws Exception {
+	public AlertTemplate getTemplate(UserBean ub, String tenantId, short templateId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + templateId);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(get);
 		if (Utils.validateStatus(resp)) {
 			String result = EntityUtils.toString(resp.getEntity());
@@ -141,9 +159,13 @@ public class TemplateManager {
 		}
 	}
 
-	public List<AlertTemplate> getTemplates(String tenantId) throws Exception {
+	public List<AlertTemplate> getTemplates(UserBean ub, String tenantId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(get);
 		if (Utils.validateStatus(resp)) {
 			String result = EntityUtils.toString(resp.getEntity());

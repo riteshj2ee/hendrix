@@ -38,39 +38,74 @@ import javax.ws.rs.core.SecurityContext;
  */
 @Priority(1000)
 public class BapiAuthorizationFilter implements ContainerRequestFilter {
-	
+
+	private static final String ROLE_PREFIX = "Role";
+	private static final String TENANTS = "tenants";
 	private static final String BAPI = "bapi";
 	public static final String USERNAME = "Username";
 	public static final String USER_GROUP = "Group";
-	public static final String USER_ROLE = "Role";
+	public static final String USER_ROLE = ROLE_PREFIX;
 	private static final Logger logger = Logger.getLogger(BapiAuthorizationFilter.class.getName());
+	private static final String SUPERADMIN_GROUP = System.getenv().getOrDefault("SUPERADMIN_GROUP", "superadmin");
 
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
 		MultivaluedMap<String, String> headers = requestContext.getHeaders();
-		if(!headers.containsKey(USERNAME) || !headers.containsKey(USER_ROLE)) {
+		if (!headers.containsKey(USERNAME) || !containsRole(headers)) {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
+			logger.severe("Invalid request:" + headers);
 			return;
 		}
 		String path = requestContext.getUriInfo().getPath();
 		String username = headers.getFirst(USERNAME);
-		String tenantId = path.split("/")[2];
 		Set<String> roles = null;
-		for (Entry<String, List<String>> entry : headers.entrySet()) {
-			if(entry.getKey().startsWith("Role")) {
-				if(tenantId.equalsIgnoreCase(entry.getKey().split("_")[1])) {
-					roles = new HashSet<>(entry.getValue());
+		logger.info("Authenticated request for path:" + path + " from user:" + username+" method:"+requestContext.getRequest().getMethod().toLowerCase());
+		if(path.startsWith("perf")) {
+			roles = new HashSet<>();
+			roles.add(ACLConstants.READER_ROLE);
+		} else if (path.startsWith(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("post")) {
+			// do nothing
+		} else if (path.equals(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("get")) {
+			roles = new HashSet<>();
+			for (Entry<String, List<String>> entry : headers.entrySet()) {
+				if (entry.getKey().startsWith(ROLE_PREFIX)) {
+					roles.add(ACLConstants.READER_ROLE);
+				}
+			}
+		} else {
+			String tenantId = path.split("/")[2];
+			for (Entry<String, List<String>> entry : headers.entrySet()) {
+				if (entry.getKey().startsWith(ROLE_PREFIX)) {
+					if (tenantId.equalsIgnoreCase(entry.getKey().split("_")[1])) {
+						roles = new HashSet<>(entry.getValue());
+					}
 				}
 			}
 		}
-		if(roles==null || roles.isEmpty()) {
+		if (headers.containsKey(USER_GROUP)) {
+			Set<String> groups = new HashSet<>(headers.get(USER_GROUP));
+			if (groups.contains(SUPERADMIN_GROUP)) {
+				roles.add(ACLConstants.SUPER_ADMIN_ROLE);
+			}
+		}
+		if (roles == null || roles.isEmpty()) {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
+			logger.severe("Request not authorized, roles are empty. Headers:"+headers);
 			return;
 		}
-		logger.fine("Authenticated request for path:"+path+" from user:"+username+"\troles:"+roles);
 		requestContext.setSecurityContext(new BapiSecurityContext(username, roles));
 	}
-	
+
+	public static boolean containsRole(MultivaluedMap<String, String> headers) {
+		Set<String> keySet = headers.keySet();
+		for (String key : keySet) {
+			if (key.startsWith(USER_ROLE)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/**
 	 * Security context to bridge with dynamic RBAC enforcement by Jersey
 	 * 
@@ -87,22 +122,22 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 
 		@Override
 		public Principal getUserPrincipal() {
-		    return new UserPrincipal(username);
+			return new UserPrincipal(username);
 		}
 
 		@Override
 		public boolean isUserInRole(String role) {
-		    return roles.contains(role);
+			return roles.contains(role);
 		}
 
 		@Override
 		public boolean isSecure() {
-		    return false;
+			return false;
 		}
 
 		@Override
 		public String getAuthenticationScheme() {
-		    return BAPI;
+			return BAPI;
 		}
 	}
 

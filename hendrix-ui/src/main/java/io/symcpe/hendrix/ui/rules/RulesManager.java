@@ -32,6 +32,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
+import io.symcpe.hendrix.ui.BapiLoginDAO;
+import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.Utils;
 import io.symcpe.hendrix.ui.storage.Tenant;
 import io.symcpe.wraith.rules.Rule;
@@ -62,15 +64,19 @@ public class RulesManager {
 		this.am = am;
 	}
 
-	public short createNewRule(Tenant tenant) throws Exception {
+	public short createNewRule(UserBean ub, Tenant tenant) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpPost post = new HttpPost(am.getBaseUrl() + RULES_URL + "/" + tenant.getTenantId());
+		if(am.isEnableAuth()) {
+			post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(post);
 		String result = EntityUtils.toString(resp.getEntity());
 		return Short.parseShort(result);
 	}
 
-	public short saveRule(Tenant tenant, Rule currRule) throws Exception {
+	public short saveRule(UserBean ub, Tenant tenant, Rule currRule) throws Exception {
 		if (currRule == null || tenant == null) {
 			logger.info("Rule was null can't save");
 			return -1;
@@ -80,6 +86,10 @@ public class RulesManager {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpPut put = new HttpPut(
 				am.getBaseUrl() + RULES_URL + "/" + tenant.getTenantId() + "/" + currRule.getRuleId());
+		if(am.isEnableAuth()) {
+			put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		StringEntity entity = new StringEntity(RuleSerializer.serializeRuleToJSONString(currRule, false),
 				ContentType.APPLICATION_JSON);
 		put.setEntity(entity);
@@ -88,9 +98,13 @@ public class RulesManager {
 		return Short.parseShort(result);
 	}
 
-	public Rule getRule(String tenantId, short ruleId) throws Exception {
+	public Rule getRule(UserBean ub, String tenantId, short ruleId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		CloseableHttpResponse resp = client.execute(get);
 		String ruleStr = EntityUtils.toString(resp.getEntity());
 		if (Utils.validateStatus(resp)) {
@@ -100,11 +114,15 @@ public class RulesManager {
 		}
 	}
 
-	public void deleteRule(String tenantId, short ruleId) throws Exception {
+	public void deleteRule(UserBean ub, String tenantId, short ruleId) throws Exception {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpDelete delete = new HttpDelete(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId);
+			if(am.isEnableAuth()) {
+				delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(delete);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
@@ -115,11 +133,15 @@ public class RulesManager {
 		}
 	}
 
-	public void deleteRules(String tenantId) throws Exception {
+	public void deleteRules(UserBean ub, String tenantId) throws Exception {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpDelete delete = new HttpDelete(am.getBaseUrl() + RULES_URL + "/" + tenantId);
+			if(am.isEnableAuth()) {
+				delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(delete);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
@@ -130,11 +152,15 @@ public class RulesManager {
 		}
 	}
 
-	public void disableAllRules(String tenantId) throws Exception {
+	public void disableAllRules(UserBean ub, String tenantId) throws Exception {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpPut put = new HttpPut(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/disable");
+			if(am.isEnableAuth()) {
+				put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(put);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
@@ -145,12 +171,16 @@ public class RulesManager {
 		}
 	}
 
-	public List<Rule> getRuleObjects(String tenantId) throws Exception {
+	public List<Rule> getRuleObjects(UserBean ub, String tenantId) throws Exception {
 		List<Rule> rules = new ArrayList<>();
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpGet get = new HttpGet(am.getBaseUrl() + RULES_URL + "/" + tenantId);
+			if(am.isEnableAuth()) {
+				get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(get);
 			String ruleStr = EntityUtils.toString(resp.getEntity());
 			if (Utils.validateStatus(resp)) {
@@ -165,14 +195,18 @@ public class RulesManager {
 		}
 	}
 
-	public Rule enableDisableRule(boolean ruleState, String tenantId, short ruleId) throws Exception {
-		Rule rule = getRule(tenantId, ruleId);
+	public Rule enableDisableRule(UserBean ub, boolean ruleState, String tenantId, short ruleId) throws Exception {
+		Rule rule = getRule(ub, tenantId, ruleId);
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpPut put = new HttpPut(
 					am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId + "/" + (rule.isActive() ? "disable"
 							: "enable"));
+			if(am.isEnableAuth()) {
+				put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			CloseableHttpResponse resp = client.execute(put);
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());

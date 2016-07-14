@@ -15,7 +15,6 @@
  */
 package io.symcpe.hendrix.ui.rules;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -43,6 +42,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import io.symcpe.hendrix.ui.ApplicationManager;
+import io.symcpe.hendrix.ui.BapiLoginDAO;
 import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.alerts.Utils;
 
@@ -111,6 +111,10 @@ public class Dashboard implements Serializable {
 		long ts = -1;
 		if (ub.getTenant() != null) {
 			HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName + "/" + ub.getTenant().getTenantId());
+			if(am.isEnableAuth()) {
+				get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+				get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+			}
 			try {
 				CloseableHttpResponse response = client.execute(get);
 				String string = EntityUtils.toString(response.getEntity());
@@ -129,9 +133,8 @@ public class Dashboard implements Serializable {
 					}
 					model.addSeries(series);
 				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (Exception e) {
+//				e.printStackTrace();
 			}
 		}
 		if (ts > 0) {
@@ -165,9 +168,8 @@ public class Dashboard implements Serializable {
 				series.set(formatter.format(date), point.get("value").getAsNumber());
 			}
 			model.addSeries(series);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+//			e.printStackTrace();
 		}
 		if (date != null) {
 			DateAxis axis = new DateAxis("Time");

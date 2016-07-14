@@ -1,4 +1,5 @@
 name: hendrix-api
+enableAuthorization: true
 server:
  applicationContextPath: /api/*
  applicationConnectors:

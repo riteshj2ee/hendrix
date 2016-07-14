@@ -43,13 +43,16 @@ import io.symcpe.wraith.rules.validator.Validator;
 @ApplicationScoped
 public class ApplicationManager implements Serializable {
 
+	private static final String AUTH_ENABLE = "auth.enable";
+	private static final String AUTH_URL = "auth.url";
 	private static final String API_URL = "api.url";
 	private static final long serialVersionUID = 1L;
-	public static final boolean LOCAL = Boolean.parseBoolean(System.getProperty("local", "true"));
 	private static final String PROP_CONFIG_FILE = "hendrixConfig";
 	private Properties config;
 	private String ruleTopicName;
 	private String baseUrl;
+	private String authUrl;
+	private boolean enableAuth;
 	private int connectTimeout;
 	private int requestTimeout;
 
@@ -73,6 +76,8 @@ public class ApplicationManager implements Serializable {
 			}
 		}
 		baseUrl = config.getProperty(API_URL, "http://localhost:9000/api");
+		authUrl = config.getProperty(AUTH_URL, "http://localhost:8085/token");
+		enableAuth = Boolean.parseBoolean(config.getProperty(AUTH_ENABLE, "false"));
 		AlertReceiver.getInstance().setAm(this);
 		RulesManager.getInstance().init(this);
 		TenantManager.getInstance().init(this);
@@ -110,5 +115,19 @@ public class ApplicationManager implements Serializable {
 	 */
 	public String getBaseUrl() {
 		return baseUrl;
+	}
+
+	/**
+	 * @return the authUrl
+	 */
+	public String getAuthUrl() {
+		return authUrl;
+	}
+
+	/**
+	 * @return the enableAuth
+	 */
+	public boolean isEnableAuth() {
+		return enableAuth;
 	}
 }

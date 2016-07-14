@@ -67,7 +67,7 @@ public class TenantEndpoint {
 	 */
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
+	@RolesAllowed({ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.SUPER_ADMIN_ROLE})
 	public List<Tenant> listTenants() {
 		EntityManager em = am.getEM();
 		try {
@@ -86,7 +86,7 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
+	@RolesAllowed({ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.SUPER_ADMIN_ROLE})
 	public Tenant getTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
 		EntityManager em = am.getEM();

@@ -21,11 +21,13 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.faces.application.FacesMessage;
 import javax.faces.bean.ManagedBean;
+import javax.faces.bean.ManagedProperty;
 import javax.faces.bean.SessionScoped;
 import javax.faces.context.FacesContext;
 
 import org.primefaces.context.RequestContext;
 
+import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.storage.Tenant;
 
 /**
@@ -41,6 +43,8 @@ public class TenantBean implements Serializable {
 
 	private boolean enableEdit;
 	private Tenant tenant;
+	@ManagedProperty(value = "#{ub}")
+	private UserBean ub;
 
 	public TenantBean() {
 	}
@@ -63,7 +67,7 @@ public class TenantBean implements Serializable {
 	public void save() {
 		try {
 			try {
-				if (TenantManager.getInstance().getTenant(tenant.getTenantId()) != null) {
+				if (TenantManager.getInstance().getTenant(ub, tenant.getTenantId()) != null) {
 					updateTenant();
 				}
 			} catch (Exception e) {
@@ -77,7 +81,7 @@ public class TenantBean implements Serializable {
 
 	public void newTenant() {
 		try {
-			TenantManager.getInstance().createTenant(tenant);
+			TenantManager.getInstance().createTenant(ub, tenant);
 		} catch (Exception e) {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to create new tenant", e.getMessage()));
@@ -86,7 +90,7 @@ public class TenantBean implements Serializable {
 
 	public void updateTenant() {
 		try {
-			TenantManager.getInstance().updateTenant(tenant.getTenantId(), tenant.getTenantName());
+			TenantManager.getInstance().updateTenant(ub, tenant.getTenantId(), tenant.getTenantName());
 		} catch (Exception e) {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to update tenant", e.getMessage()));
@@ -95,7 +99,7 @@ public class TenantBean implements Serializable {
 
 	public void deleteTenant(String tenantId) {
 		try {
-			TenantManager.getInstance().deleteTenant(tenantId);
+			TenantManager.getInstance().deleteTenant(ub, tenantId);
 		} catch (Exception e) {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to delete tenant", e.getMessage()));
@@ -104,7 +108,7 @@ public class TenantBean implements Serializable {
 
 	public void changeCurrentTenant(String tenantId) {
 		try {
-			tenant = TenantManager.getInstance().getTenant(tenantId);
+			tenant = TenantManager.getInstance().getTenant(ub, tenantId);
 			enableEdit = true;
 			RequestContext.getCurrentInstance().execute("location.reload();");
 		} catch (Exception e) {
@@ -114,7 +118,7 @@ public class TenantBean implements Serializable {
 	}
 
 	public List<Tenant> getTenants() throws Exception {
-		return TenantManager.getInstance().getTenants();
+		return TenantManager.getInstance().getTenants(ub);
 	}
 
 	/**
@@ -137,6 +141,20 @@ public class TenantBean implements Serializable {
 	 */
 	public boolean isEnableEdit() {
 		return enableEdit;
+	}
+
+	/**
+	 * @return the ub
+	 */
+	public UserBean getUb() {
+		return ub;
+	}
+
+	/**
+	 * @param ub the ub to set
+	 */
+	public void setUb(UserBean ub) {
+		this.ub = ub;
 	}
 
 }

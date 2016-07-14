@@ -45,7 +45,7 @@ public class AlertTemplateBean implements Serializable {
 	public void save() {
 		try {
 			try {
-				if (TemplateManager.getInstance().getTemplate(ub.getTenant().getTenantId(),
+				if (TemplateManager.getInstance().getTemplate(ub, ub.getTenant().getTenantId(),
 						template.getTemplateId()) != null) {
 					updateTemplate();
 				}
@@ -60,7 +60,7 @@ public class AlertTemplateBean implements Serializable {
 
 	public void newTemplate() {
 		try {
-			template = new AlertTemplate(TemplateManager.getInstance().createTemplate(ub.getTenant()));
+			template = new AlertTemplate(TemplateManager.getInstance().createTemplate(ub, ub.getTenant()));
 			enableEdit = true;
 			RequestContext.getCurrentInstance().execute("location.reload();");
 		} catch (Exception e) {
@@ -71,7 +71,7 @@ public class AlertTemplateBean implements Serializable {
 
 	public void updateTemplate() {
 		try {
-			TemplateManager.getInstance().updateTemplate(ub.getTenant().getTenantId(), template);
+			TemplateManager.getInstance().updateTemplate(ub, ub.getTenant().getTenantId(), template);
 		} catch (Exception e) {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to update template", e.getMessage()));
@@ -80,7 +80,7 @@ public class AlertTemplateBean implements Serializable {
 
 	public void deleteTemplate(short templateId) {
 		try {
-			TemplateManager.getInstance().deleteTemplate(ub.getTenant().getTenantId(), templateId);
+			TemplateManager.getInstance().deleteTemplate(ub, ub.getTenant().getTenantId(), templateId);
 		} catch (Exception e) {
 			FacesContext.getCurrentInstance().addMessage(null,
 					new FacesMessage(FacesMessage.SEVERITY_ERROR, "Unable to delete template", e.getMessage()));
@@ -89,7 +89,7 @@ public class AlertTemplateBean implements Serializable {
 
 	public void changeCurrentTemplate(short templateId) {
 		try {
-			template = TemplateManager.getInstance().getTemplate(ub.getTenant().getTenantId(), templateId);
+			template = TemplateManager.getInstance().getTemplate(ub, ub.getTenant().getTenantId(), templateId);
 			enableEdit = true;
 			RequestContext.getCurrentInstance().execute("location.reload();");
 		} catch (Exception e) {
@@ -104,7 +104,7 @@ public class AlertTemplateBean implements Serializable {
 	
 	public List<AlertTemplate> getTemplates() {
 		try {
-			return TemplateManager.getInstance().getTemplates(ub.getTenant().getTenantId());
+			return TemplateManager.getInstance().getTemplates(ub, ub.getTenant().getTenantId());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new ArrayList<>();
