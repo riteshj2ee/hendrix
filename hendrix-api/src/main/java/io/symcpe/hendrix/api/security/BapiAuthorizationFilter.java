@@ -75,7 +75,7 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 				}
 			}
 		} else {
-			String tenantId = path.split("/")[2];
+			String tenantId = path.split("/")[1];
 			for (Entry<String, List<String>> entry : headers.entrySet()) {
 				if (entry.getKey().startsWith(ROLE_PREFIX)) {
 					String[] splits = entry.getKey().split(ROLE_TENANT_SEPARATOR);

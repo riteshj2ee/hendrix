@@ -113,7 +113,7 @@ public class TestTenantManager {
 	@Test
 	public void testCreateTenantNegative() throws Exception {
 		Tenant tenant = new Tenant();
-		tenant.setTenant_id("32342342342234514322534t3435234523452345234234");
+		tenant.setTenant_id("32342342342234514322534t34352345234523452342344573657657486784768567956785678234234234");
 		tenant.setTenant_name("simple-tenant");
 		try {
 			TenantManager.getInstance().createTenant(em, tenant);
