@@ -15,7 +15,9 @@
  */
 package io.symcpe.hendrix.api.rest;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.annotation.security.RolesAllowed;
@@ -34,7 +36,10 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
@@ -43,6 +48,7 @@ import com.wordnik.swagger.annotations.Api;
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.security.ACLConstants;
+import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
 import io.symcpe.hendrix.api.storage.Tenant;
 
 /**
@@ -57,25 +63,47 @@ public class TenantEndpoint {
 	public static final String TENANT_ID = "tenantId";
 	private static final Logger logger = Logger.getLogger(TenantEndpoint.class.getName());
 	private ApplicationManager am;
-	
+
 	public TenantEndpoint(ApplicationManager am) {
 		this.am = am;
 	}
-	
+
 	/**
 	 * @return
 	 */
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.SUPER_ADMIN_ROLE})
-	public List<Tenant> listTenants() {
-		EntityManager em = am.getEM();
-		try {
-			return TenantManager.getInstance().getTenants(em);
-		} catch (Exception e) {
-			throw new NotFoundException("No Tenants found");
-		}finally{
-			em.close();
+	@RolesAllowed({ ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE,
+			ACLConstants.SUPER_ADMIN_ROLE })
+	public List<Tenant> listTenants(@Context HttpHeaders headers) {
+		if (am.getConfiguration().isEnableAuthorization()) {
+			MultivaluedMap<String, String> requestHeaders = headers.getRequestHeaders();
+			List<String> tList = new ArrayList<>();
+			for (Entry<String, List<String>> entry : requestHeaders.entrySet()) {
+				if (entry.getKey().startsWith(BapiAuthorizationFilter.ROLE_PREFIX)) {
+					String[] split = entry.getKey().split(BapiAuthorizationFilter.ROLE_TENANT_SEPARATOR);
+					if(split.length==2) {
+						tList.add(split[1]);
+					}
+				}
+			}
+			EntityManager em = am.getEM();
+			try {
+				return TenantManager.getInstance().getTenants(em, tList);
+			} catch (Exception e) {
+				throw new NotFoundException("No matching Tenants found");
+			} finally {
+				em.close();
+			}
+		} else {
+			EntityManager em = am.getEM();
+			try {
+				return TenantManager.getInstance().getTenants(em);
+			} catch (Exception e) {
+				throw new NotFoundException("No Tenants found");
+			} finally {
+				em.close();
+			}
 		}
 	}
 
@@ -86,15 +114,16 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.SUPER_ADMIN_ROLE})
+	@RolesAllowed({ ACLConstants.READER_ROLE, ACLConstants.OPERATOR_ROLE, ACLConstants.SUPER_ADMIN_ROLE,
+			ACLConstants.SUPER_ADMIN_ROLE })
 	public Tenant getTenant(
-			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message="Tenant ID can't be empty") String tenantId) {
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID can't be empty") String tenantId) {
 		EntityManager em = am.getEM();
 		try {
 			return TenantManager.getInstance().getTenant(em, tenantId);
 		} catch (Exception e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Tenants found").build());
-		}finally{
+		} finally {
 			em.close();
 		}
 	}
@@ -105,16 +134,16 @@ public class TenantEndpoint {
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
-	public void createTenant(@NotNull(message="Tenant information can't be empty") Tenant tenant) {
-		if(!validateTenant(tenant)) {
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE })
+	public void createTenant(@NotNull(message = "Tenant information can't be empty") Tenant tenant) {
+		if (!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
 		}
 		EntityManager em = am.getEM();
 		try {
-			if (TenantManager.getInstance().getTenant(em, tenant.getTenantId()) != null) {
+			if (TenantManager.getInstance().getTenant(em, tenant.getTenant_id()) != null) {
 				throw new BadRequestException(Response.status(400)
-						.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
+						.entity("Tenant with tenant id:" + tenant.getTenant_id() + " already exists").build());
 			}
 		} catch (NoResultException e) {
 		} catch (Exception e) {
@@ -124,10 +153,10 @@ public class TenantEndpoint {
 			logger.info("Created new tenant:" + tenant);
 		} catch (EntityExistsException e) {
 			throw new BadRequestException(Response.status(400)
-					.entity("Tenant with tenant id:" + tenant.getTenantId() + " already exists").build());
+					.entity("Tenant with tenant id:" + tenant.getTenant_id() + " already exists").build());
 		} catch (Exception e) {
 			throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
-		}finally{
+		} finally {
 			em.close();
 		}
 	}
@@ -138,7 +167,7 @@ public class TenantEndpoint {
 	@Path("/{" + TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE })
 	public void deleteTenant(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();
@@ -147,7 +176,7 @@ public class TenantEndpoint {
 			logger.info("Deleted tenant:" + tenant);
 		} catch (Exception e) {
 			throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
-		}finally{
+		} finally {
 			em.close();
 		}
 	}
@@ -160,16 +189,16 @@ public class TenantEndpoint {
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
-	@RolesAllowed({ACLConstants.SUPER_ADMIN_ROLE})
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE })
 	public void updateTenant(
-			@NotNull(message="Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
-			@NotNull(message="Tenant information can't be empty") Tenant tenant) {
-		if(!validateTenant(tenant)) {
+			@NotNull(message = "Tenant ID can't be empty") @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull(message = "Tenant information can't be empty") Tenant tenant) {
+		if (!validateTenant(tenant)) {
 			throw new BadRequestException("Tenant info is invalid");
 		}
 		EntityManager em = am.getEM();
 		try {
-			tenant = TenantManager.getInstance().updateTenant(em, tenantId, tenant.getTenantName());
+			tenant = TenantManager.getInstance().updateTenant(em, tenantId, tenant.getTenant_name());
 			logger.info("Updated tenant:" + tenant);
 		} catch (Exception e) {
 			if (e instanceof NoResultException) {
@@ -177,23 +206,23 @@ public class TenantEndpoint {
 			} else {
 				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
 			}
-		}finally{
+		} finally {
 			em.close();
 		}
 	}
 
 	public static boolean validateTenant(Tenant tenant) {
-		if (tenant == null || tenant.getTenantId() == null || tenant.getTenantName() == null
-				|| tenant.getTenantId().isEmpty() || tenant.getTenantName().isEmpty()) {
+		if (tenant == null || tenant.getTenant_id() == null || tenant.getTenant_name() == null
+				|| tenant.getTenant_id().isEmpty() || tenant.getTenant_name().isEmpty()) {
 			return false;
 		}
-		if(tenant.getTenantId().length()>Tenant.TENANT_ID_MAX_SIZE) {
+		if (tenant.getTenant_id().length() > Tenant.TENANT_ID_MAX_SIZE) {
 			return false;
 		}
-		if(tenant.getTenantName().length()>Tenant.TENANT_NAME_MAX_SIZE) {
+		if (tenant.getTenant_name().length() > Tenant.TENANT_NAME_MAX_SIZE) {
 			return false;
 		}
 		return true;
 	}
-	
+
 }

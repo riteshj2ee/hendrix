@@ -38,6 +38,7 @@ public class Queries {
 	public static final String TENANT_FIND_BY_ID = "Tenant.findById";
 	public static final String TENANT_FIND_ALL = "Tenant.findAll";
 	public static final String TENANT_DELETE_BY_ID = "Tenant.deleteById";
+	public static final String TENANT_FILTERED = "Tenant.filterByTenants";
 	
 	public static final String TEMPLATE_FIND_BY_TENANT_ID = "Template.findByTenantId";
 	public static final String TEMPLATE_FIND_ALL = "Template.findAll";

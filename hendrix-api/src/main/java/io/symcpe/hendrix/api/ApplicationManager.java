@@ -76,6 +76,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private PerformanceMonitor perfMonitor;
 	private Ignite ignite;
 	private AlertReceiver alertReceiver;
+	private AppConfig configuration;
 
 	public void init(AppConfig appConfiguration) {
 		config = new Properties(System.getProperties());
@@ -174,6 +175,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 
 	@Override
 	public void run(AppConfig configuration, Environment environment) throws Exception {
+		this.configuration = configuration;
 		init(configuration);
 		environment.jersey().property(ServerProperties.BV_SEND_ERROR_IN_RESPONSE, false);
 		environment.jersey().register(ValidationFeature.class);
@@ -238,5 +240,12 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	 */
 	public AlertReceiver getAlertReceiver() {
 		return alertReceiver;
+	}
+
+	/**
+	 * @return the configuration
+	 */
+	public AppConfig getConfiguration() {
+		return configuration;
 	}
 }

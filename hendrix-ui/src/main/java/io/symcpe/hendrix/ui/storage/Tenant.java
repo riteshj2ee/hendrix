@@ -31,29 +31,29 @@ public class Tenant implements Serializable {
 
 	@NotNull(message="Tenant ID can't be empty")
 	@Size(min = 1, max = 100, message="Tenant ID must be under 100 characters")
-	private String tenantId;
+	private String tenant_id;
 
 	@NotNull(message="Tenant name can't be empty")
 	@Size(min = 1, max = 100, message="Tenant name must be under 100 characters")
-	private String tenantName;
+	private String tenant_name;
 
 	public Tenant() {
 	}
 
 	public String getTenantId() {
-		return this.tenantId;
+		return this.tenant_id;
 	}
 
 	public void setTenantId(String tenantId) {
-		this.tenantId = tenantId;
+		this.tenant_id = tenantId;
 	}
 
 	public String getTenantName() {
-		return this.tenantName;
+		return this.tenant_name;
 	}
 
 	public void setTenantName(String tenantName) {
-		this.tenantName = tenantName;
+		this.tenant_name = tenantName;
 	}
 
 	/*
@@ -63,7 +63,7 @@ public class Tenant implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + ", ";
+		return "Tenant [tenantId=" + tenant_id + ", tenantName=" + tenant_name + ", ";
 	}
 
 }

@@ -37,48 +37,61 @@ import io.symcpe.hendrix.api.Queries;
 @Entity
 @Table(name = "tenant")
 @NamedQueries({ @NamedQuery(name = Queries.TENANT_FIND_ALL, query = "SELECT t FROM Tenant t"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_ID, query = "SELECT t FROM Tenant t where t.tenantId=:tenantId"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_IDS, query = "SELECT t FROM Tenant t where t.tenantId in :tenantIds"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_NAMES, query = "SELECT t FROM Tenant t where t.tenantName in :tenantNames"),
-		@NamedQuery(name = Queries.TENANT_FIND_BY_NAME, query = "SELECT t FROM Tenant t where t.tenantName like :tenantName"),
-		@NamedQuery(name = Queries.TENANT_DELETE_BY_ID, query = "DELETE FROM Tenant t where t.tenantId=:tenantId") })
+		@NamedQuery(name = Queries.TENANT_FIND_BY_ID, query = "SELECT t FROM Tenant t where t.tenant_id=:tenantId"),
+		@NamedQuery(name = Queries.TENANT_FIND_BY_IDS, query = "SELECT t FROM Tenant t where t.tenant_id in :tenantIds"),
+		@NamedQuery(name = Queries.TENANT_FIND_BY_NAMES, query = "SELECT t FROM Tenant t where t.tenant_name in :tenantNames"),
+		@NamedQuery(name = Queries.TENANT_FIND_BY_NAME, query = "SELECT t FROM Tenant t where t.tenant_name like :tenantName"),
+		@NamedQuery(name = Queries.TENANT_DELETE_BY_ID, query = "DELETE FROM Tenant t where t.tenant_id=:tenantId"),
+		@NamedQuery(name = Queries.TENANT_FILTERED, query = "SELECT t FROM Tenant t where t.tenant_id IN :tenants") })
 public class Tenant implements Serializable {
 
 	private static final long serialVersionUID = 1L;
-	public static final int TENANT_ID_MAX_SIZE = 32;
+	public static final int TENANT_ID_MAX_SIZE = 50;
 	public static final int TENANT_NAME_MAX_SIZE = 100;
 
 	@Id
 	@Column(name = "tenant_id", length = TENANT_ID_MAX_SIZE)
-	private String tenantId;
+	private String tenant_id;
 
 	@Column(name = "tenant_name", length = TENANT_NAME_MAX_SIZE)
-	private String tenantName;
+	private String tenant_name;
 
 	// bi-directional many-to-one association to RulesTable
-	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY) 
+	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
 	private List<Rules> rulesTables;
-	
+
 	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
 	private List<AlertTemplates> templates;
 
 	public Tenant() {
 	}
 
-	public String getTenantId() {
-		return this.tenantId;
+	/**
+	 * @return the tenant_id
+	 */
+	public String getTenant_id() {
+		return tenant_id;
 	}
 
-	public void setTenantId(String tenantId) {
-		this.tenantId = tenantId;
+	/**
+	 * @return the tenant_name
+	 */
+	public String getTenant_name() {
+		return tenant_name;
 	}
 
-	public String getTenantName() {
-		return this.tenantName;
+	/**
+	 * @param tenant_name the tenant_name to set
+	 */
+	public void setTenant_name(String tenant_name) {
+		this.tenant_name = tenant_name;
 	}
 
-	public void setTenantName(String tenantName) {
-		this.tenantName = tenantName;
+	/**
+	 * @param tenant_id the tenant_id to set
+	 */
+	public void setTenant_id(String tenant_id) {
+		this.tenant_id = tenant_id;
 	}
 
 	@JsonIgnore
@@ -99,7 +112,8 @@ public class Tenant implements Serializable {
 	}
 
 	/**
-	 * @param templates the templates to set
+	 * @param templates
+	 *            the templates to set
 	 */
 	public void setTemplates(List<AlertTemplates> templates) {
 		this.templates = templates;
@@ -118,7 +132,7 @@ public class Tenant implements Serializable {
 
 		return rulesTable;
 	}
-	
+
 	public AlertTemplates addTemplates(AlertTemplates alertTemplates) {
 		getTemplates().add(alertTemplates);
 		alertTemplates.setTenant(this);
@@ -138,7 +152,7 @@ public class Tenant implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		return "Tenant [tenantId=" + tenantId + ", tenantName=" + tenantName + "]";
+		return "Tenant [tenantId=" + tenant_id + ", tenantName=" + tenant_name + "]";
 	}
 
 }

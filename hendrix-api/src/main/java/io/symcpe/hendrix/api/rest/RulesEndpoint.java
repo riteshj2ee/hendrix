@@ -201,7 +201,7 @@ public class RulesEndpoint {
 			Rules ruleContainer = new Rules();
 			if (rule.getRuleId() > 0) {
 				try {
-					Rules temp = mgr.getRule(em, tenant.getTenantId(), rule.getRuleId());
+					Rules temp = mgr.getRule(em, tenant.getTenant_id(), rule.getRuleId());
 					if (temp != null) {
 						ruleContainer = temp;
 					}

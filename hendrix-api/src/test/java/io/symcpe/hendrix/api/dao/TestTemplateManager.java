@@ -100,8 +100,8 @@ public class TestTemplateManager {
 		EntityManager em = emf.createEntityManager();
 
 		Tenant tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_1);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_1);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
 
 		em.close();
@@ -222,7 +222,7 @@ public class TestTemplateManager {
 		assertEquals(id, templates.getTemplateId());
 		TemplateManager.getInstance().deleteTemplates(em, templates.getTenant(), am);
 		try {
-			List<AlertTemplates> results = TemplateManager.getInstance().getTemplates(em, templates.getTenant().getTenantId());
+			List<AlertTemplates> results = TemplateManager.getInstance().getTemplates(em, templates.getTenant().getTenant_id());
 			assertEquals(0, results.size());
 		} catch (Exception e) {
 		}

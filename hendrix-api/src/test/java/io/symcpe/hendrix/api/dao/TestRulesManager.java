@@ -117,23 +117,23 @@ public class TestRulesManager {
 		EntityManager em = emf.createEntityManager();
 
 		Tenant tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_1);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_1);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
 
 		tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_2);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_2);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
 
 		tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_3);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_3);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
 
 		tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_5);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_5);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(em, tenant);
 
 		em.close();
@@ -224,8 +224,8 @@ public class TestRulesManager {
 	@Test
 	public void testRuleOperations1CreateTenant() throws Exception {
 		Tenant tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID_4);
-		tenant.setTenantName(TEST_TENANT);
+		tenant.setTenant_id(TENANT_ID_4);
+		tenant.setTenant_name(TEST_TENANT);
 		TenantManager.getInstance().createTenant(emf.createEntityManager(), tenant);
 
 		tenant = TenantManager.getInstance().getTenant(em, TENANT_ID_4);

@@ -39,7 +39,8 @@ import javax.ws.rs.core.SecurityContext;
 @Priority(1000)
 public class BapiAuthorizationFilter implements ContainerRequestFilter {
 
-	private static final String ROLE_PREFIX = "Role";
+	public static final String ROLE_TENANT_SEPARATOR = "_";
+	public static final String ROLE_PREFIX = "Role";
 	private static final String TENANTS = "tenants";
 	private static final String BAPI = "bapi";
 	public static final String USERNAME = "Username";
@@ -59,8 +60,9 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 		String path = requestContext.getUriInfo().getPath();
 		String username = headers.getFirst(USERNAME);
 		Set<String> roles = null;
-		logger.info("Authenticated request for path:" + path + " from user:" + username+" method:"+requestContext.getRequest().getMethod().toLowerCase());
-		if(path.startsWith("perf")) {
+		logger.info("Authenticated request for path:" + path + " from user:" + username + " method:"
+				+ requestContext.getRequest().getMethod().toLowerCase());
+		if (path.startsWith("perf")) {
 			roles = new HashSet<>();
 			roles.add(ACLConstants.READER_ROLE);
 		} else if (path.startsWith(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("post")) {
@@ -76,7 +78,8 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 			String tenantId = path.split("/")[2];
 			for (Entry<String, List<String>> entry : headers.entrySet()) {
 				if (entry.getKey().startsWith(ROLE_PREFIX)) {
-					if (tenantId.equalsIgnoreCase(entry.getKey().split("_")[1])) {
+					String[] splits = entry.getKey().split(ROLE_TENANT_SEPARATOR);
+					if (splits.length == 2 && tenantId.equalsIgnoreCase(splits[1])) {
 						roles = new HashSet<>(entry.getValue());
 					}
 				}
@@ -85,12 +88,15 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 		if (headers.containsKey(USER_GROUP)) {
 			Set<String> groups = new HashSet<>(headers.get(USER_GROUP));
 			if (groups.contains(SUPERADMIN_GROUP)) {
+				if(roles==null) {
+					roles = new HashSet<>();
+				}
 				roles.add(ACLConstants.SUPER_ADMIN_ROLE);
 			}
 		}
 		if (roles == null || roles.isEmpty()) {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
-			logger.severe("Request not authorized, roles are empty. Headers:"+headers);
+			logger.severe("Request not authorized, roles are empty. Headers:" + headers);
 			return;
 		}
 		requestContext.setSecurityContext(new BapiSecurityContext(username, roles));

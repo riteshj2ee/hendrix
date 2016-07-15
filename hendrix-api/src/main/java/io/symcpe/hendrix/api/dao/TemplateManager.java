@@ -194,7 +194,7 @@ public class TemplateManager {
 			em.flush();
 			logger.info("Template " + templates.getTemplateId() + ":" + templates.getTemplateContent() + " saved");
 			// publish template to kafka
-			sendTemplateToKafka(false, tenant.getTenantId(), templates.getTemplateContent(), am);
+			sendTemplateToKafka(false, tenant.getTenant_id(), templates.getTemplateContent(), am);
 			em.getTransaction().commit();
 			logger.info("Completed Transaction for template " + templates.getTemplateId() + ":"
 					+ templates.getTemplateContent() + "");
@@ -251,7 +251,7 @@ public class TemplateManager {
 			em.createNamedQuery(Queries.TEMPLATE_DELETE_BY_ID).setParameter(PARAM_TEMPLATE_ID, templateId)
 					.executeUpdate();
 			if (templateContent != null) {
-				sendTemplateToKafka(true, template.getTenant().getTenantId(), templateContent, am);
+				sendTemplateToKafka(true, template.getTenant().getTenant_id(), templateContent, am);
 			}
 			transaction.commit();
 			logger.info("Deleted template:" + templateId);
@@ -277,12 +277,12 @@ public class TemplateManager {
 		EntityTransaction transaction = em.getTransaction();
 		try {
 			transaction.begin();
-			List<AlertTemplates> templates = getTemplates(em, tenant.getTenantId());
+			List<AlertTemplates> templates = getTemplates(em, tenant.getTenant_id());
 			if (templates != null) {
 				for (AlertTemplates template : templates) {
 					List<Short> result = null;
 					try {
-						result = RulesManager.getInstance().getRuleByTemplateId(em, tenant.getTenantId(), template.getTemplateId());
+						result = RulesManager.getInstance().getRuleByTemplateId(em, tenant.getTenant_id(), template.getTemplateId());
 					} catch (Exception e) {
 					}
 					if(result!=null && result.size()>0) {
@@ -290,7 +290,7 @@ public class TemplateManager {
 					}
 					em.remove(template);
 					if (template.getTemplateContent() != null) {
-						sendTemplateToKafka(true, template.getTenant().getTenantId(), template.getTemplateContent(),
+						sendTemplateToKafka(true, template.getTenant().getTenant_id(), template.getTemplateContent(),
 								am);
 					}
 					logger.info("Deleting template:" + template.getTemplateId() + " for tenant id:" + tenant);

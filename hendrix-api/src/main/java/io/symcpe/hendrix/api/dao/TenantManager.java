@@ -95,7 +95,7 @@ public class TenantManager {
 			EntityTransaction t = em.getTransaction();
 			try {
 				t.begin();
-				tenant.setTenantName(tenantName);
+				tenant.setTenant_name(tenantName);
 				em.merge(tenant);
 				em.flush();
 				t.commit();
@@ -112,6 +112,11 @@ public class TenantManager {
 		}
 	}
 
+	public List<Tenant> getTenants(EntityManager em, List<String> tenants) throws Exception {
+		return em.createNamedQuery(Queries.TENANT_FILTERED, Tenant.class).setParameter("tenants", tenants)
+				.getResultList();
+	}
+
 	public Tenant getTenant(EntityManager em, String tenantId) throws Exception {
 		return em.createNamedQuery(Queries.TENANT_FIND_BY_ID, Tenant.class).setParameter("tenantId", tenantId)
 				.getSingleResult();
@@ -125,5 +130,5 @@ public class TenantManager {
 	public List<Tenant> getTenants(EntityManager em) {
 		return em.createNamedQuery(Queries.TENANT_FIND_ALL, Tenant.class).getResultList();
 	}
-	
+
 }

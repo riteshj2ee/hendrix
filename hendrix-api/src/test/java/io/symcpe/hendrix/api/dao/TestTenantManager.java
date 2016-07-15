@@ -103,18 +103,18 @@ public class TestTenantManager {
 	@Test
 	public void testCreateTenant() throws Exception {
 		Tenant tenant = new Tenant();
-		tenant.setTenantId(TENANT_ID);
-		tenant.setTenantName("simple-tenant");
+		tenant.setTenant_id(TENANT_ID);
+		tenant.setTenant_name("simple-tenant");
 		TenantManager.getInstance().createTenant(em, tenant);
 		tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
-		assertEquals(TENANT_ID, tenant.getTenantId());
+		assertEquals(TENANT_ID, tenant.getTenant_id());
 	}
 
 	@Test
 	public void testCreateTenantNegative() throws Exception {
 		Tenant tenant = new Tenant();
-		tenant.setTenantId("32342342342234514322534t3435234523452345234234");
-		tenant.setTenantName("simple-tenant");
+		tenant.setTenant_id("32342342342234514322534t3435234523452345234234");
+		tenant.setTenant_name("simple-tenant");
 		try {
 			TenantManager.getInstance().createTenant(em, tenant);
 			fail("Can't create this tenant");
@@ -126,8 +126,8 @@ public class TestTenantManager {
 	public void testCupdateTenant() throws Exception {
 		TenantManager.getInstance().updateTenant(em, TENANT_ID, "simple-tenant2");
 		Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
-		assertEquals(TENANT_ID, tenant.getTenantId());
-		assertEquals("simple-tenant2", tenant.getTenantName());
+		assertEquals(TENANT_ID, tenant.getTenant_id());
+		assertEquals("simple-tenant2", tenant.getTenant_name());
 	}
 
 	@Test

@@ -40,7 +40,7 @@ import io.symcpe.hendrix.api.Queries;
 @NamedQueries({
 	@NamedQuery(name = Queries.TEMPLATE_FIND_ALL, query = "SELECT t FROM AlertTemplates t"),
 	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_ID, query = "SELECT t FROM AlertTemplates t where t.templateId=:templateId"),
-	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_TENANT_ID, query = "SELECT t FROM AlertTemplates t where t.tenant.tenantId=:tenantId"),
+	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_TENANT_ID, query = "SELECT t FROM AlertTemplates t where t.tenant.tenant_id=:tenantId"),
 	@NamedQuery(name = Queries.TEMPLATE_DELETE_BY_ID, query = "DELETE FROM AlertTemplates t where t.templateId=:templateId"),
 })
 public class AlertTemplates implements Serializable {

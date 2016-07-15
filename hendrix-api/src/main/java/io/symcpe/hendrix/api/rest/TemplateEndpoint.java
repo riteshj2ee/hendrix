@@ -179,7 +179,7 @@ public class TemplateEndpoint {
 			AlertTemplates templateContainer = new AlertTemplates();
 			if (template.getTemplateId() > 0) {
 				try {
-					AlertTemplates temp = mgr.getTemplate(em, tenant.getTenantId(), template.getTemplateId());
+					AlertTemplates temp = mgr.getTemplate(em, tenant.getTenant_id(), template.getTemplateId());
 					if (temp != null) {
 						templateContainer = temp;
 					}

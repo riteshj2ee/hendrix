@@ -105,7 +105,7 @@ public class RulesManager {
 		RuleValidator.getInstance().validate(currRule);
 		for (Action action : currRule.getActions()) {
 			if (action instanceof TemplatedAlertAction) {
-				TemplateManager.getInstance().getTemplate(em, tenant.getTenantId(),
+				TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(),
 						((TemplatedAlertAction) action).getTemplateId());
 			}
 		}
@@ -128,7 +128,7 @@ public class RulesManager {
 			em.flush();
 			logger.info("Rule " + dbRule.getRuleId() + ":" + dbRule.getRuleContent() + " saved");
 			// publish rule to kafka
-			sendRuleToKafka(false, tenant.getTenantId(), dbRule.getRuleContent(), am);
+			sendRuleToKafka(false, tenant.getTenant_id(), dbRule.getRuleContent(), am);
 			em.getTransaction().commit();
 			logger.info("Completed Transaction for rule " + dbRule.getRuleId() + ":" + dbRule.getRuleContent() + "");
 			return dbRule.getRuleId();
@@ -214,7 +214,7 @@ public class RulesManager {
 			String ruleContent = rule.getRuleContent();
 			em.createNamedQuery(Queries.RULES_DELETE_BY_ID).setParameter(PARAM_RULE_ID, ruleId).executeUpdate();
 			if (ruleContent != null) {
-				sendRuleToKafka(true, rule.getTenant().getTenantId(), ruleContent, am);
+				sendRuleToKafka(true, rule.getTenant().getTenant_id(), ruleContent, am);
 			}
 			transaction.commit();
 			logger.info("Deleted rule:" + ruleId);
@@ -235,12 +235,12 @@ public class RulesManager {
 		EntityTransaction transaction = em.getTransaction();
 		try {
 			transaction.begin();
-			List<Rules> rules = getRules(em, tenant.getTenantId());
+			List<Rules> rules = getRules(em, tenant.getTenant_id());
 			if (rules != null) {
 				for (Rules rule : rules) {
 					em.remove(rule);
 					if (rule.getRuleContent() != null) {
-						sendRuleToKafka(true, rule.getTenant().getTenantId(), rule.getRuleContent(), am);
+						sendRuleToKafka(true, rule.getTenant().getTenant_id(), rule.getRuleContent(), am);
 					}
 					logger.info("Deleting rule:" + rule.getRuleId() + " for tenant id:" + tenant);
 				}

@@ -26,15 +26,15 @@ import io.symcpe.hendrix.api.Queries;
 @Entity
 @Table(name = "rules_table")
 @NamedQueries({ @NamedQuery(name = Queries.RULES_FIND_ALL, query = "SELECT r FROM Rules r"),
-		@NamedQuery(name = Queries.RULES_STATS, query = "SELECT r.tenant.tenantName,count(r) FROM Rules r group by r.tenant.tenantName"),
-		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_ID, query = "SELECT r FROM Rules r where r.tenant.tenantId=:tenantId"),
+		@NamedQuery(name = Queries.RULES_STATS, query = "SELECT r.tenant.tenant_name,count(r) FROM Rules r group by r.tenant.tenant_name"),
+		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_ID, query = "SELECT r FROM Rules r where r.tenant.tenant_id=:tenantId"),
 		@NamedQuery(name = Queries.RULES_FIND_BY_ID, query = "SELECT r FROM Rules r where r.ruleId=:ruleId"),
-		@NamedQuery(name = Queries.RULES_FIND_BY_ID_AND_TENANT, query = "SELECT r FROM Rules r where r.ruleId=:ruleId and r.tenant.tenantId=:tenantId"),
-		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_IDS, query = "SELECT r FROM Rules r where r.tenant.tenantId in :tenantIds"),
-		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_NAME, query = "SELECT r FROM Rules r where r.tenant.tenantName=:tenantName"),
+		@NamedQuery(name = Queries.RULES_FIND_BY_ID_AND_TENANT, query = "SELECT r FROM Rules r where r.ruleId=:ruleId and r.tenant.tenant_id=:tenantId"),
+		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_IDS, query = "SELECT r FROM Rules r where r.tenant.tenant_id in :tenantIds"),
+		@NamedQuery(name = Queries.RULES_FIND_ALL_BY_TENANT_NAME, query = "SELECT r FROM Rules r where r.tenant.tenant_name=:tenantName"),
 		@NamedQuery(name = Queries.RULES_DELETE_BY_ID, query = "DELETE FROM Rules r where r.ruleId=:ruleId"),
 		@NamedQuery(name = Queries.RULES_LATEST_RULE_ID, query = "SELECT r.ruleId from Rules r order by r.ruleId desc"),
-		@NamedQuery(name = Queries.RULES_BY_TEMPLATE_ID_BY_TENANT, query = "SELECT r.ruleId from Rules r where r.tenant.tenantId=:tenantId and r.ruleContent like :template"),
+		@NamedQuery(name = Queries.RULES_BY_TEMPLATE_ID_BY_TENANT, query = "SELECT r.ruleId from Rules r where r.tenant.tenant_id=:tenantId and r.ruleContent like :template"),
 		@NamedQuery(name = Queries.RULES_ENABLE_DISABLE_RULE, query = "UPDATE Rules r set r.ruleContent=:ruleContent where r.ruleId=:ruleId") })
 public class Rules implements Serializable {
 
