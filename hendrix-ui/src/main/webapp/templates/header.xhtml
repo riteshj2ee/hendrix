@@ -12,21 +12,25 @@
 				<b:navLink value="Rules" href="${request.contextPath}/rules.xhtml" />
 				<b:navLink value="Tenants"
 					href="${request.contextPath}/tenants.xhtml" />
-				<b:navLink value="Templates"
-					href="${request.contextPath}/templates.xhtml" />
+				<c:choose>
+					<c:when test="#{not am.enableAuth}">
+						<b:navLink value="Templates"
+							href="${request.contextPath}/templates.xhtml" />
+					</c:when>
+				</c:choose>
 				<b:navLink value="Alert Viewer"
 					href="${request.contextPath}/components/av.xhtml" />
 			</b:navbarLinks>
 			<b:navbarLinks pull="right" rendered="#{lb.authenticated}">
 				<h:selectOneMenu value="#{ub.tenant}" converter="tenantConverter"
 					style="float:left;margin-top:12px">
-					<f:selectItems value="#{ub.tenants}" var="group"
-						itemLabel="#{group.tenantName}" itemValue="#{group.tenantId}" />
+					<f:selectItems value="#{ub.tenants}" var="tenant"
+						itemLabel="#{tenant.tenantName}" itemValue="#{tenant.tenantId}" />
 					<p:ajax event="change" process="@this" update="@all" />
 				</h:selectOneMenu>
-				<b:dropMenu value="#{ub.userId}"
-					style="padding-left:10px;">
-					<p:commandLink value="Logout" actionListener="#{lb.logout}" style="font-size:12pt;text-align:center" update="@all" />
+				<b:dropMenu value="#{ub.userId}" style="padding-left:10px;">
+					<p:commandLink value="Logout" actionListener="#{lb.logout}"
+						style="font-size:12pt;text-align:center" update="@all" />
 				</b:dropMenu>
 			</b:navbarLinks>
 		</b:navBar>

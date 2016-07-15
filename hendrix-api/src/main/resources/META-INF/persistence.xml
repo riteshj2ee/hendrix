@@ -17,6 +17,11 @@
 			<property name="hibernate.connection.characterEncoding"
 				value="ascii" />
 			<property name="hibernate.connection.charSet" value="ascii" />
+			<property name="hibernate.connection.provider_class"
+				value="org.hibernate.connection.C3P0ConnectionProvider" />
+			<property name="hibernate.c3p0.min_size" value="5" />
+			<property name="hibernate.c3p0.max_size" value="10" />
+			<property name="hibernate.c3p0.timeout" value="10" />
 		</properties>
 	</persistence-unit>
 </persistence>
