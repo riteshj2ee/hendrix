@@ -31,6 +31,9 @@ import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
+import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
@@ -60,6 +63,9 @@ import io.symcpe.wraith.rules.validator.Validator;
  */
 public class ApplicationManager extends Application<AppConfig> implements Daemon {
 
+	private static final String TEMPLATE_TOPIC_NAME = "template.topic.name";
+	private static final String RULE_TOPIC_NAME = "rule.topic.name";
+	private static final String IGNITE_DISOVERY_ADDRESS = "ignite.discovery.address";
 	private static final String JAVAX_PERSISTENCE_JDBC_URL = "javax.persistence.jdbc.url";
 	private static final String JAVAX_PERSISTENCE_JDBC_DRIVER = "javax.persistence.jdbc.driver";
 	private static final String JAVAX_PERSISTENCE_JDBC_PASSWORD = "javax.persistence.jdbc.password";
@@ -86,13 +92,13 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			} catch (IOException e) {
 				throw new RuntimeException("Configuration file not loaded", e);
 			}
-		} else if (System.getProperty(PROP_CONFIG_FILE)!=null) {
+		} else if (System.getProperty(PROP_CONFIG_FILE) != null) {
 			try {
 				config.load(new FileInputStream(System.getProperty(PROP_CONFIG_FILE)));
 			} catch (IOException e) {
 				throw new RuntimeException("Configuration file not loaded", e);
 			}
-		}else {
+		} else {
 			try {
 				config.load(ApplicationManager.class.getClassLoader().getResourceAsStream("default-config.properties"));
 			} catch (IOException e) {
@@ -125,8 +131,8 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	}
 
 	public void initKafkaConnection() {
-		ruleTopicName = config.getProperty("rule.topic.name", "ruleTopic");
-		templateTopicName = config.getProperty("template.topic.name", "templateTopic");
+		ruleTopicName = config.getProperty(RULE_TOPIC_NAME, "ruleTopic");
+		templateTopicName = config.getProperty(TEMPLATE_TOPIC_NAME, "templateTopic");
 		producer = new KafkaProducer<>(config);
 	}
 
@@ -166,7 +172,8 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 				config.setLicenseUrl("http://www.apache.org/licenses/LICENSE-2.0.txt");
 				config.setTitle("Hendrix API");
 				config.setResourcePackage("io.symcpe.hendrix.api.rest");
-				config.setDescription("Hendrix API is allows CRUD operations for Rules, Tenants and Templates in Hendrix");
+				config.setDescription(
+						"Hendrix API is allows CRUD operations for Rules, Tenants and Templates in Hendrix");
 				return config;
 			}
 		});
@@ -183,8 +190,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 			environment.jersey().register(new BapiAuthorizationFilter());
 			environment.jersey().register(RolesAllowedDynamicFeature.class);
 		}
-		Ignition.setClientMode(false);
-		ignite = Ignition.start();
+		configureIgnite(configuration, environment);
 		perfMonitor = new PerformanceMonitor(this);
 		environment.lifecycle().manage(perfMonitor);
 		alertReceiver = new AlertReceiver(this);
@@ -194,6 +200,23 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		environment.jersey().register(new TemplateEndpoint(this));
 		environment.jersey().register(new RestReceiver(this));
 		environment.jersey().register(new PerfMonEndpoint(this));
+	}
+
+	protected void configureIgnite(AppConfig configuration2, Environment environment) {
+		Ignition.setClientMode(false);
+		IgniteConfiguration cfg = new IgniteConfiguration();
+		cfg.setGridName("hendrix");
+		cfg.setClientMode(false);
+		cfg.setClockSyncFrequency(2000);
+		TcpDiscoverySpi discoSpi = new TcpDiscoverySpi();
+		discoSpi.setAckTimeout(3000);
+		discoSpi.setHeartbeatFrequency(2000);
+		TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
+		ipFinder.setAddresses(Arrays.asList(config.getProperty(IGNITE_DISOVERY_ADDRESS, "localhost")));
+		discoSpi.setIpFinder(ipFinder);
+		cfg.setDiscoverySpi(discoSpi);
+		ignite = Ignition.start(cfg);
+		System.err.println("\n\nIgnite using TCP static IP based discovery with address:"+config.getProperty(IGNITE_DISOVERY_ADDRESS, "localhost")+"\n\n");
 	}
 
 	@Override
@@ -227,14 +250,14 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	public PerformanceMonitor getPerfMonitor() {
 		return perfMonitor;
 	}
-	
+
 	/**
 	 * @return
 	 */
 	public Ignite getIgnite() {
 		return ignite;
 	}
-	
+
 	/**
 	 * @return
 	 */
