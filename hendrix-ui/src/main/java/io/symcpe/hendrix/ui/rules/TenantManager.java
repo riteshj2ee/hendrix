@@ -73,7 +73,6 @@ public class TenantManager {
 					am.getRequestTimeout());
 			StringEntity entity = new StringEntity(gson.toJson(tenant), ContentType.APPLICATION_JSON);
 			HttpPost post = new HttpPost(am.getBaseUrl() + TENANT_URL);
-			System.err.println("Create tenant entity:"+gson.toJson(tenant));
 			post.setEntity(entity);
 			if(am.isEnableAuth()) {
 				post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
@@ -169,7 +168,6 @@ public class TenantManager {
 		if(Utils.validateStatus(resp)) {
 			String result = EntityUtils.toString(resp.getEntity());
 			Gson gson = new Gson();
-			System.err.println("Tenants:"+result);
 			return Arrays.asList(gson.fromJson(result, Tenant[].class));
 		}else {
 			throw new Exception("Tenant not found:"+resp.toString()+"\t"+am.isEnableAuth()+"\thmac:"+ub.getHmac()+"\ttoken:"+ub.getToken());
