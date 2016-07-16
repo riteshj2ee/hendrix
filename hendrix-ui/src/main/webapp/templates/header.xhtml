@@ -10,14 +10,15 @@
 			brandHref="${request.contextPath}/" inverse="true">
 			<b:navbarLinks pull="left" rendered="#{lb.authenticated}">
 				<b:navLink value="Rules" href="${request.contextPath}/rules.xhtml" />
-				<b:navLink value="Tenants"
-					href="${request.contextPath}/tenants.xhtml" />
 				<c:choose>
 					<c:when test="#{not am.enableAuth}">
-						<b:navLink value="Templates"
-							href="${request.contextPath}/templates.xhtml" />
+						<b:navLink value="Tenants"
+							href="${request.contextPath}/tenants.xhtml" />
 					</c:when>
 				</c:choose>
+				<b:navLink value="Templates"
+					href="${request.contextPath}/templates.xhtml" />
+
 				<b:navLink value="Alert Viewer"
 					href="${request.contextPath}/components/av.xhtml" />
 			</b:navbarLinks>
