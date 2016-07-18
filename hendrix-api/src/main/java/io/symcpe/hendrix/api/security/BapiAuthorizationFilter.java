@@ -51,13 +51,16 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
+		String path = requestContext.getUriInfo().getPath();
+		if(path.startsWith("swagger")) {
+			return;
+		}
 		MultivaluedMap<String, String> headers = requestContext.getHeaders();
 		if (!headers.containsKey(USERNAME) || !containsRole(headers)) {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
 			logger.severe("Invalid request:" + headers);
 			return;
 		}
-		String path = requestContext.getUriInfo().getPath();
 		String username = headers.getFirst(USERNAME);
 		Set<String> roles = null;
 		logger.info("Authenticated request for path:" + path + " from user:" + username + " method:"
