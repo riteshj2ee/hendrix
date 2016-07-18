@@ -47,6 +47,12 @@ public class TenantManager {
 		return TENANT_MANAGER;
 	}
 
+	/**
+	 * Create tenant
+	 * @param em
+	 * @param tenant
+	 * @throws Exception
+	 */
 	public void createTenant(EntityManager em, Tenant tenant) throws Exception {
 		if (tenant == null) {
 			throw new NullPointerException("Tenant can't be empty");
@@ -93,28 +99,14 @@ public class TenantManager {
 		}
 	}
 
-	public void deleteApiKeys(EntityManager em, Tenant tenant) throws Exception {
-		EntityTransaction transaction = em.getTransaction();
-		try {
-			transaction.begin();
-			List<ApiKey> apiKeys = getApiKeys(em, tenant);
-			for (ApiKey key : apiKeys) {
-				em.remove(key);
-			}
-			em.flush();
-			transaction.commit();
-			logger.info("All apikeys for tenant:" + tenant);
-		} catch (Exception e) {
-			if (transaction.isActive()) {
-				transaction.rollback();
-			}
-			if (!(e instanceof NoResultException)) {
-				logger.log(Level.SEVERE, "Failed to delete apikey", e);
-			}
-			throw e;
-		}
-	}
-
+	/**
+	 * Update tenant, only name can be updated
+	 * @param em
+	 * @param tenantId
+	 * @param tenantName
+	 * @return
+	 * @throws Exception
+	 */
 	public Tenant updateTenant(EntityManager em, String tenantId, String tenantName) throws Exception {
 		Tenant tenant = getTenant(em, tenantId);
 		if (tenant != null) {
@@ -138,25 +130,58 @@ public class TenantManager {
 		}
 	}
 
+	/**
+	 * Get all tenants with tenant ids matching the list
+	 * @param em
+	 * @param tenants
+	 * @return
+	 * @throws Exception
+	 */
 	public List<Tenant> getTenants(EntityManager em, List<String> tenants) throws Exception {
 		return em.createNamedQuery(Queries.TENANT_FILTERED, Tenant.class).setParameter("tenants", tenants)
 				.getResultList();
 	}
 
+	/**
+	 * Get Tenant by tenant id
+	 * @param em
+	 * @param tenantId
+	 * @return
+	 * @throws Exception
+	 */
 	public Tenant getTenant(EntityManager em, String tenantId) throws Exception {
 		return em.createNamedQuery(Queries.TENANT_FIND_BY_ID, Tenant.class).setParameter("tenantId", tenantId)
 				.getSingleResult();
 	}
 
+	/**
+	 * Get all tenants by tenant name
+	 * @param em
+	 * @param tenantName
+	 * @return
+	 * @throws Exception
+	 */
 	public List<Tenant> getTenantsByName(EntityManager em, String tenantName) throws Exception {
 		return em.createNamedQuery(Queries.TENANT_FIND_BY_NAME, Tenant.class).setParameter("tenantName", tenantName)
 				.getResultList();
 	}
 
+	/**
+	 * Get all tenants
+	 * @param em
+	 * @return
+	 */
 	public List<Tenant> getTenants(EntityManager em) {
 		return em.createNamedQuery(Queries.TENANT_FIND_ALL, Tenant.class).getResultList();
 	}
 
+	/**
+	 * Delete apikey
+	 * @param em
+	 * @param tenantId
+	 * @param apiKey
+	 * @throws Exception
+	 */
 	public void deleteApiKey(EntityManager em, String tenantId, String apiKey) throws Exception {
 		Tenant tenant = getTenant(em, tenantId);
 		if (tenant == null) {
@@ -178,16 +203,39 @@ public class TenantManager {
 		}
 	}
 
+	/**
+	 * Get all apikeys for tenant
+	 * @param em
+	 * @param tenant
+	 * @return
+	 * @throws Exception
+	 */
 	public List<ApiKey> getApiKeys(EntityManager em, Tenant tenant) throws Exception {
-		return em.createNamedQuery(Queries.API_KEY_BY_ID, ApiKey.class).setParameter("tenantId", tenant.getTenant_id())
+		return em.createNamedQuery(Queries.API_KEYS_BY_TENANT, ApiKey.class).setParameter("tenantId", tenant.getTenant_id())
 				.getResultList();
 	}
 
+	/**
+	 * Get apikey 
+	 * @param em
+	 * @param tenant
+	 * @param apiKey
+	 * @return
+	 * @throws Exception
+	 */
 	public ApiKey getApiKey(EntityManager em, Tenant tenant, String apiKey) throws Exception {
 		return em.createNamedQuery(Queries.API_KEY_BY_ID, ApiKey.class).setParameter("apikey", apiKey)
 				.setParameter("tenantId", tenant.getTenant_id()).getSingleResult();
 	}
 
+	/**
+	 * Update apikey, only enabled and description can be updated.
+	 * @param em
+	 * @param tenant
+	 * @param key
+	 * @return
+	 * @throws Exception
+	 */
 	public ApiKey updateApiKey(EntityManager em, Tenant tenant, ApiKey key) throws Exception {
 		EntityTransaction t = em.getTransaction();
 		try {
@@ -209,6 +257,13 @@ public class TenantManager {
 
 	}
 
+	/**
+	 * Create apikey
+	 * @param em
+	 * @param tenantId
+	 * @return
+	 * @throws Exception
+	 */
 	public ApiKey createApiKey(EntityManager em, String tenantId) throws Exception {
 		Tenant tenant = getTenant(em, tenantId);
 		if (tenant == null) {
@@ -229,6 +284,34 @@ public class TenantManager {
 				t.rollback();
 			}
 			logger.log(Level.SEVERE, "Failed to create apikey for tenant:" + tenant, e);
+			throw e;
+		}
+	}
+	
+	/**
+	 * Delete all api keys for tenant
+	 * @param em
+	 * @param tenant
+	 * @throws Exception
+	 */
+	public void deleteApiKeys(EntityManager em, Tenant tenant) throws Exception {
+		EntityTransaction transaction = em.getTransaction();
+		try {
+			transaction.begin();
+			List<ApiKey> apiKeys = getApiKeys(em, tenant);
+			for (ApiKey key : apiKeys) {
+				em.remove(key);
+			}
+			em.flush();
+			transaction.commit();
+			logger.info("All apikeys for tenant:" + tenant);
+		} catch (Exception e) {
+			if (transaction.isActive()) {
+				transaction.rollback();
+			}
+			if (!(e instanceof NoResultException)) {
+				logger.log(Level.SEVERE, "Failed to delete apikey", e);
+			}
 			throw e;
 		}
 	}

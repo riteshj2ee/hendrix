@@ -16,6 +16,7 @@
 package io.symcpe.hendrix.api.dao;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.times;
@@ -23,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
@@ -45,7 +47,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.DerbyUtil;
-import io.symcpe.hendrix.api.dao.TenantManager;
+import io.symcpe.hendrix.api.storage.ApiKey;
 import io.symcpe.hendrix.api.storage.Tenant;
 
 /**
@@ -111,6 +113,36 @@ public class TestTenantManager {
 	}
 
 	@Test
+	public void testCreateTenantApiKey() throws Exception {
+		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID);
+		assertNotNull(apiKey);
+		Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
+		List<ApiKey> list = TenantManager.getInstance().getApiKeys(em, tenant);
+		assertEquals(1, list.size());
+	}
+
+	@Test
+	public void testCreateTenantApiKeyDelete() throws Exception {
+		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID);
+		assertNotNull(apiKey);
+		Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
+		
+		List<ApiKey> list = TenantManager.getInstance().getApiKeys(em, tenant);
+		assertEquals(2, list.size());
+		
+		apiKey = TenantManager.getInstance().getApiKey(em, tenant, apiKey.getApikey());
+		apiKey.setDescription("hello");
+		TenantManager.getInstance().updateApiKey(em, tenant, apiKey);
+		
+		apiKey = TenantManager.getInstance().getApiKey(em, tenant, apiKey.getApikey());
+		assertEquals("hello", apiKey.getDescription());
+		
+		TenantManager.getInstance().deleteApiKey(em, TENANT_ID, apiKey.getApikey());
+		list = TenantManager.getInstance().getApiKeys(em, tenant);
+		assertEquals(1, list.size());
+	}
+	
+	@Test
 	public void testCreateTenantNegative() throws Exception {
 		Tenant tenant = new Tenant();
 		tenant.setTenant_id("32342342342234514322534t34352345234523452342344573657657486784768567956785678234234234");
@@ -134,6 +166,16 @@ public class TestTenantManager {
 	public void testDeleteTenant() throws Exception {
 		TenantManager.getInstance().deleteTenant(em, TENANT_ID, am);
 		verify(producer, times(0)).send(any());
+	}
+
+	@Test
+	public void testDeleteZNoApiKeys() throws Exception {
+		try {
+			Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
+			TenantManager.getInstance().getApiKeys(em, tenant);
+			fail("Exception  should be thrown");
+		} catch (Exception e) {
+		}
 	}
 
 }
