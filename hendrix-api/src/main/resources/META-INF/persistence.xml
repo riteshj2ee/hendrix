@@ -7,6 +7,7 @@
 		<class>io.symcpe.hendrix.api.storage.Rules</class>
 		<class>io.symcpe.hendrix.api.storage.Tenant</class>
 		<class>io.symcpe.hendrix.api.storage.AlertTemplates</class>
+		<class>io.symcpe.hendrix.api.storage.ApiKey</class>
 		<properties>
 			<property name="hibernate.hbm2ddl.auto" value="update" />
 			<property name="hibernate.show_sql" value="false" />

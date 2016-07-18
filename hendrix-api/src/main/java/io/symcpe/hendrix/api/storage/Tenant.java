@@ -62,6 +62,9 @@ public class Tenant implements Serializable {
 
 	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
 	private List<AlertTemplates> templates;
+	
+	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
+	private List<ApiKey> apiKeys;
 
 	public Tenant() {
 	}
@@ -143,6 +146,32 @@ public class Tenant implements Serializable {
 		getTemplates().remove(alertTemplates);
 		alertTemplates.setTenant(null);
 		return alertTemplates;
+	}
+	
+	public ApiKey addApiKey(ApiKey apiKey) {
+		getApiKeys().add(apiKey);
+		apiKey.setTenant(this);
+		return apiKey;
+	}
+
+	public ApiKey removeApiKey(ApiKey apiKey) {
+		getApiKeys().remove(apiKey);
+		apiKey.setTenant(null);
+		return apiKey;
+	}
+
+	/**
+	 * @return the apiKeys
+	 */
+	public List<ApiKey> getApiKeys() {
+		return apiKeys;
+	}
+
+	/**
+	 * @param apiKeys the apiKeys to set
+	 */
+	public void setApiKeys(List<ApiKey> apiKeys) {
+		this.apiKeys = apiKeys;
 	}
 
 	/*

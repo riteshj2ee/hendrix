@@ -49,6 +49,7 @@ import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.dao.TenantManager;
 import io.symcpe.hendrix.api.security.ACLConstants;
 import io.symcpe.hendrix.api.security.BapiAuthorizationFilter;
+import io.symcpe.hendrix.api.storage.ApiKey;
 import io.symcpe.hendrix.api.storage.Tenant;
 
 /**
@@ -62,6 +63,7 @@ public class TenantEndpoint {
 
 	public static final String TENANT_ID = "tenantId";
 	private static final Logger logger = Logger.getLogger(TenantEndpoint.class.getName());
+	private static final String APIKEY = "apikey";
 	private ApplicationManager am;
 
 	public TenantEndpoint(ApplicationManager am) {
@@ -82,7 +84,7 @@ public class TenantEndpoint {
 			for (Entry<String, List<String>> entry : requestHeaders.entrySet()) {
 				if (entry.getKey().startsWith(BapiAuthorizationFilter.ROLE_PREFIX)) {
 					String[] split = entry.getKey().split(BapiAuthorizationFilter.ROLE_TENANT_SEPARATOR);
-					if(split.length==2) {
+					if (split.length == 2) {
 						tList.add(split[1]);
 					}
 				}
@@ -223,6 +225,98 @@ public class TenantEndpoint {
 			return false;
 		}
 		return true;
+	}
+
+	@Path("/{" + TENANT_ID + "}/apikey")
+	@POST
+	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	public ApiKey createApiKey(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+		EntityManager em = am.getEM();
+		try {
+			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenantId);
+			logger.info("Created Apikey for tenant:" + tenantId);
+			return apiKey;
+		} catch (Exception e) {
+			if (e instanceof NoResultException) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Tenants found").build());
+			} else {
+				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+			}
+		} finally {
+			em.close();
+		}
+	}
+
+	@Path("/{" + TENANT_ID + "}/apikey/{apiKey}")
+	@DELETE
+	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
+	public String deleteApiKey(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull @PathParam(APIKEY) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String apiKey) {
+		EntityManager em = am.getEM();
+		try {
+			TenantManager.getInstance().deleteApiKey(em, tenantId, apiKey);
+			logger.info("Delete Apikey for tenant:" + tenantId);
+			return apiKey;
+		} catch (Exception e) {
+			if (e instanceof NoResultException) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Apikey found").build());
+			} else {
+				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+			}
+		} finally {
+			em.close();
+		}
+	}
+
+	@Path("/{" + TENANT_ID + "}/apikey")
+	@GET
+	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
+	public List<ApiKey> getApiKey(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+		EntityManager em = am.getEM();
+		try {
+			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);
+			List<ApiKey> apiKeys = TenantManager.getInstance().getApiKeys(em, tenant);
+			return apiKeys;
+		} catch (Exception e) {
+			if (e instanceof NoResultException) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Apikey found").build());
+			} else {
+				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+			}
+		} finally {
+			em.close();
+		}
+	}
+
+	@Path("/{" + TENANT_ID + "}/apikey")
+	@GET
+	@Consumes({ MediaType.APPLICATION_JSON })
+	@Produces({ MediaType.APPLICATION_JSON })
+	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
+			ACLConstants.READER_ROLE })
+	public ApiKey updateApiKey(
+			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@NotNull(message = "Apikey information can't be empty") ApiKey key) {
+		EntityManager em = am.getEM();
+		try {
+			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);
+			return TenantManager.getInstance().updateApiKey(em, tenant, key);
+		} catch (Exception e) {
+			if (e instanceof NoResultException) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Apikey found").build());
+			} else {
+				throw new BadRequestException(Response.status(400).entity(e.getMessage()).build());
+			}
+		} finally {
+			em.close();
+		}
 	}
 
 }

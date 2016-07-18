@@ -46,6 +46,9 @@ public class Queries {
 	public static final String TEMPLATE_FIND_BY_ID = "Template.findById";
 	public static final String RULES_BY_TEMPLATE_ID_BY_TENANT = "Rules.findByTemplateIdByTenant";
 	
+	public static final String API_KEYS_BY_TENANT = "ApiKey.findByTenant";
+	public static final String API_KEY_BY_ID = "ApiKey.findById";
+	
 	private Queries() {
 	}
 
