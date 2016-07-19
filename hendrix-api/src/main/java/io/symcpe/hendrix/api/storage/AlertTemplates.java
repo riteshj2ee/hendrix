@@ -28,6 +28,8 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.symcpe.hendrix.api.Queries;
 
 /**
@@ -60,6 +62,7 @@ public class AlertTemplates implements Serializable {
 	// bi-directional many-to-one association to Tenant
 	@ManyToOne()
 	@JoinColumn(name = "tenant_id")
+	@JsonIgnore
 	private Tenant tenant;
 	
 	public AlertTemplates() {

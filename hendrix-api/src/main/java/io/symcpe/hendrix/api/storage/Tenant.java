@@ -58,12 +58,15 @@ public class Tenant implements Serializable {
 
 	// bi-directional many-to-one association to RulesTable
 	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
+	@JsonIgnore
 	private List<Rules> rulesTables;
 
 	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
+	@JsonIgnore
 	private List<AlertTemplates> templates;
 	
 	@OneToMany(mappedBy = "tenant", fetch = FetchType.LAZY)
+	@JsonIgnore
 	private List<ApiKey> apiKeys;
 
 	public Tenant() {

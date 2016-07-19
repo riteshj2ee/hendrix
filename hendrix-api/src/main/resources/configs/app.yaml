@@ -8,3 +8,6 @@ server:
  adminConnectors:
   - type: http
     port: 9001
+    
+logging:
+  level: DEBUG

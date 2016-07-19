@@ -18,6 +18,8 @@ package io.symcpe.hendrix.api.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.symcpe.hendrix.api.Queries;
 
 /**
@@ -53,6 +55,7 @@ public class Rules implements Serializable {
 	// bi-directional many-to-one association to Tenant
 	@ManyToOne()
 	@JoinColumn(name = "tenant_id")
+	@JsonIgnore
 	private Tenant tenant;
 
 	public Rules() {
