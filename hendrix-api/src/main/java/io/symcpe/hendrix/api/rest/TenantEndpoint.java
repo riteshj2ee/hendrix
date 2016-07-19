@@ -153,6 +153,8 @@ public class TenantEndpoint {
 		try {
 			TenantManager.getInstance().createTenant(em, tenant);
 			logger.info("Created new tenant:" + tenant);
+			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenant.getTenant_id());
+			logger.info("Created API Key for tenant:" + tenant + "\t" + apiKey);
 		} catch (EntityExistsException e) {
 			throw new BadRequestException(Response.status(400)
 					.entity("Tenant with tenant id:" + tenant.getTenant_id() + " already exists").build());
@@ -249,13 +251,13 @@ public class TenantEndpoint {
 		}
 	}
 
-	@Path("/{" + TENANT_ID + "}/apikey/{apiKey}")
+	@Path("/{" + TENANT_ID + "}/apikey/{" + APIKEY + " : .+}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
 	public String deleteApiKey(
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
-			@NotNull @PathParam(APIKEY) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String apiKey) {
+			@NotNull @PathParam(APIKEY) @Size(min = 1, max = ApiKey.APIKEY_LENGTH) String apiKey) {
 		EntityManager em = am.getEM();
 		try {
 			TenantManager.getInstance().deleteApiKey(em, tenantId, apiKey);
@@ -296,7 +298,7 @@ public class TenantEndpoint {
 	}
 
 	@Path("/{" + TENANT_ID + "}/apikey")
-	@GET
+	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,

@@ -42,14 +42,17 @@ import io.symcpe.hendrix.api.Queries;
 })
 public class ApiKey implements Serializable {
 
+	public static final int APIKEY_LENGTH = 200;
+
 	private static final long serialVersionUID = 1L;
 
 	@ApiModelProperty(required = true, value = "api key")
 	@Id
-	@Column(name = "apikey", nullable = false, length = 200)
+	@Column(name = "apikey", nullable = false, length = APIKEY_LENGTH)
 	private String apikey;
 	
 	@ApiModelProperty(value = "enabled")
+	@Column(name = "enabled")
 	private Boolean enabled;
 
 	@ApiModelProperty(value = "description")
@@ -83,7 +86,6 @@ public class ApiKey implements Serializable {
 		this.description = description;
 	}
 
-	@Column(name = "enabled", length = 100)
 	public boolean getEnabled() {
 		return enabled;
 	}
@@ -125,6 +127,15 @@ public class ApiKey implements Serializable {
 	 */
 	public void setEnabled(Boolean enabled) {
 		this.enabled = enabled;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "ApiKey [apikey=" + apikey + ", enabled=" + enabled + ", description=" + description + ", tenant="
+				+ tenant + "]";
 	}
 
 }
