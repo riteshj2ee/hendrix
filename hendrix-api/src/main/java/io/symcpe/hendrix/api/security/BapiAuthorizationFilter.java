@@ -52,7 +52,7 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
 		String path = requestContext.getUriInfo().getPath();
-		if(path.startsWith("swagger")) {
+		if(path.startsWith("swagger") || path.startsWith("perf")) {
 			return;
 		}
 		MultivaluedMap<String, String> headers = requestContext.getHeaders();
