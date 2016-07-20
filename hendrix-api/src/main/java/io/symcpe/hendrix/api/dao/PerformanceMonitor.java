@@ -97,6 +97,7 @@ public class PerformanceMonitor implements Managed {
 		colCfg = new CollectionConfiguration();
 		colCfg.setCollocated(true);
 		colCfg.setBackups(1);
+		colCfg.setCacheMode(CacheMode.REPLICATED);
 		seriesSize = Integer.parseInt(System.getProperty(SERIES_CAPACITY, DEFAULT_SERIES_CAPACITY));
 
 		cfg = new CollectionConfiguration();
