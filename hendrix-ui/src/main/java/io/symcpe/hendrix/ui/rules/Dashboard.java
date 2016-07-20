@@ -154,6 +154,10 @@ public class Dashboard implements Serializable {
 	private void initializeThroughputMetrics(String metricName, LineChartModel model) {
 		CloseableHttpClient client = Utils.getClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
 		HttpGet get = new HttpGet(am.getBaseUrl() + "/perf/" + metricName);
+		if(am.isEnableAuth()) {
+			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
+			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
+		}
 		Date date = null;
 		try {
 			CloseableHttpResponse response = client.execute(get);
