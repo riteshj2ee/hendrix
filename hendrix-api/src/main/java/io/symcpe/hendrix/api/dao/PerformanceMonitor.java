@@ -175,7 +175,7 @@ public class PerformanceMonitor implements Managed {
 			}
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(System.currentTimeMillis(),
 					obj.get("value").getAsNumber()));
-			logger.info("Processed event:" + obj);
+			logger.fine("Processed event:" + obj);
 		} else if (seriesName.startsWith("cm")) {
 			IgniteQueue<Entry<Long, Number>> queue = ignite.queue(seriesName, seriesSize, colCfg);
 			queue.add(new AbstractMap.SimpleEntry<Long, Number>(ts, obj.get("value").getAsNumber()));
