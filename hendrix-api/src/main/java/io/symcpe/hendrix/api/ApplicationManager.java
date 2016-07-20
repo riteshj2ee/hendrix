@@ -63,6 +63,7 @@ import io.symcpe.wraith.rules.validator.Validator;
  */
 public class ApplicationManager extends Application<AppConfig> implements Daemon {
 
+	private static final String APIKEY_TOPIC_NAME = "apikey.topic.name";
 	private static final String TEMPLATE_TOPIC_NAME = "template.topic.name";
 	private static final String RULE_TOPIC_NAME = "rule.topic.name";
 	private static final String IGNITE_DISOVERY_ADDRESS = "ignite.discovery.address";
@@ -77,6 +78,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	private EntityManagerFactory factory;
 	private String ruleTopicName;
 	private String templateTopicName;
+	private String apiKeyTopic;
 	private KafkaProducer<String, String> producer;
 	private String[] args;
 	private PerformanceMonitor perfMonitor;
@@ -133,6 +135,7 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	public void initKafkaConnection() {
 		ruleTopicName = config.getProperty(RULE_TOPIC_NAME, "ruleTopic");
 		templateTopicName = config.getProperty(TEMPLATE_TOPIC_NAME, "templateTopic");
+		apiKeyTopic = config.getProperty(APIKEY_TOPIC_NAME, "apikeyTopic");
 		producer = new KafkaProducer<>(config);
 	}
 
@@ -270,5 +273,12 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 	 */
 	public AppConfig getConfiguration() {
 		return configuration;
+	}
+
+	/**
+	 * @return the apiKeyTopic
+	 */
+	public String getApiKeyTopic() {
+		return apiKeyTopic;
 	}
 }

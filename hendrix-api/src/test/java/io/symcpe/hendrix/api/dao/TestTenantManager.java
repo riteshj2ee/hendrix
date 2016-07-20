@@ -96,6 +96,7 @@ public class TestTenantManager {
 		em = emf.createEntityManager();
 		when(am.getEM()).thenReturn(em);
 		when(am.getRuleTopicName()).thenReturn("ruleTopic");
+		when(am.getApiKeyTopic()).thenReturn("apikeyTopic");
 		when(am.getKafkaProducer()).thenReturn(producer);
 
 		when(producer.send(any())).thenReturn(
@@ -114,32 +115,36 @@ public class TestTenantManager {
 
 	@Test
 	public void testCreateTenantApiKey() throws Exception {
-		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID);
+		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID, am);
 		assertNotNull(apiKey);
 		Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
 		List<ApiKey> list = TenantManager.getInstance().getApiKeys(em, tenant);
 		assertEquals(1, list.size());
+		verify(producer, times(1)).send(any());
 	}
 
 	@Test
 	public void testCreateTenantApiKeyDelete() throws Exception {
-		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID);
+		ApiKey apiKey = TenantManager.getInstance().createApiKey(em, TENANT_ID, am);
 		assertNotNull(apiKey);
 		Tenant tenant = TenantManager.getInstance().getTenant(em, TENANT_ID);
 		
 		List<ApiKey> list = TenantManager.getInstance().getApiKeys(em, tenant);
 		assertEquals(2, list.size());
+		verify(producer, times(1)).send(any());
 		
 		apiKey = TenantManager.getInstance().getApiKey(em, tenant, apiKey.getApikey());
 		apiKey.setDescription("hello");
-		TenantManager.getInstance().updateApiKey(em, tenant, apiKey);
+		TenantManager.getInstance().updateApiKey(em, tenant, apiKey, am);
+		verify(producer, times(2)).send(any());
 		
 		apiKey = TenantManager.getInstance().getApiKey(em, tenant, apiKey.getApikey());
 		assertEquals("hello", apiKey.getDescription());
 		
-		TenantManager.getInstance().deleteApiKey(em, TENANT_ID, apiKey.getApikey());
+		TenantManager.getInstance().deleteApiKey(em, TENANT_ID, apiKey.getApikey(), am);
 		list = TenantManager.getInstance().getApiKeys(em, tenant);
 		assertEquals(1, list.size());
+		verify(producer, times(3)).send(any());
 	}
 	
 	@Test
@@ -165,7 +170,7 @@ public class TestTenantManager {
 	@Test
 	public void testDeleteTenant() throws Exception {
 		TenantManager.getInstance().deleteTenant(em, TENANT_ID, am);
-		verify(producer, times(0)).send(any());
+		verify(producer, times(1)).send(any());
 	}
 
 	@Test

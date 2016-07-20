@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
 import io.symcpe.wraith.Event;
@@ -73,6 +74,15 @@ public class Utils {
 		}
 	}
 
+	public static JsonObject buildEvent(String operation,String tenantId, String apiKey) {
+		JsonObject event = new JsonObject();
+		event.addProperty("apikey", apiKey);
+		event.addProperty("tenant_id", tenantId);
+		event.addProperty("@timestamp", System.currentTimeMillis());
+		event.addProperty("operation", operation);
+		return event;
+	}
+	
 	public static class WebEvent implements Event {
 
 		private static final long serialVersionUID = 1L;

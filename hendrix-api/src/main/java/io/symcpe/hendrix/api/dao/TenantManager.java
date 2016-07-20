@@ -25,8 +25,11 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 
+import org.apache.kafka.clients.producer.ProducerRecord;
+
 import io.symcpe.hendrix.api.ApplicationManager;
 import io.symcpe.hendrix.api.Queries;
+import io.symcpe.hendrix.api.Utils;
 import io.symcpe.hendrix.api.storage.ApiKey;
 import io.symcpe.hendrix.api.storage.Tenant;
 
@@ -37,6 +40,10 @@ import io.symcpe.hendrix.api.storage.Tenant;
  */
 public class TenantManager {
 
+	public static final String CREATED_APIKEY = "created_apiKey";
+	public static final String DISABLED_APIKEY = "disabled_apiKey";
+	public static final String ENABLED_APIKEY = "enabled_apiKey";
+	public static final String DELETED_APIKEY = "deleted_apiKey";
 	private static final Logger logger = Logger.getLogger(TenantManager.class.getCanonicalName());
 	private static final TenantManager TENANT_MANAGER = new TenantManager();
 
@@ -49,6 +56,7 @@ public class TenantManager {
 
 	/**
 	 * Create tenant
+	 * 
 	 * @param em
 	 * @param tenant
 	 * @throws Exception
@@ -79,7 +87,7 @@ public class TenantManager {
 			try {
 				RulesManager.getInstance().deleteRules(em, tenant, am);
 				TemplateManager.getInstance().deleteTemplates(em, tenant, am);
-				TenantManager.getInstance().deleteApiKeys(em, tenant);
+				TenantManager.getInstance().deleteApiKeys(em, tenant, am);
 				t.begin();
 				tenant.setRulesTables(null);
 				tenant.setTemplates(null);
@@ -101,6 +109,7 @@ public class TenantManager {
 
 	/**
 	 * Update tenant, only name can be updated
+	 * 
 	 * @param em
 	 * @param tenantId
 	 * @param tenantName
@@ -132,6 +141,7 @@ public class TenantManager {
 
 	/**
 	 * Get all tenants with tenant ids matching the list
+	 * 
 	 * @param em
 	 * @param tenants
 	 * @return
@@ -144,6 +154,7 @@ public class TenantManager {
 
 	/**
 	 * Get Tenant by tenant id
+	 * 
 	 * @param em
 	 * @param tenantId
 	 * @return
@@ -156,6 +167,7 @@ public class TenantManager {
 
 	/**
 	 * Get all tenants by tenant name
+	 * 
 	 * @param em
 	 * @param tenantName
 	 * @return
@@ -168,6 +180,7 @@ public class TenantManager {
 
 	/**
 	 * Get all tenants
+	 * 
 	 * @param em
 	 * @return
 	 */
@@ -177,12 +190,13 @@ public class TenantManager {
 
 	/**
 	 * Delete apikey
+	 * 
 	 * @param em
 	 * @param tenantId
 	 * @param apiKey
 	 * @throws Exception
 	 */
-	public void deleteApiKey(EntityManager em, String tenantId, String apiKey) throws Exception {
+	public void deleteApiKey(EntityManager em, String tenantId, String apiKey, ApplicationManager am) throws Exception {
 		Tenant tenant = getTenant(em, tenantId);
 		if (tenant == null) {
 			throw new NullPointerException("Tenant can't be empty");
@@ -192,8 +206,10 @@ public class TenantManager {
 			ApiKey key = getApiKey(em, tenant, apiKey);
 			t.begin();
 			em.remove(key);
+			sendApikeyToKafka(am, DELETED_APIKEY, tenant.getTenant_id(), key.getApikey());
 			em.flush();
 			t.commit();
+			logger.info("Deleted Apikey:" + apiKey + " for Tenant:" + tenantId);
 		} catch (Exception e) {
 			if (t.isActive()) {
 				t.rollback();
@@ -205,18 +221,20 @@ public class TenantManager {
 
 	/**
 	 * Get all apikeys for tenant
+	 * 
 	 * @param em
 	 * @param tenant
 	 * @return
 	 * @throws Exception
 	 */
 	public List<ApiKey> getApiKeys(EntityManager em, Tenant tenant) throws Exception {
-		return em.createNamedQuery(Queries.API_KEYS_BY_TENANT, ApiKey.class).setParameter("tenantId", tenant.getTenant_id())
-				.getResultList();
+		return em.createNamedQuery(Queries.API_KEYS_BY_TENANT, ApiKey.class)
+				.setParameter("tenantId", tenant.getTenant_id()).getResultList();
 	}
 
 	/**
-	 * Get apikey 
+	 * Get apikey
+	 * 
 	 * @param em
 	 * @param tenant
 	 * @param apiKey
@@ -229,14 +247,28 @@ public class TenantManager {
 	}
 
 	/**
+	 * Event source apikey CRUD to kafka
+	 * 
+	 * @param am
+	 * @param enabled
+	 * @param tenantId
+	 * @param apiKey
+	 */
+	public void sendApikeyToKafka(ApplicationManager am, String operation, String tenantId, String apiKey) {
+		am.getKafkaProducer().send(new ProducerRecord<String, String>(am.getApiKeyTopic(),
+				Utils.buildEvent(operation, tenantId, apiKey).toString()));
+	}
+
+	/**
 	 * Update apikey, only enabled and description can be updated.
+	 * 
 	 * @param em
 	 * @param tenant
 	 * @param key
 	 * @return
 	 * @throws Exception
 	 */
-	public ApiKey updateApiKey(EntityManager em, Tenant tenant, ApiKey key) throws Exception {
+	public ApiKey updateApiKey(EntityManager em, Tenant tenant, ApiKey key, ApplicationManager am) throws Exception {
 		EntityTransaction t = em.getTransaction();
 		try {
 			ApiKey apiKey = getApiKey(em, tenant, key.getApikey());
@@ -244,8 +276,14 @@ public class TenantManager {
 			apiKey.setEnabled(key.getEnabled());
 			t.begin();
 			em.merge(apiKey);
+			if (apiKey.getEnabled()) {
+				sendApikeyToKafka(am, ENABLED_APIKEY, tenant.getTenant_id(), apiKey.getApikey());
+			} else {
+				sendApikeyToKafka(am, DISABLED_APIKEY, tenant.getTenant_id(), apiKey.getApikey());
+			}
 			em.flush();
 			t.commit();
+			logger.info("Updated Apikey:" + key.getApikey() + " for tenant:" + tenant.getTenant_id());
 			return apiKey;
 		} catch (Exception e) {
 			if (t.isActive()) {
@@ -254,17 +292,17 @@ public class TenantManager {
 			logger.log(Level.SEVERE, "Failed to update apikey:" + key.getApikey(), e);
 			throw e;
 		}
-
 	}
 
 	/**
 	 * Create apikey
+	 * 
 	 * @param em
 	 * @param tenantId
 	 * @return
 	 * @throws Exception
 	 */
-	public ApiKey createApiKey(EntityManager em, String tenantId) throws Exception {
+	public ApiKey createApiKey(EntityManager em, String tenantId, ApplicationManager am) throws Exception {
 		Tenant tenant = getTenant(em, tenantId);
 		if (tenant == null) {
 			throw new NullPointerException("Tenant can't be empty");
@@ -276,8 +314,10 @@ public class TenantManager {
 			key.setTenant(tenant);
 			t.begin();
 			em.persist(key);
+			sendApikeyToKafka(am, CREATED_APIKEY, tenant.getTenant_id(), key.getApikey());
 			em.flush();
 			t.commit();
+			logger.info("Created api key for tenant:" + tenantId);
 			return key;
 		} catch (Exception e) {
 			if (t.isActive()) {
@@ -287,24 +327,26 @@ public class TenantManager {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Delete all api keys for tenant
+	 * 
 	 * @param em
 	 * @param tenant
 	 * @throws Exception
 	 */
-	public void deleteApiKeys(EntityManager em, Tenant tenant) throws Exception {
+	public void deleteApiKeys(EntityManager em, Tenant tenant, ApplicationManager am) throws Exception {
 		EntityTransaction transaction = em.getTransaction();
 		try {
 			transaction.begin();
 			List<ApiKey> apiKeys = getApiKeys(em, tenant);
 			for (ApiKey key : apiKeys) {
 				em.remove(key);
+				sendApikeyToKafka(am, DELETED_APIKEY, tenant.getTenant_id(), key.getApikey());
 			}
 			em.flush();
 			transaction.commit();
-			logger.info("All apikeys for tenant:" + tenant);
+			logger.info("Deleted all apikeys for tenant:" + tenant);
 		} catch (Exception e) {
 			if (transaction.isActive()) {
 				transaction.rollback();

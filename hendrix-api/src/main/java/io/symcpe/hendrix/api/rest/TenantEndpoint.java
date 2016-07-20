@@ -153,7 +153,7 @@ public class TenantEndpoint {
 		try {
 			TenantManager.getInstance().createTenant(em, tenant);
 			logger.info("Created new tenant:" + tenant);
-			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenant.getTenant_id());
+			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenant.getTenant_id(), am);
 			logger.info("Created API Key for tenant:" + tenant + "\t" + apiKey);
 		} catch (EntityExistsException e) {
 			throw new BadRequestException(Response.status(400)
@@ -237,7 +237,7 @@ public class TenantEndpoint {
 			@NotNull @PathParam(TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
 		EntityManager em = am.getEM();
 		try {
-			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenantId);
+			ApiKey apiKey = TenantManager.getInstance().createApiKey(em, tenantId, am);
 			logger.info("Created Apikey for tenant:" + tenantId);
 			return apiKey;
 		} catch (Exception e) {
@@ -260,7 +260,7 @@ public class TenantEndpoint {
 			@NotNull @PathParam(APIKEY) @Size(min = 1, max = ApiKey.APIKEY_LENGTH) String apiKey) {
 		EntityManager em = am.getEM();
 		try {
-			TenantManager.getInstance().deleteApiKey(em, tenantId, apiKey);
+			TenantManager.getInstance().deleteApiKey(em, tenantId, apiKey, am);
 			logger.info("Delete Apikey for tenant:" + tenantId);
 			return apiKey;
 		} catch (Exception e) {
@@ -309,7 +309,8 @@ public class TenantEndpoint {
 		EntityManager em = am.getEM();
 		try {
 			Tenant tenant = TenantManager.getInstance().getTenant(em, tenantId);
-			return TenantManager.getInstance().updateApiKey(em, tenant, key);
+			ApiKey updateApiKey = TenantManager.getInstance().updateApiKey(em, tenant, key, am);
+			return updateApiKey;
 		} catch (Exception e) {
 			if (e instanceof NoResultException) {
 				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("No Apikey found").build());
