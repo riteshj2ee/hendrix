@@ -17,7 +17,6 @@ package io.symcpe.wraith.aggregators;
 
 import java.util.Map;
 
-import io.symcpe.wraith.Constants;
 import io.symcpe.wraith.EventFactory;
 import io.symcpe.wraith.aggregations.MarkovianAggregationEngineImpl;
 import io.symcpe.wraith.store.StoreFactory;
@@ -39,8 +38,8 @@ import io.symcpe.wraith.store.StoreFactory;
  */
 public class CountingEngine extends MarkovianAggregationEngineImpl {
 
-	public CountingEngine(EventFactory eventFactory, StoreFactory storeFactory) {
-		super(eventFactory, storeFactory);
+	public CountingEngine(EventFactory eventFactory, StoreFactory storeFactory, String agreggatorType) {
+		super(eventFactory, storeFactory, agreggatorType);
 	}
 
 	/**
@@ -53,8 +52,6 @@ public class CountingEngine extends MarkovianAggregationEngineImpl {
 	 */
 	@Override
 	public void initialize(Map<String, String> conf, int taskId) throws Exception {
-		String agreggatorType = conf.get(Constants.COUNTER_TYPE);
-		conf.put(Constants.AGGREGATOR_TYPE, agreggatorType);
 		super.initialize(conf, taskId);
 	}
 

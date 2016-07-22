@@ -51,7 +51,7 @@ public class TestTemporalAggregations {
 	@Test
 	public void testTemporalEmits() throws Exception {
 		for (int k = 0; k < 10; k++) {
-			CountingEngine aggregationEngine = new CountingEngine(factory, factory);
+			CountingEngine aggregationEngine = new CountingEngine(factory, factory, FineCountingAggregator.class.getName());
 			conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
 			conf.put(Constants.AGGREGATION_JITTER_TOLERANCE, String.valueOf(k * 10));
 			aggregationEngine.initialize(conf, 1);

@@ -52,8 +52,7 @@ public class TestAggregationEngine {
 
 	@Test
 	public void testFineCountingAggregator() throws Exception {
-		CountingEngine aggregationEngine = new CountingEngine(factory, factory);
-		conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
+		CountingEngine aggregationEngine = new CountingEngine(factory, factory, FineCountingAggregator.class.getName());
 		aggregationEngine.initialize(conf, 1);
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		for (int i = 0; i < 10; i++) {
@@ -94,7 +93,7 @@ public class TestAggregationEngine {
 
 	@Test
 	public void testFineCountingAggregatorLimit() throws Exception {
-		CountingEngine aggregationEngine = new CountingEngine(factory, factory);
+		CountingEngine aggregationEngine = new CountingEngine(factory, factory, FineCountingAggregator.class.getName());
 		int limit = 100000;
 		conf.put(Constants.COUNTER_TYPE, FineCountingAggregator.class.getName());
 		conf.put(Constants.AGGREGATIONS_FCOUNT_LIMIT, String.valueOf(limit));
@@ -122,10 +121,9 @@ public class TestAggregationEngine {
 
 	@Test
 	public void testCoarseCountingAggregator() throws Exception {
-		CountingEngine aggregationEngine = new CountingEngine(factory, factory);
+		CountingEngine aggregationEngine = new CountingEngine(factory, factory, CoarseCountingAggregator.class.getName());
 		int count = 1000000;
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
-		conf.put(Constants.COUNTER_TYPE, CoarseCountingAggregator.class.getName());
 		aggregationEngine.initialize(conf, 1);
 		for (int i = 0; i < count; i++) {
 			try {
@@ -166,7 +164,7 @@ public class TestAggregationEngine {
 
 	@Test
 	public void testSetAggregator() throws Exception {
-		MarkovianAggregationEngineImpl aggregationEngine = new MarkovianAggregationEngineImpl(factory, factory);
+		MarkovianAggregationEngineImpl aggregationEngine = new MarkovianAggregationEngineImpl(factory, factory, SetAggregator.class.getName());
 		int count = 10000;
 		String ruleActionId = Utils.combineRuleActionId((short) 12, (short) 1233);
 		conf.put(Constants.AGGREGATOR_TYPE, SetAggregator.class.getName());
@@ -192,7 +190,7 @@ public class TestAggregationEngine {
 
 	@Test
 	public void testSetAggregatorLimit() throws Exception {
-		MarkovianAggregationEngineImpl aggregationEngine = new MarkovianAggregationEngineImpl(factory, factory);
+		MarkovianAggregationEngineImpl aggregationEngine = new MarkovianAggregationEngineImpl(factory, factory, SetAggregator.class.getName());
 		int count = 1000000;
 		int limit = 500000;
 		conf.put(Constants.AGGREGATOR_TYPE, SetAggregator.class.getName());
