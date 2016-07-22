@@ -28,11 +28,11 @@ import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import io.symcpe.hendrix.interceptors.ValidationException;
+import io.symcpe.hendrix.interceptors.ValidationInterceptor;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.StormContextUtil;
 import io.symcpe.hendrix.storm.validation.DateInterceptor;
-import io.symcpe.hendrix.storm.validation.ValidationException;
-import io.symcpe.hendrix.storm.validation.ValidationInterceptor;
 
 /**
  * Intercepts and validates data so that it can be sent downstream

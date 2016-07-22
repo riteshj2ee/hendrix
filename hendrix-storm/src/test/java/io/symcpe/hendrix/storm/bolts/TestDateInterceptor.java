@@ -15,7 +15,8 @@
  */
 package io.symcpe.hendrix.storm.bolts;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,8 +26,8 @@ import org.junit.Test;
 
 import com.google.gson.JsonObject;
 
+import io.symcpe.hendrix.interceptors.ValidationException;
 import io.symcpe.hendrix.storm.validation.DateInterceptor;
-import io.symcpe.hendrix.storm.validation.ValidationException;
 
 /**
  * Test cases for date interceptor/validator

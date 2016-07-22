@@ -1,4 +1,4 @@
-package io.symcpe.hendrix.storm.validation;
+package io.symcpe.hendrix.interceptors;
 
 import io.symcpe.wraith.PerformantException;
 
