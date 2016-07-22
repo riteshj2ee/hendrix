@@ -15,9 +15,79 @@
  */
 package io.symcpe.hendrix.interceptor.aws;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import io.symcpe.wraith.Event;
+import io.symcpe.wraith.EventFactory;
+
 /**
  * @author ambud_sharma
  */
 public class VPCFlowLogParser {
+
+	private static final String FLOW_RECORD_REGEX = "(\\d)" // version
+			+ "\\s(.*)" // account-id
+			+ "\\s(.*-.*)" // interface-id
+			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4})" // srcaddr
+			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4})" // dstaddr
+			+ "\\s(\\d{1,5})" // srcport
+			+ "\\s(\\d{1,5})" // dstport
+			+ "\\s(\\d{1,3})" // protocol
+			+ "\\s(\\d+)" // packets
+			+ "\\s(\\d+)" // bytes
+			+ "\\s(\\d+)" // start
+			+ "\\s(\\d+)" // end
+			+ "\\s(ACCEPT|REJECT)" // action
+			+ "\\s(OK|NODATA|SKIPDATA)"; // log-status
+	private static final Pattern FLOW_RECORD_PATTERN = Pattern.compile(FLOW_RECORD_REGEX);
+	private Gson gson;
+
+	public VPCFlowLogParser() {
+		gson = new Gson();
+	}
+
+	public List<Event> parseFlowLogJson(EventFactory factory, String json) {
+		List<Event> events = new ArrayList<>();
+		JsonObject flowLogs = gson.fromJson(json, JsonObject.class);
+		String logGroup = flowLogs.get("logGroup").getAsString();
+		String logStream = flowLogs.get("logStream").getAsString();
+		for (JsonElement element : flowLogs.get("logEvents").getAsJsonArray()) {
+			Event event = factory.buildEvent();
+			event.getHeaders().put("logGroup", logGroup);
+			event.getHeaders().put("logStream", logStream);
+		}
+		return events;
+	}
+
+	public static VPCFlowLogRecord parseToRecord(String line) {
+		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
+		if (matcher.matches()) {
+			VPCFlowLogRecord record = new VPCFlowLogRecord();
+			record.setVersion(Short.parseShort(matcher.group(1)));
+			record.setAccountId(matcher.group(2));
+			record.setInterfaceId(matcher.group(3));
+			record.setSrcAddr(matcher.group(4));
+			record.setDstAddr(matcher.group(5));
+			record.setSrcPort(Integer.parseInt(matcher.group(6)));
+			record.setDstPort(Integer.parseInt(matcher.group(7)));
+			record.setProtocol((byte)matcher.group(8).charAt(0));
+			record.setPackets(Integer.parseInt(matcher.group(9)));
+			record.setBytes(Integer.parseInt(matcher.group(10)));
+			record.setStartTs(Integer.parseInt(matcher.group(11)));
+			record.setEndTs(Integer.parseInt(matcher.group(12)));
+			record.setAccepted(matcher.group(13).equals("ACCEPT"));
+			record.setLogStatus((byte)matcher.group(14).charAt(0));
+			return record;
+		} else {
+			return null;
+		}
+	}
 
 }
