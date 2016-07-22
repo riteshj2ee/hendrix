@@ -61,6 +61,11 @@ public class MarkovianAggregationBolt extends BaseRichBolt {
 	private transient MarkovianAggregationEngineImpl engine;
 	private transient long bufferTickCounter;
 	private transient int flushTimeout;
+	private transient String aggregatorType;
+	
+	public MarkovianAggregationBolt(String aggregatorType) {
+		this.aggregatorType = aggregatorType;
+	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
@@ -74,7 +79,7 @@ public class MarkovianAggregationBolt extends BaseRichBolt {
 		}
 		this.buffer = new ArrayList<>(bufferSize);
 		this.unifiedFactory = new UnifiedFactory();
-		this.engine = new MarkovianAggregationEngineImpl(unifiedFactory, unifiedFactory);
+		this.engine = new MarkovianAggregationEngineImpl(unifiedFactory, unifiedFactory, aggregatorType);
 		int taskId = context.getThisTaskIndex();
 		try {
 			engine.initialize(stormConf, taskId);

@@ -64,10 +64,12 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	private int taskId;
 	private EventFactory eventFactory;
 	private StoreFactory storeFactory;
+	private String agreggatorType;
 
-	public MarkovianAggregationEngineImpl(EventFactory eventFactory, StoreFactory storeFactory) {
+	public MarkovianAggregationEngineImpl(EventFactory eventFactory, StoreFactory storeFactory, String agreggatorType) {
 		this.eventFactory = eventFactory;
 		this.storeFactory = storeFactory;
+		this.agreggatorType = agreggatorType;
 	}
 
 	/**
@@ -80,6 +82,8 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	 * @throws InstantiationException
 	 */
 	public void initialize(Map<String, String> conf, int taskId) throws Exception {
+		template = (Aggregator) Class.forName(agreggatorType).newInstance();
+		template.initialize(conf);
 		this.taskId = taskId;
 		lastEmittedBucketMap = new HashMap<String, Integer>();
 		if (conf.get(Constants.ASTORE_TYPE) != null) {
@@ -92,9 +96,6 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 		aggregationMap = new TreeMap<>();
 		flushAggregationMap = new TreeMap<>();
 		jitterTolerance = Integer.parseInt(conf.getOrDefault(Constants.AGGREGATION_JITTER_TOLERANCE, "10")) * 1000;
-		String agreggatorType = conf.get(Constants.AGGREGATOR_TYPE);
-		template = (Aggregator) Class.forName(agreggatorType).newInstance();
-		template.initialize(conf);
 	}
 
 	/**
