@@ -19,6 +19,11 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+/**
+ * Unit tests for VPC flow log parsing
+ * 
+ * @author ambud_sharma
+ */
 public class TestVPCFlowLogParser {
 	
 	@Test

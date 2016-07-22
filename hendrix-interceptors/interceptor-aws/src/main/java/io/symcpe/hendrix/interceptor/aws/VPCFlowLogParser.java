@@ -32,6 +32,7 @@ import io.symcpe.wraith.EventFactory;
  */
 public class VPCFlowLogParser {
 
+	// http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html#flow-log-records
 	private static final String FLOW_RECORD_REGEX = "(\\d)" // version
 			+ "\\s(.*)" // account-id
 			+ "\\s(.*-.*)" // interface-id
@@ -76,13 +77,15 @@ public class VPCFlowLogParser {
 			event.getHeaders().put("version", Short.parseShort(matcher.group(1)));
 			event.getHeaders().put("account-id", matcher.group(2));
 			event.getHeaders().put("interface-id", matcher.group(3));
-			event.getHeaders().put("srcaddr", matcher.group(4));
-			event.getHeaders().put("dstaddr", matcher.group(5));
-			event.getHeaders().put("srcport", Integer.parseInt(matcher.group(6)));
-			event.getHeaders().put("dstport", Integer.parseInt(matcher.group(7)));
-			event.getHeaders().put("protocol", (byte) matcher.group(8).charAt(0));
-			event.getHeaders().put("packets", Integer.parseInt(matcher.group(9)));
-			event.getHeaders().put("bytes", Integer.parseInt(matcher.group(10)));
+			if (matcher.group(14).charAt(0) == 'O') {
+				event.getHeaders().put("srcaddr", matcher.group(4));
+				event.getHeaders().put("dstaddr", matcher.group(5));
+				event.getHeaders().put("srcport", Integer.parseInt(matcher.group(6)));
+				event.getHeaders().put("dstport", Integer.parseInt(matcher.group(7)));
+				event.getHeaders().put("protocol", (byte) matcher.group(8).charAt(0));
+				event.getHeaders().put("packets", Integer.parseInt(matcher.group(9)));
+				event.getHeaders().put("bytes", Integer.parseInt(matcher.group(10)));
+			}
 			event.getHeaders().put("start", Integer.parseInt(matcher.group(11)));
 			event.getHeaders().put("end", Integer.parseInt(matcher.group(12)));
 			event.getHeaders().put("accepted", matcher.group(13).equals("ACCEPT"));
@@ -97,13 +100,15 @@ public class VPCFlowLogParser {
 			record.setVersion(Short.parseShort(matcher.group(1)));
 			record.setAccountId(matcher.group(2));
 			record.setInterfaceId(matcher.group(3));
-			record.setSrcAddr(matcher.group(4));
-			record.setDstAddr(matcher.group(5));
-			record.setSrcPort(Integer.parseInt(matcher.group(6)));
-			record.setDstPort(Integer.parseInt(matcher.group(7)));
-			record.setProtocol((byte) matcher.group(8).charAt(0));
-			record.setPackets(Integer.parseInt(matcher.group(9)));
-			record.setBytes(Integer.parseInt(matcher.group(10)));
+			if (matcher.group(14).charAt(0) == 'O') {
+				record.setSrcAddr(matcher.group(4));
+				record.setDstAddr(matcher.group(5));
+				record.setSrcPort(Integer.parseInt(matcher.group(6)));
+				record.setDstPort(Integer.parseInt(matcher.group(7)));
+				record.setProtocol((byte) matcher.group(8).charAt(0));
+				record.setPackets(Integer.parseInt(matcher.group(9)));
+				record.setBytes(Integer.parseInt(matcher.group(10)));
+			}
 			record.setStartTs(Integer.parseInt(matcher.group(11)));
 			record.setEndTs(Integer.parseInt(matcher.group(12)));
 			record.setAccepted(matcher.group(13).equals("ACCEPT"));
