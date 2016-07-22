@@ -60,10 +60,34 @@ public class VPCFlowLogParser {
 		String logStream = flowLogs.get("logStream").getAsString();
 		for (JsonElement element : flowLogs.get("logEvents").getAsJsonArray()) {
 			Event event = factory.buildEvent();
+			JsonObject obj = element.getAsJsonObject();
 			event.getHeaders().put("logGroup", logGroup);
 			event.getHeaders().put("logStream", logStream);
+			event.getHeaders().put("@timestamp", obj.get("timestamp").getAsLong());
+			event.getHeaders().put("id", obj.get("id").getAsString());
+			parseToRecord(event, obj.get("message").getAsString());
 		}
 		return events;
+	}
+
+	public static void parseToRecord(Event event, String line) {
+		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
+		if (matcher.matches()) {
+			event.getHeaders().put("version", Short.parseShort(matcher.group(1)));
+			event.getHeaders().put("account-id", matcher.group(2));
+			event.getHeaders().put("interface-id", matcher.group(3));
+			event.getHeaders().put("srcaddr", matcher.group(4));
+			event.getHeaders().put("dstaddr", matcher.group(5));
+			event.getHeaders().put("srcport", Integer.parseInt(matcher.group(6)));
+			event.getHeaders().put("dstport", Integer.parseInt(matcher.group(7)));
+			event.getHeaders().put("protocol", (byte) matcher.group(8).charAt(0));
+			event.getHeaders().put("packets", Integer.parseInt(matcher.group(9)));
+			event.getHeaders().put("bytes", Integer.parseInt(matcher.group(10)));
+			event.getHeaders().put("start", Integer.parseInt(matcher.group(11)));
+			event.getHeaders().put("end", Integer.parseInt(matcher.group(12)));
+			event.getHeaders().put("accepted", matcher.group(13).equals("ACCEPT"));
+			event.getHeaders().put("log-status", (byte) matcher.group(14).charAt(0));
+		}
 	}
 
 	public static VPCFlowLogRecord parseToRecord(String line) {
@@ -77,13 +101,13 @@ public class VPCFlowLogParser {
 			record.setDstAddr(matcher.group(5));
 			record.setSrcPort(Integer.parseInt(matcher.group(6)));
 			record.setDstPort(Integer.parseInt(matcher.group(7)));
-			record.setProtocol((byte)matcher.group(8).charAt(0));
+			record.setProtocol((byte) matcher.group(8).charAt(0));
 			record.setPackets(Integer.parseInt(matcher.group(9)));
 			record.setBytes(Integer.parseInt(matcher.group(10)));
 			record.setStartTs(Integer.parseInt(matcher.group(11)));
 			record.setEndTs(Integer.parseInt(matcher.group(12)));
 			record.setAccepted(matcher.group(13).equals("ACCEPT"));
-			record.setLogStatus((byte)matcher.group(14).charAt(0));
+			record.setLogStatus((byte) matcher.group(14).charAt(0));
 			return record;
 		} else {
 			return null;
