@@ -56,7 +56,7 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 			return;
 		}
 		MultivaluedMap<String, String> headers = requestContext.getHeaders();
-		if (!headers.containsKey(USERNAME) || !containsRole(headers)) {
+		if (!headers.containsKey(USERNAME)) {
 			requestContext.abortWith(Response.status(Status.UNAUTHORIZED).build());
 			logger.severe("Invalid request:" + headers);
 			return;
