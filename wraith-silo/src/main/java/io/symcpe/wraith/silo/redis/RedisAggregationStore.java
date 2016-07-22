@@ -18,6 +18,7 @@ package io.symcpe.wraith.silo.redis;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -116,14 +117,49 @@ public class RedisAggregationStore implements AggregationStore {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void persist(int taskId, String entity, Aggregator aggregator) throws IOException {
-		if (isSentinel) {
-			redis = sentinel.getResource();
-		}
-		if (aggregator.getClass() == SetAggregator.class || aggregator.getClass() == FineCountingAggregator.class) {
+		if (aggregator.getClass() == FineCountingAggregator.class) {
+			mergeSetIntValues(taskId, entity, (Set<Integer>) aggregator.getDatastructure());
+		} else if (aggregator.getClass() == SetAggregator.class) {
 			mergeSetValues(taskId, entity, (Set<Object>) aggregator.getDatastructure());
 		} else if (aggregator.getClass() == CoarseCountingAggregator.class) {
 			putValue(taskId, entity, ((ICardinality) aggregator.getDatastructure()));
 		}
+	}
+
+	@Override
+	public Map<String, Aggregator> retrive(int taskId, Aggregator template) throws IOException {
+		if (isSentinel) {
+			redis = sentinel.getResource();
+		}
+		Map<String, Aggregator> aggregatorMap = new HashMap<>();
+		Set<String> smembers = null;
+		String prefix = "";
+		Set<String> keys = redis.keys(prefix);
+		for (String key : keys) {
+			Aggregator instance = template.getInstance();
+			Object data = null;
+			if (template.getClass() == SetAggregator.class) {
+				smembers = redis.smembers(key);
+			} else if (template.getClass() == FineCountingAggregator.class) {
+				smembers = redis.smembers(key);
+				instance.initialize(stringSetToInteger(smembers));
+			} else if (template.getClass() == CoarseCountingAggregator.class) {
+				String card = redis.get(prefixICard(taskId));
+				if(card!=null) {
+					instance.initialize(Base64.getDecoder().decode(card));
+				}
+			}
+			instance.initialize(data);
+		}
+		return aggregatorMap;
+	}
+
+	public Set<Integer> stringSetToInteger(Set<String> stringSet) {
+		Set<Integer> set = new HashSet<>();
+		for (String object : stringSet) {
+			set.add(Integer.parseInt(object));
+		}
+		return set;
 	}
 
 	@Override
@@ -160,19 +196,25 @@ public class RedisAggregationStore implements AggregationStore {
 
 	@Override
 	public void putValue(int taskId, String entity, ICardinality value) throws IOException {
-		value.getBytes();
-		// TODO put value
+		if (isSentinel) {
+			redis = sentinel.getResource();
+		}
+		String key = prefixICardKey(taskId, entity);
+		redis.set(key, Base64.getEncoder().encodeToString(value.getBytes()));
+	}
+
+	private String prefixICardKey(int taskId, String entity) {
+		return prefixICard(taskId) + entity;
+	}
+
+	private String prefixICard(int taskId) {
+		String key = taskId + "_icard_";
+		return key;
 	}
 
 	@Override
 	public void mergeSetIntValues(int taskId, String entity, Set<Integer> values) {
 		mergeSetValues(taskId, entity, integerSetToList(values));
-	}
-
-	@Override
-	public void retrive(int taskId, String entity, Aggregator aggregator) throws IOException {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

@@ -15,6 +15,7 @@
  */
 package io.symcpe.wraith.aggregators;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 
@@ -33,6 +34,13 @@ public interface Aggregator extends Serializable {
 	 * @param conf
 	 */
 	public void initialize(Map<String, String> conf);
+	
+	/**
+	 * To populate the aggregator restored data
+	 * @param data
+	 * @throws IOException 
+	 */
+	public void initialize(Object data) throws IOException;
 	
 	/**
 	 * The maximum number of values the {@link Aggregator} can store

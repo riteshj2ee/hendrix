@@ -37,12 +37,12 @@ import io.symcpe.wraith.store.AggregationStore;
 import io.symcpe.wraith.store.StoreFactory;
 
 /**
- * {@link MarkovianAggregationEngineImpl} aggregates the value, group values by a key either
- * put them together or count them.<br>
+ * {@link MarkovianAggregationEngineImpl} aggregates the value, group values by
+ * a key either put them together or count them.<br>
  * <br>
  * 
- * {@link MarkovianAggregationEngineImpl} is also fault tolerant by providing a flush feature
- * that periodically flushes results to a persistent store.<br>
+ * {@link MarkovianAggregationEngineImpl} is also fault tolerant by providing a
+ * flush feature that periodically flushes results to a persistent store.<br>
  * <br>
  * 
  * {@link Aggregator}s are asked to be idempotent i.e. calling the same
@@ -63,9 +63,8 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	private AggregationStore store;
 	private int taskId;
 	private EventFactory eventFactory;
-	@SuppressWarnings("unused")
 	private StoreFactory storeFactory;
-	
+
 	public MarkovianAggregationEngineImpl(EventFactory eventFactory, StoreFactory storeFactory) {
 		this.eventFactory = eventFactory;
 		this.storeFactory = storeFactory;
@@ -83,7 +82,13 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	public void initialize(Map<String, String> conf, int taskId) throws Exception {
 		this.taskId = taskId;
 		lastEmittedBucketMap = new HashMap<String, Integer>();
-//		storeFactory.getAggregationStore(type, conf)
+		if (conf.get(Constants.ASTORE_TYPE) != null) {
+			store = storeFactory.getAggregationStore(conf.get(Constants.ASTORE_TYPE), conf);
+			if (store != null) {
+				store.connect();
+				restore();
+			}
+		}
 		aggregationMap = new TreeMap<>();
 		flushAggregationMap = new TreeMap<>();
 		jitterTolerance = Integer.parseInt(conf.getOrDefault(Constants.AGGREGATION_JITTER_TOLERANCE, "10")) * 1000;
@@ -165,10 +170,10 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 	 * @param ruleActionId
 	 * @throws IOException
 	 */
-	public void emit(int aggregationWindow, String ruleActionId, List<Event> emits)
-			throws IOException {
+	public void emit(int aggregationWindow, String ruleActionId, List<Event> emits) throws IOException {
 		flush();
-		SortedMap<String, Aggregator> map = getAggregationMap().subMap(Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
+		SortedMap<String, Aggregator> map = getAggregationMap().subMap(
+				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR),
 				Utils.concat(ruleActionId, Constants.KEY_SEPARATOR, String.valueOf(Character.MAX_VALUE)));
 		int lastTs = 0;
 		if (getLastEmittedBucketMap().containsKey(ruleActionId)) {
@@ -188,7 +193,8 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 			if (template instanceof CountingAggregator) {
 				Event event = eventFactory.buildEvent();
 				event.getHeaders().put(Constants.FIELD_AGGREGATION_KEY, entry.getKey());
-				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE, ((CountingAggregator) entry.getValue()).getCardinality());
+				event.getHeaders().put(Constants.FIELD_AGGREGATION_VALUE,
+						((CountingAggregator) entry.getValue()).getCardinality());
 				emits.add(event);
 			}
 			getFlushAggregationMap().remove(entry.getKey());
@@ -243,8 +249,7 @@ public class MarkovianAggregationEngineImpl implements MarkovianAggregationEngin
 
 	@Override
 	public void restore() throws IOException {
-		// TODO Auto-generated method stub
-		
+		aggregationMap.putAll(store.retrive(taskId, template));
 	}
 
 }

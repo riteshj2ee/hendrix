@@ -73,9 +73,10 @@ public interface AggregationStore extends Store {
 	 * @param taskId
 	 * @param entity
 	 * @param aggregator
+	 * @return 
 	 * @throws IOException
 	 */
-	public void retrive(int taskId, String entity, Aggregator aggregator) throws IOException;
+	public Map<String, Aggregator> retrive(int taskId, Aggregator aggregator) throws IOException;
 
 	/**
 	 * Put set of value to an existing set for an entity

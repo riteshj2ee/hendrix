@@ -305,10 +305,6 @@ public class TestStateTrackingBolt {
 		}
 
 		@Override
-		public void retrive(int taskId, String entity, Aggregator aggregator) throws IOException {
-		}
-
-		@Override
 		public void mergeSetValues(int taskId, String entity, Set<Object> values) throws IOException {
 		}
 
@@ -332,6 +328,12 @@ public class TestStateTrackingBolt {
 
 		@Override
 		public void purgeState(int taskId, String key) throws IOException {
+		}
+
+		@Override
+		public Map<String, Aggregator> retrive(int taskId, Aggregator aggregator) throws IOException {
+			// TODO Auto-generated method stub
+			return null;
 		}
 		
 	}

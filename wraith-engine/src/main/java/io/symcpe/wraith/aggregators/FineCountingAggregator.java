@@ -15,6 +15,7 @@
  */
 package io.symcpe.wraith.aggregators;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -62,7 +63,7 @@ public class FineCountingAggregator implements CountingAggregator {
 						.toString());
 		initialize();
 	}
-	
+
 	protected void initialize() {
 		set = new HashSet<>((int) (hardLimit * Constants.SET_CAPACITY_AMPLIFICATION), Constants.HASHSET_LOAD_FACTOR);
 	}
@@ -84,7 +85,7 @@ public class FineCountingAggregator implements CountingAggregator {
 
 	@Override
 	public boolean add(Object aggregationValue) {
-		return set.add((Integer)aggregationValue);
+		return set.add((Integer) aggregationValue);
 	}
 
 	@Override
@@ -105,6 +106,14 @@ public class FineCountingAggregator implements CountingAggregator {
 	@Override
 	public long getCardinality() {
 		return size();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void initialize(Object data) throws IOException {
+		if (data instanceof Set) {
+			set.addAll((Set<Integer>) data);
+		}
 	}
 
 }

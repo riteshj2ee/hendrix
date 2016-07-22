@@ -117,12 +117,6 @@ public class IgniteAggregationStore implements AggregationStore {
 	}
 
 	@Override
-	public void retrive(int taskId, String entity, Aggregator aggregator) throws IOException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public Map<String, MutableBoolean> retriveStates(int taskId) throws IOException {
 		// TODO Auto-generated method stub
 		return null;
@@ -132,5 +126,11 @@ public class IgniteAggregationStore implements AggregationStore {
 	public void purgeState(int taskId, String key) throws IOException {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public Map<String, Aggregator> retrive(int taskId, Aggregator aggregator) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

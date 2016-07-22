@@ -15,14 +15,17 @@
  */
 package io.symcpe.wraith.aggregators;
 
+import java.io.IOException;
 import java.util.Map;
 
 import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 /**
- * Coarse grain counting of unique items based on HyperLogLog (plus) probabilistic data structure.
+ * Coarse grain counting of unique items based on HyperLogLog (plus)
+ * probabilistic data structure.
  * 
- * Use of Coarse counting should be used for counts above 10K to millions with about 98-995 accuracy.
+ * Use of Coarse counting should be used for counts above 10K to millions with
+ * about 98-995 accuracy.
  * 
  * @author ambud_sharma
  */
@@ -32,11 +35,11 @@ public class CoarseCountingAggregator implements CountingAggregator {
 	private static final long serialVersionUID = 1L;
 	private static final int HLL_PRECISION = 10;
 	private HyperLogLogPlus hll;
-	
+
 	public CoarseCountingAggregator() {
 		hll = new HyperLogLogPlus(HLL_PRECISION);
 	}
-	
+
 	@Override
 	public void initialize(Map<String, String> conf) {
 	}
@@ -59,7 +62,7 @@ public class CoarseCountingAggregator implements CountingAggregator {
 
 	@Override
 	public boolean add(Object aggregationValue) {
-		return hll.offer((Integer)aggregationValue);
+		return hll.offer((Integer) aggregationValue);
 	}
 
 	@Override
@@ -80,6 +83,13 @@ public class CoarseCountingAggregator implements CountingAggregator {
 	@Override
 	public long getCardinality() {
 		return size();
+	}
+
+	@Override
+	public void initialize(Object data) throws IOException {
+		if (data instanceof byte[]) {
+			hll = HyperLogLogPlus.Builder.build((byte[]) data);
+		}
 	}
 
 }

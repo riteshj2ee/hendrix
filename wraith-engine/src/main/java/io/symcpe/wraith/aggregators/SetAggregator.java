@@ -15,6 +15,7 @@
  */
 package io.symcpe.wraith.aggregators;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -91,6 +92,14 @@ public class SetAggregator implements Aggregator {
 	@Override
 	public void reset() {
 		set.clear();
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public void initialize(Object data) throws IOException {
+		if(data instanceof Set) {
+			set.addAll((Set<Object>)data);
+		}
 	}
 
 }

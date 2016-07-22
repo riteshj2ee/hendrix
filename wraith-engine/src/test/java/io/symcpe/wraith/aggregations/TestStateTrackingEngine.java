@@ -204,10 +204,6 @@ public class TestStateTrackingEngine {
 		}
 
 		@Override
-		public void retrive(int taskId, String entity, Aggregator aggregator) throws IOException {
-		}
-
-		@Override
 		public void mergeSetValues(int taskId, String entity, Set<Object> values) throws IOException {
 		}
 
@@ -239,6 +235,12 @@ public class TestStateTrackingEngine {
 		 */
 		public SortedMap<String, MutableBoolean> getStore() {
 			return store;
+		}
+
+		@Override
+		public Map<String, Aggregator> retrive(int taskId, Aggregator aggregator) throws IOException {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 	}
