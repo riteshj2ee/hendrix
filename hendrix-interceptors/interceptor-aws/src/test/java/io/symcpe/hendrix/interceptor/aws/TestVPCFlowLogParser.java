@@ -19,6 +19,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import io.symcpe.hendrix.interceptors.InterceptException;
+
 /**
  * Unit tests for VPC flow log parsing
  * 
@@ -27,7 +29,7 @@ import org.junit.Test;
 public class TestVPCFlowLogParser {
 	
 	@Test
-	public void testRecordParsing() {
+	public void testRecordParsing() throws InterceptException {
 		String val = "2 123456789101 eni-g123abcd 100.100.10.2 50.90.30.21 43895 443 6 13 1836 1469126675 1469126733 ACCEPT OK";
 		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
 		assertNotNull(record);
@@ -44,6 +46,42 @@ public class TestVPCFlowLogParser {
 		assertEquals(1469126675, record.getStartTs());
 		assertEquals(1469126733, record.getEndTs());
 		assertEquals((byte)"O".charAt(0), record.getLogStatus());
+	}
+	
+	@Test
+	public void testRecordParsingInvalid() {
+		String val = "2 123456789101 eni-g123abcd 100.100.10.2 50.90.30.21 43895 443 6 13 1836 1469126675 1469126733 RE OK";
+		try {
+			VPCFlowLogParser.parseToRecord(val);
+			fail("Should throw an exception and not pass");
+		} catch (InterceptException e) {
+		}
+	}
+	
+	@Test
+	public void testRecordParsingSkipData() throws InterceptException {
+		String val = "2 123456789101 eni-g123abcd - - - - - - - 1431280876 1431280934 - SKIPDATA";
+		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
+		assertNotNull(record);
+		assertEquals((short)2, record.getVersion());
+		assertEquals("123456789101", record.getAccountId());
+		assertEquals("eni-g123abcd", record.getInterfaceId());
+		assertEquals(1431280876, record.getStartTs());
+		assertEquals(1431280934, record.getEndTs());
+		assertEquals((byte)"S".charAt(0), record.getLogStatus());
+	}
+	
+	@Test
+	public void testRecordParsingNoData() throws InterceptException {
+		String val = "2 123456789010 eni-1a2b3c4d - - - - - - - 1431280876 1431280934 - NODATA";
+		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
+		assertNotNull(record);
+		assertEquals((short)2, record.getVersion());
+		assertEquals("123456789010", record.getAccountId());
+		assertEquals("eni-1a2b3c4d", record.getInterfaceId());
+		assertEquals(1431280876, record.getStartTs());
+		assertEquals(1431280934, record.getEndTs());
+		assertEquals((byte)"N".charAt(0), record.getLogStatus());
 	}
 
 }

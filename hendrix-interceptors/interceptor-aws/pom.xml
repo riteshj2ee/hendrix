@@ -29,5 +29,10 @@
 			<artifactId>wraith-engine</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.symcpe.hendrix</groupId>
+			<artifactId>interceptor-base</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 	</dependencies>
 </project>

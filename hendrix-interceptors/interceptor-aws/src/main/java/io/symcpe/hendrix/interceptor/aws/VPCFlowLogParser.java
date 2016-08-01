@@ -24,28 +24,55 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import io.symcpe.hendrix.interceptors.InterceptException;
 import io.symcpe.wraith.Event;
 import io.symcpe.wraith.EventFactory;
 
 /**
+ * Parser for VPC Flow Logs streamed to Lambda from CloudWatch via a
+ * subscription filter
+ * 
  * @author ambud_sharma
  */
 public class VPCFlowLogParser {
 
+	private static final char STATUS_CODE_ZERO = 'O';
+	private static final String MESSAGE = "message";
+	private static final String ID = "id";
+	private static final String TIMESTAMP2 = "timestamp";
+	private static final String TIMESTAMP = "@timestamp";
+	private static final String LOG_EVENTS = "logEvents";
+	private static final String LOG_STREAM = "logStream";
+	private static final String LOG_GROUP = "logGroup";
+	private static final String ACCEPT = "ACCEPT";
+	private static final String LOG_STATUS = "log-status";
+	private static final String ACCEPTED = "accepted";
+	private static final String END = "end";
+	private static final String START = "start";
+	private static final String BYTES = "bytes";
+	private static final String PACKETS = "packets";
+	private static final String PROTOCOL = "protocol";
+	private static final String DSTPORT = "dstport";
+	private static final String SRCPORT = "srcport";
+	private static final String DSTADDR = "dstaddr";
+	private static final String SRCADDR = "srcaddr";
+	private static final String INTERFACE_ID = "interface-id";
+	private static final String ACCOUNT_ID = "account-id";
+	private static final String VERSION = "version";
 	// http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/flow-logs.html#flow-log-records
 	private static final String FLOW_RECORD_REGEX = "(\\d)" // version
 			+ "\\s(.*)" // account-id
 			+ "\\s(.*-.*)" // interface-id
-			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4})" // srcaddr
-			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4})" // dstaddr
-			+ "\\s(\\d{1,5})" // srcport
-			+ "\\s(\\d{1,5})" // dstport
-			+ "\\s(\\d{1,3})" // protocol
-			+ "\\s(\\d+)" // packets
-			+ "\\s(\\d+)" // bytes
+			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}|\\-)" // srcaddr
+			+ "\\s(\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}\\.\\d{1,4}|\\-)" // dstaddr
+			+ "\\s(\\d{1,5}|\\-)" // srcport
+			+ "\\s(\\d{1,5}|\\-)" // dstport
+			+ "\\s(\\d{1,3}|\\-)" // protocol
+			+ "\\s(\\d+|\\-)" // packets
+			+ "\\s(\\d+|\\-)" // bytes
 			+ "\\s(\\d+)" // start
 			+ "\\s(\\d+)" // end
-			+ "\\s(ACCEPT|REJECT)" // action
+			+ "\\s(ACCEPT|REJECT|\\-)" // action
 			+ "\\s(OK|NODATA|SKIPDATA)"; // log-status
 	private static final Pattern FLOW_RECORD_PATTERN = Pattern.compile(FLOW_RECORD_REGEX);
 	private Gson gson;
@@ -54,68 +81,83 @@ public class VPCFlowLogParser {
 		gson = new Gson();
 	}
 
-	public List<Event> parseFlowLogJson(EventFactory factory, String json) {
-		List<Event> events = new ArrayList<>();
-		JsonObject flowLogs = gson.fromJson(json, JsonObject.class);
-		String logGroup = flowLogs.get("logGroup").getAsString();
-		String logStream = flowLogs.get("logStream").getAsString();
-		for (JsonElement element : flowLogs.get("logEvents").getAsJsonArray()) {
-			Event event = factory.buildEvent();
-			JsonObject obj = element.getAsJsonObject();
-			event.getHeaders().put("logGroup", logGroup);
-			event.getHeaders().put("logStream", logStream);
-			event.getHeaders().put("@timestamp", obj.get("timestamp").getAsLong());
-			event.getHeaders().put("id", obj.get("id").getAsString());
-			parseToRecord(event, obj.get("message").getAsString());
-		}
-		return events;
-	}
-
-	public static void parseToRecord(Event event, String line) {
-		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
-		if (matcher.matches()) {
-			event.getHeaders().put("version", Short.parseShort(matcher.group(1)));
-			event.getHeaders().put("account-id", matcher.group(2));
-			event.getHeaders().put("interface-id", matcher.group(3));
-			if (matcher.group(14).charAt(0) == 'O') {
-				event.getHeaders().put("srcaddr", matcher.group(4));
-				event.getHeaders().put("dstaddr", matcher.group(5));
-				event.getHeaders().put("srcport", Integer.parseInt(matcher.group(6)));
-				event.getHeaders().put("dstport", Integer.parseInt(matcher.group(7)));
-				event.getHeaders().put("protocol", (byte) matcher.group(8).charAt(0));
-				event.getHeaders().put("packets", Integer.parseInt(matcher.group(9)));
-				event.getHeaders().put("bytes", Integer.parseInt(matcher.group(10)));
+	public List<Event> parseFlowLogJson(EventFactory factory, String json) throws InterceptException {
+		try {
+			List<Event> events = new ArrayList<>();
+			JsonObject flowLogs = gson.fromJson(json, JsonObject.class);
+			String logGroup = flowLogs.get(LOG_GROUP).getAsString();
+			String logStream = flowLogs.get(LOG_STREAM).getAsString();
+			for (JsonElement element : flowLogs.get(LOG_EVENTS).getAsJsonArray()) {
+				Event event = factory.buildEvent();
+				JsonObject obj = element.getAsJsonObject();
+				event.getHeaders().put(LOG_GROUP, logGroup);
+				event.getHeaders().put(LOG_STREAM, logStream);
+				event.getHeaders().put(TIMESTAMP, obj.get(TIMESTAMP2).getAsLong());
+				event.getHeaders().put(ID, obj.get(ID).getAsString());
+				parseToRecord(event, obj.get(MESSAGE).getAsString());
 			}
-			event.getHeaders().put("start", Integer.parseInt(matcher.group(11)));
-			event.getHeaders().put("end", Integer.parseInt(matcher.group(12)));
-			event.getHeaders().put("accepted", matcher.group(13).equals("ACCEPT"));
-			event.getHeaders().put("log-status", (byte) matcher.group(14).charAt(0));
+			return events;
+		} catch (Exception e) {
+			throw new InterceptException(e);
 		}
 	}
 
-	public static VPCFlowLogRecord parseToRecord(String line) {
+	public static void parseToRecord(Event event, String line) throws InterceptException {
 		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
 		if (matcher.matches()) {
-			VPCFlowLogRecord record = new VPCFlowLogRecord();
-			record.setVersion(Short.parseShort(matcher.group(1)));
-			record.setAccountId(matcher.group(2));
-			record.setInterfaceId(matcher.group(3));
-			if (matcher.group(14).charAt(0) == 'O') {
-				record.setSrcAddr(matcher.group(4));
-				record.setDstAddr(matcher.group(5));
-				record.setSrcPort(Integer.parseInt(matcher.group(6)));
-				record.setDstPort(Integer.parseInt(matcher.group(7)));
-				record.setProtocol((byte) matcher.group(8).charAt(0));
-				record.setPackets(Integer.parseInt(matcher.group(9)));
-				record.setBytes(Integer.parseInt(matcher.group(10)));
+			try {
+				event.getHeaders().put(VERSION, Short.parseShort(matcher.group(1)));
+				event.getHeaders().put(ACCOUNT_ID, matcher.group(2));
+				event.getHeaders().put(INTERFACE_ID, matcher.group(3));
+				if (matcher.group(14).charAt(0) == STATUS_CODE_ZERO) {
+					event.getHeaders().put(SRCADDR, matcher.group(4));
+					event.getHeaders().put(DSTADDR, matcher.group(5));
+					event.getHeaders().put(SRCPORT, Integer.parseInt(matcher.group(6)));
+					event.getHeaders().put(DSTPORT, Integer.parseInt(matcher.group(7)));
+					event.getHeaders().put(PROTOCOL, (byte) matcher.group(8).charAt(0));
+					event.getHeaders().put(PACKETS, Integer.parseInt(matcher.group(9)));
+					event.getHeaders().put(BYTES, Integer.parseInt(matcher.group(10)));
+				}
+				event.getHeaders().put(START, Integer.parseInt(matcher.group(11)));
+				event.getHeaders().put(END, Integer.parseInt(matcher.group(12)));
+				event.getHeaders().put(ACCEPTED, matcher.group(13).equals(ACCEPT));
+				event.getHeaders().put(LOG_STATUS, (byte) matcher.group(14).charAt(0));
+			} catch (Exception e) {
+				throw new InterceptException(e);
 			}
-			record.setStartTs(Integer.parseInt(matcher.group(11)));
-			record.setEndTs(Integer.parseInt(matcher.group(12)));
-			record.setAccepted(matcher.group(13).equals("ACCEPT"));
-			record.setLogStatus((byte) matcher.group(14).charAt(0));
-			return record;
 		} else {
-			return null;
+			throw new InterceptException("Line doesn't match flow record:" + line);
+		}
+
+	}
+
+	public static VPCFlowLogRecord parseToRecord(String line) throws InterceptException {
+		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
+		if (matcher.matches()) {
+			try {
+				VPCFlowLogRecord record = new VPCFlowLogRecord();
+				record.setVersion(Short.parseShort(matcher.group(1)));
+				record.setAccountId(matcher.group(2));
+				record.setInterfaceId(matcher.group(3));
+				if (matcher.group(14).charAt(0) == STATUS_CODE_ZERO) {
+					record.setSrcAddr(matcher.group(4));
+					record.setDstAddr(matcher.group(5));
+					record.setSrcPort(Integer.parseInt(matcher.group(6)));
+					record.setDstPort(Integer.parseInt(matcher.group(7)));
+					record.setProtocol((byte) matcher.group(8).charAt(0));
+					record.setPackets(Integer.parseInt(matcher.group(9)));
+					record.setBytes(Integer.parseInt(matcher.group(10)));
+				}
+				record.setStartTs(Integer.parseInt(matcher.group(11)));
+				record.setEndTs(Integer.parseInt(matcher.group(12)));
+				record.setAccepted(matcher.group(13).equals(ACCEPT));
+				record.setLogStatus((byte) matcher.group(14).charAt(0));
+				return record;
+			} catch (Exception e) {
+				throw new InterceptException(e);
+			}
+		} else {
+			throw new InterceptException("Line doesn't match flow record:" + line);
 		}
 	}
 
