@@ -17,6 +17,7 @@ package io.symcpe.hendrix.api;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +47,8 @@ import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
 import io.symcpe.hendrix.api.dao.AlertReceiver;
 import io.symcpe.hendrix.api.dao.PerformanceMonitor;
+import io.symcpe.hendrix.api.hc.DBHealthCheck;
+import io.symcpe.hendrix.api.hc.KafkaHealthCheck;
 import io.symcpe.hendrix.api.rest.PerfMonEndpoint;
 import io.symcpe.hendrix.api.rest.RestReceiver;
 import io.symcpe.hendrix.api.rest.RulesEndpoint;
@@ -203,6 +206,11 @@ public class ApplicationManager extends Application<AppConfig> implements Daemon
 		environment.jersey().register(new TemplateEndpoint(this));
 		environment.jersey().register(new RestReceiver(this));
 		environment.jersey().register(new PerfMonEndpoint(this));
+		if (!LOCAL) {
+			String hostAddress = InetAddress.getLocalHost().getHostAddress();
+			environment.healthChecks().register("kafkaHC", new KafkaHealthCheck(this, hostAddress));
+		}
+		environment.healthChecks().register("dbHC", new DBHealthCheck(this));
 	}
 
 	protected void configureIgnite(AppConfig configuration2, Environment environment) {
