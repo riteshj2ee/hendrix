@@ -4,7 +4,7 @@ curl -H 'Content-Type: application/json' -XPOST localhost:9000/api/tenants -d '{
 
 TEMPLATE_ID=`curl -XPOST localhost:9000/api/templates/test`
 
-curl -H 'Content-Type: application/json' -XPUT localhost:9000/apt/templates/test/$TEMPLATE_ID -d '{"templateId":2,"templateName":"rest","destination":"test@xyz.com","media":"mail","subject":"test","body":"test","throttleDuration":300,"throttleLimit":1}'
+curl -H 'Content-Type: application/json' -XPUT localhost:9000/api/templates/test/$TEMPLATE_ID -d '{"templateId":2,"templateName":"rest","destination":"test@xyz.com","media":"mail","subject":"test","body":"test","throttleDuration":300,"throttleLimit":1}'
 
 RULE_ID=`curl -XPOST localhost:9000/api/rules/test`
 

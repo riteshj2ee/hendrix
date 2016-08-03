@@ -16,7 +16,9 @@
 package io.symcpe.hendrix.interceptor.aws;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -80,6 +82,55 @@ public class VPCFlowLogParser {
 	public VPCFlowLogParser() {
 		gson = new Gson();
 	}
+	
+	public List<Map<String, Object>> parseFlowLogMap(String json) throws InterceptException {
+		try {
+			List<Map<String, Object>> events = new ArrayList<>();
+			JsonObject flowLogs = gson.fromJson(json, JsonObject.class);
+			String logGroup = flowLogs.get(LOG_GROUP).getAsString();
+			String logStream = flowLogs.get(LOG_STREAM).getAsString();
+			for (JsonElement element : flowLogs.get(LOG_EVENTS).getAsJsonArray()) {
+				Map<String, Object> map = new LinkedHashMap<>();
+				JsonObject obj = element.getAsJsonObject();
+				map.put(LOG_GROUP, logGroup);
+				map.put(LOG_STREAM, logStream);
+				map.put(TIMESTAMP, obj.get(TIMESTAMP2).getAsLong());
+				map.put(ID, obj.get(ID).getAsString());
+				parseToRecord(map, obj.get(MESSAGE).getAsString());
+			}
+			return events;
+		} catch (Exception e) {
+			throw new InterceptException(e);
+		}
+	}
+
+	public static void parseToRecord(Map<String, Object> map, String line) throws InterceptException {
+		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
+		if (matcher.matches()) {
+			try {
+				map.put(VERSION, Short.parseShort(matcher.group(1)));
+				map.put(ACCOUNT_ID, matcher.group(2));
+				map.put(INTERFACE_ID, matcher.group(3));
+				if (matcher.group(14).charAt(0) == STATUS_CODE_ZERO) {
+					map.put(SRCADDR, matcher.group(4));
+					map.put(DSTADDR, matcher.group(5));
+					map.put(SRCPORT, Integer.parseInt(matcher.group(6)));
+					map.put(DSTPORT, Integer.parseInt(matcher.group(7)));
+					map.put(PROTOCOL, (byte) matcher.group(8).charAt(0));
+					map.put(PACKETS, Integer.parseInt(matcher.group(9)));
+					map.put(BYTES, Integer.parseInt(matcher.group(10)));
+				}
+				map.put(START, Integer.parseInt(matcher.group(11)));
+				map.put(END, Integer.parseInt(matcher.group(12)));
+				map.put(ACCEPTED, matcher.group(13).equals(ACCEPT));
+				map.put(LOG_STATUS, (byte) matcher.group(14).charAt(0));
+			} catch (Exception e) {
+				throw new InterceptException(e);
+			}
+		} else {
+			throw new InterceptException("Line doesn't match flow record:" + line);
+		}
+	}
 
 	public List<Event> parseFlowLogJson(EventFactory factory, String json) throws InterceptException {
 		try {
@@ -103,32 +154,7 @@ public class VPCFlowLogParser {
 	}
 
 	public static void parseToRecord(Event event, String line) throws InterceptException {
-		Matcher matcher = FLOW_RECORD_PATTERN.matcher(line);
-		if (matcher.matches()) {
-			try {
-				event.getHeaders().put(VERSION, Short.parseShort(matcher.group(1)));
-				event.getHeaders().put(ACCOUNT_ID, matcher.group(2));
-				event.getHeaders().put(INTERFACE_ID, matcher.group(3));
-				if (matcher.group(14).charAt(0) == STATUS_CODE_ZERO) {
-					event.getHeaders().put(SRCADDR, matcher.group(4));
-					event.getHeaders().put(DSTADDR, matcher.group(5));
-					event.getHeaders().put(SRCPORT, Integer.parseInt(matcher.group(6)));
-					event.getHeaders().put(DSTPORT, Integer.parseInt(matcher.group(7)));
-					event.getHeaders().put(PROTOCOL, (byte) matcher.group(8).charAt(0));
-					event.getHeaders().put(PACKETS, Integer.parseInt(matcher.group(9)));
-					event.getHeaders().put(BYTES, Integer.parseInt(matcher.group(10)));
-				}
-				event.getHeaders().put(START, Integer.parseInt(matcher.group(11)));
-				event.getHeaders().put(END, Integer.parseInt(matcher.group(12)));
-				event.getHeaders().put(ACCEPTED, matcher.group(13).equals(ACCEPT));
-				event.getHeaders().put(LOG_STATUS, (byte) matcher.group(14).charAt(0));
-			} catch (Exception e) {
-				throw new InterceptException(e);
-			}
-		} else {
-			throw new InterceptException("Line doesn't match flow record:" + line);
-		}
-
+		parseToRecord(event.getHeaders(), line);
 	}
 
 	public static VPCFlowLogRecord parseToRecord(String line) throws InterceptException {
