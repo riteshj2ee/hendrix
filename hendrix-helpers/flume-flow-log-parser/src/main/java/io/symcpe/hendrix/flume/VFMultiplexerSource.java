@@ -39,7 +39,7 @@ import io.symcpe.hendrix.interceptors.InterceptException;
  * 
  * @author ambud_sharma
  */
-public class VFMultiplexer extends KafkaSource {
+public class VFMultiplexerSource extends KafkaSource {
 
 	@Override
 	public synchronized ChannelProcessor getChannelProcessor() {
@@ -49,7 +49,7 @@ public class VFMultiplexer extends KafkaSource {
 	public static class MultiplexingProcessor extends ChannelProcessor {
 
 		private static final Logger logger = LoggerFactory.getLogger(MultiplexingProcessor.class);;
-		private VPCFlowLogParser parser;
+		private VPCFlowLogParser parser = new VPCFlowLogParser();
 		private ChannelProcessor processor;
 
 		public MultiplexingProcessor(ChannelSelector selector) {
@@ -63,17 +63,22 @@ public class VFMultiplexer extends KafkaSource {
 
 		@Override
 		public void processEvent(Event event) {
+			if(event==null) {
+				return;
+			}
 			try {
-				List<Map<String, Object>> events = parser.parseFlowLogMap(new String(event.getBody()));
-				for (Map<String, Object> map : events) {
-					event = new SimpleEvent();
-					for (Entry<String, Object> entry : map.entrySet()) {
-						event.getHeaders().put(entry.getKey(), entry.getValue().toString());
+				if (event.getBody() != null) {
+					List<Map<String, Object>> events = parser.parseFlowLogMap(new String(event.getBody()));
+					for (Map<String, Object> map : events) {
+						event = new SimpleEvent();
+						for (Entry<String, Object> entry : map.entrySet()) {
+							event.getHeaders().put(entry.getKey(), entry.getValue().toString());
+						}
+						processor.processEvent(event);
 					}
-					processor.processEvent(event);
 				}
 			} catch (InterceptException e) {
-				logger.error("Failed to parse event", e);
+				logger.error("\nFailed to parse event", e);
 			}
 		}
 

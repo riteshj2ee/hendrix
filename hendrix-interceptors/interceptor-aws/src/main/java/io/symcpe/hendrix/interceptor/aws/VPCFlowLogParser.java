@@ -97,6 +97,7 @@ public class VPCFlowLogParser {
 				map.put(TIMESTAMP, obj.get(TIMESTAMP2).getAsLong());
 				map.put(ID, obj.get(ID).getAsString());
 				parseToRecord(map, obj.get(MESSAGE).getAsString());
+				events.add(map);
 			}
 			return events;
 		} catch (Exception e) {
@@ -146,6 +147,7 @@ public class VPCFlowLogParser {
 				event.getHeaders().put(TIMESTAMP, obj.get(TIMESTAMP2).getAsLong());
 				event.getHeaders().put(ID, obj.get(ID).getAsString());
 				parseToRecord(event, obj.get(MESSAGE).getAsString());
+				events.add(event);
 			}
 			return events;
 		} catch (Exception e) {

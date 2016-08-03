@@ -17,6 +17,9 @@ package io.symcpe.hendrix.interceptor.aws;
 
 import static org.junit.Assert.*;
 
+import java.util.List;
+import java.util.Map;
+
 import org.junit.Test;
 
 import io.symcpe.hendrix.interceptors.InterceptException;
@@ -27,27 +30,27 @@ import io.symcpe.hendrix.interceptors.InterceptException;
  * @author ambud_sharma
  */
 public class TestVPCFlowLogParser {
-	
+
 	@Test
 	public void testRecordParsing() throws InterceptException {
 		String val = "2 123456789101 eni-g123abcd 100.100.10.2 50.90.30.21 43895 443 6 13 1836 1469126675 1469126733 ACCEPT OK";
 		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
 		assertNotNull(record);
-		assertEquals((short)2, record.getVersion());
+		assertEquals((short) 2, record.getVersion());
 		assertEquals("123456789101", record.getAccountId());
 		assertEquals("eni-g123abcd", record.getInterfaceId());
 		assertEquals("100.100.10.2", record.getSrcAddr());
 		assertEquals("50.90.30.21", record.getDstAddr());
 		assertEquals(43895, record.getSrcPort());
 		assertEquals(443, record.getDstPort());
-		assertEquals((byte)"6".charAt(0), record.getProtocol());
+		assertEquals((byte) "6".charAt(0), record.getProtocol());
 		assertEquals(13, record.getPackets());
 		assertEquals(1836, record.getBytes());
 		assertEquals(1469126675, record.getStartTs());
 		assertEquals(1469126733, record.getEndTs());
-		assertEquals((byte)"O".charAt(0), record.getLogStatus());
+		assertEquals((byte) "O".charAt(0), record.getLogStatus());
 	}
-	
+
 	@Test
 	public void testRecordParsingInvalid() {
 		String val = "2 123456789101 eni-g123abcd 100.100.10.2 50.90.30.21 43895 443 6 13 1836 1469126675 1469126733 RE OK";
@@ -57,31 +60,40 @@ public class TestVPCFlowLogParser {
 		} catch (InterceptException e) {
 		}
 	}
-	
+
 	@Test
 	public void testRecordParsingSkipData() throws InterceptException {
 		String val = "2 123456789101 eni-g123abcd - - - - - - - 1431280876 1431280934 - SKIPDATA";
 		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
 		assertNotNull(record);
-		assertEquals((short)2, record.getVersion());
+		assertEquals((short) 2, record.getVersion());
 		assertEquals("123456789101", record.getAccountId());
 		assertEquals("eni-g123abcd", record.getInterfaceId());
 		assertEquals(1431280876, record.getStartTs());
 		assertEquals(1431280934, record.getEndTs());
-		assertEquals((byte)"S".charAt(0), record.getLogStatus());
+		assertEquals((byte) "S".charAt(0), record.getLogStatus());
 	}
-	
+
 	@Test
 	public void testRecordParsingNoData() throws InterceptException {
 		String val = "2 123456789010 eni-1a2b3c4d - - - - - - - 1431280876 1431280934 - NODATA";
 		VPCFlowLogRecord record = VPCFlowLogParser.parseToRecord(val);
 		assertNotNull(record);
-		assertEquals((short)2, record.getVersion());
+		assertEquals((short) 2, record.getVersion());
 		assertEquals("123456789010", record.getAccountId());
 		assertEquals("eni-1a2b3c4d", record.getInterfaceId());
 		assertEquals(1431280876, record.getStartTs());
 		assertEquals(1431280934, record.getEndTs());
-		assertEquals((byte)"N".charAt(0), record.getLogStatus());
+		assertEquals((byte) "N".charAt(0), record.getLogStatus());
+	}
+
+	@Test
+	public void testFlowLogParse() throws InterceptException {
+		VPCFlowLogParser parser = new VPCFlowLogParser();
+		String event = "{\"messageType\":\"DATA_MESSAGE\",\"owner\":\"123456789115\",\"logGroup\":\"vpc-flow-log-group\",\"logStream\""
+				+ ":\"eni-00fv0000-all\",\"subscriptionFilters\":[\"cloudwatch_flowlog_lambda_subscription\"],\"logEvents\":[{\"id\":\"327880164000000002313720044516500000000\",\"timestamp\":1470265507000,\"message\":\"2 123456789115 eni-0625b517 100.100.10.100 100.220.1.1 49162 5938 6 33 1848 1470265507 1470266096 ACCEPT OK\"},{\"id\":\"327880164000000002313720044516500000000\",\"timestamp\":123456789115,\"message\":\"2 686559647175 eni-0000b000 120.220.2.1 102.123.34.145 5938 49162 6 22 1144 1470265507 1470266096 ACCEPT OK\"}]}";
+		List<Map<String, Object>> result = parser.parseFlowLogMap(event);
+		assertEquals(2, result.size());
 	}
 
 }
