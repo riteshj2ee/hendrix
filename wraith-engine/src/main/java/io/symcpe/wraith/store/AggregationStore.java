@@ -71,7 +71,6 @@ public interface AggregationStore extends Store {
 
 	/**
 	 * @param taskId
-	 * @param entity
 	 * @param aggregator
 	 * @return 
 	 * @throws IOException
