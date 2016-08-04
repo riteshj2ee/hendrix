@@ -52,6 +52,7 @@ public class TestLMMInterceptor {
         TestRunner runner = TestRunners.newTestRunner(new LMMInterceptor());
         
         runner.setProperty(LMMInterceptor.TENANT_ID, TENANT_ID);
+        runner.setProperty(LMMInterceptor.API_KEY, TENANT_ID);
         runner.setProperty(LMMInterceptor.TIMESTAMP, "${'syslog.timestamp'}");
         
         runner.enqueue(content, attributes);
@@ -73,6 +74,7 @@ public class TestLMMInterceptor {
         TestRunner runner = TestRunners.newTestRunner(new LMMInterceptor());
         
         runner.setProperty(LMMInterceptor.TENANT_ID, TENANT_ID);
+        runner.setProperty(LMMInterceptor.API_KEY, TENANT_ID);
         runner.setProperty(LMMInterceptor.TIMESTAMP, "${'syslo.timestamp'}");
         
         runner.enqueue(content, attributes);

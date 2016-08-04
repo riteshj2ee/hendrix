@@ -155,6 +155,7 @@ public class LMMInterceptor extends AbstractProcessor {
 		List<PropertyDescriptor> properties = new ArrayList<>();
 		properties.add(TENANT_ID);
 		properties.add(TIMESTAMP);
+		properties.add(API_KEY);
 		this.properties = Collections.unmodifiableList(properties);
 
 		Set<Relationship> relationships = new HashSet<>();
