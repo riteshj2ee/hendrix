@@ -106,8 +106,12 @@ public class LMMInterceptor extends AbstractProcessor {
 	private static final String ATTR_TIMESTAMP = "@timestamp";
 	private static final String ATTR_VERSION = "@version";
 	private static final String ATTR_TENANT_ID = "tenant_id";
+	private static final String ATTR_API_KEY = "apikey";
 
 	public static final PropertyDescriptor TENANT_ID = new PropertyDescriptor.Builder().name("Tenant Id").required(true).expressionLanguageSupported(false)
+			.addValidator(StandardValidators.NON_EMPTY_VALIDATOR).build();
+	
+	public static final PropertyDescriptor API_KEY = new PropertyDescriptor.Builder().name("Api Key").required(true).expressionLanguageSupported(false)
 			.addValidator(StandardValidators.NON_EMPTY_VALIDATOR).build();
 
 	public static final PropertyDescriptor TIMESTAMP = new PropertyDescriptor.Builder().name("Timestamp").required(true).expressionLanguageSupported(true)
@@ -179,6 +183,7 @@ public class LMMInterceptor extends AbstractProcessor {
 			});
 			flowFile = session.putAttribute(flowFile, "message", message.get());
 			flowFile = session.putAttribute(flowFile, ATTR_TENANT_ID, ctx.getProperty(TENANT_ID).getValue());
+			flowFile = session.putAttribute(flowFile, ATTR_API_KEY, ctx.getProperty(API_KEY).getValue());
 			flowFile = session.putAttribute(flowFile, ATTR_VERSION, _1);
 			String timestamp = ctx.getProperty(TIMESTAMP).evaluateAttributeExpressions(flowFile).getValue();
 			DateTime ts = formatter.withZoneUTC().parseDateTime(timestamp);
