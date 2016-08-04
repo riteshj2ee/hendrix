@@ -3,7 +3,7 @@
 
 	<groupId>io.symcpe.hendrix</groupId>
 	<artifactId>hendrix-parent</artifactId>
-	<version>0.0.25</version>
+	<version>0.0.26-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>hendrix</name>
@@ -46,7 +46,7 @@
 		<connection>scm:git:git@github.com:Symantec/hendrix.git</connection>
 		<developerConnection>scm:git:git@github.com:Symantec/hendrix.git</developerConnection>
 		<url>https://github.com/Symantec/hendrix.git</url>
-		<tag>hendrix-parent-0.0.25</tag>
+		<tag>HEAD</tag>
 	</scm>
 
 	<dependencyManagement>
