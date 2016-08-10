@@ -16,7 +16,7 @@
 package io.symcpe.wraith;
 
 /**
- * Simple test for checking gated builds 1
+ * Simple test for checking gated builds 2
  * 
  * @author ambud_sharma
  */
