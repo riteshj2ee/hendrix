@@ -7,7 +7,7 @@ addons:
     - rpm
 script: mvn -DSTORM_TEST_TIMEOUT_MS=60000 clean verify
 after_success: 
-  - "curl -o /tmp/travis-automerge https://raw.githubusercontent.com/cdown/travis-automerge/master/travis-automerge"
+  - "curl -o /tmp/travis-automerge https://gist.githubusercontent.com/ambud/d0848527ebb051f19ba764534f2d13cc/raw/9886af555130b69919b3a2a9f198a657cfcaa6b7/automerge.sh"
   - "chmod a+x /tmp/travis-automerge"
   - "BRANCHES_TO_MERGE_REGEX='current' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=symantec/hendrix /tmp/travis-automerge"
   - "curl -o /tmp/conditionalbuild.sh https://gist.githubusercontent.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/f64c67df17123e53d7d1c158d2bbfc0e30d4b865/conditionalbuild.sh"
