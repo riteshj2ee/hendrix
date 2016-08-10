@@ -9,7 +9,10 @@ script: mvn -DSTORM_TEST_TIMEOUT_MS=60000 clean verify
 after_success: 
   - "curl -o /tmp/travis-automerge https://raw.githubusercontent.com/cdown/travis-automerge/master/travis-automerge"
   - "chmod a+x /tmp/travis-automerge"
-  - "BRANCHES_TO_MERGE_REGEX='current' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=cdown/srt /tmp/travis-automerge"
+  - "BRANCHES_TO_MERGE_REGEX='current' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=symantec/hendrix /tmp/travis-automerge"
+  - "curl -o /tmp/conditionalbuild.sh https://gist.githubusercontent.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/f64c67df17123e53d7d1c158d2bbfc0e30d4b865/conditionalbuild.sh"
+  - "chmod a+x /tmp/conditionalbuild.sh"
+  - "BRANCHES_TO_MERGE_REGEX='current' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=symantec/hendrix /tmp/travis-automerge"
 env:
   global:
   - secure: FnQfx/24XZLZwRh/mqWwbPFGTk9gDktsvWdD7Nn64du9JD88AhuQPovRQYQNos2h/gpb8bI5OoMWMn4fbi6zEOSipvHE2FU2HFRXcRUKjSyT1dYPdqxZuajtqNbZlBdKBP/UDouPPbdYf1YgTBAKR5NaOUyYbsarom7IOUgRtHbW9UvNcnxnaM1+kVRNI7GzuVQ1hvCAWwUY6agFCLRSQGecvYOZb1T1apSlKZzpimDliYxKXfuEjyLTMYXRoVFdjT7OweTpEI213GjqwV0vYlOjjOy6Q6vRDpcYYPcY/HoZmCZe46Ws67gF8dwuU/jJSbbVyUByg4f6ELpehzSUeYlVFOa7T44u41fDkDdBRIqUKnEpCHkHgfJwaxsCQ3rW3X1D8Zhn2LXYwKjvpxZxRF0U8cw9oVGOb7YuuR7+riEd9A4Fdgc5Eq5OY6InXEJNI/6PnUjBDuou5cLZQkPdMC0ZlKla7yEWlXxR/FEaFBOLCE/vB/0mhLEVtQuisyDtG7Yb/wib/Akou/2u/CJ5k/RXnRSU1xbnnL78Vc1YuajaDkQBtnylbu8cc5u5LEWrfxk36X6zTopXTpKOBfxyiVJbYtrLzDFDDeYzKDsCp3gjOBDTR6aWOL3IOfWi50ZTDZpaoPw8mr4O5i4tkiUOqznYbX3rU6jtdJXrySVG4bQ=
