@@ -16,6 +16,8 @@
 package io.symcpe.wraith;
 
 /**
+ * Simple test for checking gated builds
+ * 
  * @author ambud_sharma
  */
 public abstract class Constants {
