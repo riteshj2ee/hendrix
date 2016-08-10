@@ -7,7 +7,6 @@ addons:
     - rpm
 script: mvn -DSTORM_TEST_TIMEOUT_MS=60000 clean verify
 after_success: 
-  - mvn -DSTORM_TEST_TIMEOUT_MS=60000 -Dtravis=true deploy --settings settings.xml
   - "curl -o /tmp/travis-automerge https://raw.githubusercontent.com/cdown/travis-automerge/master/travis-automerge"
   - "chmod a+x /tmp/travis-automerge"
   - "BRANCHES_TO_MERGE_REGEX='current' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=cdown/srt /tmp/travis-automerge"
