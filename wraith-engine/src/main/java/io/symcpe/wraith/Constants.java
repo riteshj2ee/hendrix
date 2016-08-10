@@ -16,6 +16,8 @@
 package io.symcpe.wraith;
 
 /**
+ * Central file for all the constants
+ * 
  * @author ambud_sharma
  */
 public abstract class Constants {
