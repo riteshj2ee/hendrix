@@ -11,7 +11,7 @@ after_success:
   - "curl -o /tmp/travis-automerge https://gist.githubusercontent.com/ambud/d0848527ebb051f19ba764534f2d13cc/raw/9886af555130b69919b3a2a9f198a657cfcaa6b7/automerge.sh"
   - "chmod a+x /tmp/travis-automerge"
   - "BRANCHES_TO_MERGE_REGEX='^curr' BRANCH_TO_MERGE_INTO=master GITHUB_REPO=symantec/hendrix /tmp/travis-automerge"
-  - "curl -o /tmp/conditionalbuild.sh https://gist.githubusercontent.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/f64c67df17123e53d7d1c158d2bbfc0e30d4b865/conditionalbuild.sh"
+  - "curl -o /tmp/conditionalbuild.sh https://gist.githubusercontent.com/ambud/3480192ce43fd35a4640201ba10794f5/raw/9aaa6f8d577b8e3c9c68d07cf44d39f52c173e93/conditionalbuild.sh"
   - "chmod a+x /tmp/conditionalbuild.sh"
   - "/tmp/conditionalbuild.sh"
 env:
