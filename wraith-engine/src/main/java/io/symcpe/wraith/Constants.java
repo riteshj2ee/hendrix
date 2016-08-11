@@ -16,7 +16,7 @@
 package io.symcpe.wraith;
 
 /**
- * Simple test for checking gated builds 2
+ * Central file for all the constants
  * 
  * @author ambud_sharma
  */
