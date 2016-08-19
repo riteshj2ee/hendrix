@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.google.gson.Gson;
+
 import io.symcpe.hendrix.interceptors.InterceptException;
 
 /**
@@ -43,12 +45,13 @@ public class TestVPCFlowLogParser {
 		assertEquals("50.90.30.21", record.getDstAddr());
 		assertEquals(43895, record.getSrcPort());
 		assertEquals(443, record.getDstPort());
-		assertEquals((byte) "6".charAt(0), record.getProtocol());
+		assertEquals("6".charAt(0), record.getProtocol());
 		assertEquals(13, record.getPackets());
 		assertEquals(1836, record.getBytes());
 		assertEquals(1469126675, record.getStartTs());
 		assertEquals(1469126733, record.getEndTs());
 		assertEquals((byte) "O".charAt(0), record.getLogStatus());
+		System.out.println(new Gson().toJson(record));
 	}
 
 	@Test
