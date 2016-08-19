@@ -27,7 +27,7 @@ public class VPCFlowLogRecord implements Serializable {
 	private String dstAddr;
 	private int srcPort;
 	private int dstPort;
-	private byte protocol;
+	private char protocol;
 	private int packets;
 	private int bytes;
 	private int startTs;
@@ -39,7 +39,7 @@ public class VPCFlowLogRecord implements Serializable {
 	}
 	
 	public VPCFlowLogRecord(short version, String accountId, String interfaceId, String srcAddr, String dstAddr,
-			int srcPort, int dstPort, byte protocol, int packets, int bytes, int startTs, int endTs, boolean accepted,
+			int srcPort, int dstPort, char protocol, int packets, int bytes, int startTs, int endTs, boolean accepted,
 			byte logStatus) {
 		this.version = version;
 		this.accountId = accountId;
@@ -158,14 +158,14 @@ public class VPCFlowLogRecord implements Serializable {
 	/**
 	 * @return the protocol
 	 */
-	public byte getProtocol() {
+	public char getProtocol() {
 		return protocol;
 	}
 
 	/**
 	 * @param protocol the protocol to set
 	 */
-	public void setProtocol(byte protocol) {
+	public void setProtocol(char protocol) {
 		this.protocol = protocol;
 	}
 

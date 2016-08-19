@@ -117,7 +117,7 @@ public class VPCFlowLogParser {
 					map.put(DSTADDR, matcher.group(5));
 					map.put(SRCPORT, Integer.parseInt(matcher.group(6)));
 					map.put(DSTPORT, Integer.parseInt(matcher.group(7)));
-					map.put(PROTOCOL, (byte) matcher.group(8).charAt(0));
+					map.put(PROTOCOL, matcher.group(8).charAt(0));
 					map.put(PACKETS, Integer.parseInt(matcher.group(9)));
 					map.put(BYTES, Integer.parseInt(matcher.group(10)));
 				}
@@ -172,7 +172,7 @@ public class VPCFlowLogParser {
 					record.setDstAddr(matcher.group(5));
 					record.setSrcPort(Integer.parseInt(matcher.group(6)));
 					record.setDstPort(Integer.parseInt(matcher.group(7)));
-					record.setProtocol((byte) matcher.group(8).charAt(0));
+					record.setProtocol(matcher.group(8).charAt(0));
 					record.setPackets(Integer.parseInt(matcher.group(9)));
 					record.setBytes(Integer.parseInt(matcher.group(10)));
 				}
