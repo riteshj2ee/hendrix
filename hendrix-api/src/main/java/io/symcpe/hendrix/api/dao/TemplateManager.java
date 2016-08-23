@@ -84,26 +84,10 @@ public class TemplateManager {
 	 * @param templateId
 	 * @return
 	 */
-	public AlertTemplates getTemplate(EntityManager em, short templateId) throws Exception {
+	public AlertTemplates getTemplate(EntityManager em, String tenantId, short templateId) throws Exception {
 		try {
 			AlertTemplates result = em.createNamedQuery(Queries.TEMPLATE_FIND_BY_ID, AlertTemplates.class)
-					.setParameter("templateId", templateId).getSingleResult();
-			return result;
-		} catch (Exception e) {
-			throw new NoResultException("Template:" + templateId + " not found");
-		}
-	}
-
-	/**
-	 * @param em
-	 * @param tenantId
-	 * @param templateId
-	 * @return
-	 */
-	public AlertTemplates getTemplate(EntityManager em, String tenantId, short templateId) {
-		try {
-			AlertTemplates result = em.createNamedQuery(Queries.TEMPLATE_FIND_BY_ID, AlertTemplates.class)
-					.setParameter("templateId", templateId).getSingleResult();
+					.setParameter("templateId", templateId).setParameter("tenantId", tenantId).getSingleResult();
 			return result;
 		} catch (Exception e) {
 			throw new NoResultException("Template:" + templateId + " not found");
@@ -215,7 +199,7 @@ public class TemplateManager {
 	 * @throws Exception
 	 */
 	public AlertTemplate getTemplateObj(EntityManager em, String tenantId, short templateId) throws Exception {
-		AlertTemplates template = getTemplate(em, templateId);
+		AlertTemplates template = getTemplate(em, tenantId, templateId);
 		if (template.getTemplateContent() != null) {
 			return AlertTemplateSerializer.deserialize(template.getTemplateContent());
 		} else {
