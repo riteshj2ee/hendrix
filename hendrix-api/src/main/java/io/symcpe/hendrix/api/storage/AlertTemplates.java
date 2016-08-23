@@ -41,7 +41,7 @@ import io.symcpe.hendrix.api.Queries;
 @Table(name = "alert_template")
 @NamedQueries({
 	@NamedQuery(name = Queries.TEMPLATE_FIND_ALL, query = "SELECT t FROM AlertTemplates t"),
-	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_ID, query = "SELECT t FROM AlertTemplates t where t.templateId=:templateId"),
+	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_ID, query = "SELECT t FROM AlertTemplates t where t.templateId=:templateId and t.tenant.tenant_id=:tenantId"),
 	@NamedQuery(name = Queries.TEMPLATE_FIND_BY_TENANT_ID, query = "SELECT t FROM AlertTemplates t where t.tenant.tenant_id=:tenantId"),
 	@NamedQuery(name = Queries.TEMPLATE_DELETE_BY_ID, query = "DELETE FROM AlertTemplates t where t.templateId=:templateId"),
 })
