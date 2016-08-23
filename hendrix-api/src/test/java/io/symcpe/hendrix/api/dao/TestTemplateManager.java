@@ -75,6 +75,7 @@ public class TestTemplateManager {
 	@Mock
 	private ApplicationManager am;
 	private static short id;
+	private Tenant tenant;
 
 	static {
 		System.setProperty("org.jboss.logging.provider", "jdk");
@@ -127,16 +128,17 @@ public class TestTemplateManager {
 	@Test
 	public void testGetTemplate() throws Exception {
 		AlertTemplates templates = new AlertTemplates();
-		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
+		tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
 		id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
-		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, id);
+		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 		assertEquals(id, template.getTemplateId());
 	}
 
 	@Test
 	public void testSaveTemplate() throws Exception {
 		AlertTemplate tpl = new AlertTemplate();
-		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, id);
+		tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
+		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 		tpl.setTemplateId(template.getTemplateId());
 		tpl.setBody("test");
 		tpl.setDestination("test@xyz.com");
@@ -152,7 +154,7 @@ public class TestTemplateManager {
 	public void testZDeleteTemplate() throws Exception {
 		TemplateManager.getInstance().deleteTemplate(em, TENANT_ID_1, id, am);
 		try {
-			TemplateManager.getInstance().getTemplate(em, id);
+			TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 			fail("Not reachable");
 		} catch (Exception e) {
 		}
@@ -164,7 +166,7 @@ public class TestTemplateManager {
 		AlertTemplate tpl = new AlertTemplate();
 		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
 		short id = TemplateManager.getInstance().createNewTemplate(em, new AlertTemplates(), tenant);
-		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, id);
+		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 		tpl.setTemplateId(template.getTemplateId());
 		tpl.setBody("test");
 		tpl.setDestination("test");
