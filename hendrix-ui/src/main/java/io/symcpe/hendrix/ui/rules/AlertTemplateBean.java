@@ -60,7 +60,7 @@ public class AlertTemplateBean implements Serializable {
 
 	public void newTemplate() {
 		try {
-			template = new AlertTemplate(TemplateManager.getInstance().createTemplate(ub, ub.getTenant()));
+			template = new AlertTemplate(TemplateManager.getInstance().createTemplate(ub, ub.getTenant().getTenantId()));
 			enableEdit = true;
 			RequestContext.getCurrentInstance().execute("location.reload();");
 		} catch (Exception e) {
