@@ -3,7 +3,7 @@
 
 	<groupId>io.symcpe.hendrix</groupId>
 	<artifactId>hendrix-parent</artifactId>
-	<version>0.0.29-SNAPSHOT</version>
+	<version>0.0.32-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>hendrix</name>
