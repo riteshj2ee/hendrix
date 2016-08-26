@@ -57,7 +57,7 @@ import io.symcpe.wraith.rules.validator.ValidationException;
 /**
  * @author ambud_sharma
  */
-@Path("/templates")
+@Path("/tenants/{" + TenantEndpoint.TENANT_ID + "}/templates")
 @Api
 public class TemplateEndpoint {
 
@@ -68,7 +68,6 @@ public class TemplateEndpoint {
 		this.am = am;
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
@@ -90,7 +89,6 @@ public class TemplateEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -115,7 +113,7 @@ public class TemplateEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + TEMPLATE_ID + "}")
+	@Path("/{" + TEMPLATE_ID + "}")
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
@@ -199,7 +197,7 @@ public class TemplateEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + TEMPLATE_ID + "}")
+	@Path("/{" + TEMPLATE_ID + "}")
 	@GET
 	@Produces({ MediaType.TEXT_HTML })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
@@ -225,7 +223,7 @@ public class TemplateEndpoint {
 		return AlertTemplateSerializer.serialize(template, pretty);
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + TEMPLATE_ID + "}")
+	@Path("/{" + TEMPLATE_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -246,7 +244,6 @@ public class TemplateEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
