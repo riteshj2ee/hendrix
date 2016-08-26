@@ -68,7 +68,7 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 		if (path.startsWith("perf")) {
 			roles = new HashSet<>();
 			roles.add(ACLConstants.READER_ROLE);
-		} else if (path.startsWith(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("post")) {
+		} else if (path.endsWith(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("post")) {
 			// do nothing
 		} else if (path.equals(TENANTS) && requestContext.getRequest().getMethod().toLowerCase().equals("get")) {
 			roles = new HashSet<>();
