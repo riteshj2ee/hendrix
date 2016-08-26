@@ -51,7 +51,7 @@ public class TemplateManager {
 
 	private static final Logger logger = Logger.getLogger(TemplateManager.class.getCanonicalName());
 	private static final TemplateManager TEMPLATE_MANAGER = new TemplateManager();
-	private static final String TEMPLATE_URL = "/templates";
+	public static final String TEMPLATE_URL = "/templates";
 	private ApplicationManager am;
 
 	private TemplateManager() {
@@ -65,15 +65,16 @@ public class TemplateManager {
 		this.am = am;
 	}
 
-	public short createTemplate(UserBean ub, Tenant tenant) throws Exception {
-		if (tenant == null) {
+	public short createTemplate(UserBean ub, String tenantId) throws Exception {
+		if (tenantId == null) {
 			throw new NullPointerException("Template can't be empty");
 		}
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpPost post = new HttpPost(am.getBaseUrl() + TEMPLATE_URL + "/" + tenant.getTenantId());
-			if(am.isEnableAuth()) {
+			HttpPost post = new HttpPost(
+					am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL + "/" + tenantId);
+			if (am.isEnableAuth()) {
 				post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}
@@ -83,7 +84,7 @@ public class TemplateManager {
 			}
 			return Short.parseShort(EntityUtils.toString(resp.getEntity()));
 		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Failed to create template:" + tenant + "\t" + e.getMessage());
+			logger.log(Level.SEVERE, "Failed to create template:" + tenantId + "\t" + e.getMessage());
 			throw e;
 		}
 	}
@@ -94,8 +95,9 @@ public class TemplateManager {
 			try {
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 						am.getRequestTimeout());
-				HttpDelete delete = new HttpDelete(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + templateId);
-				if(am.isEnableAuth()) {
+				HttpDelete delete = new HttpDelete(
+						am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL + "/" + templateId);
+				if (am.isEnableAuth()) {
 					delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 					delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 				}
@@ -118,9 +120,9 @@ public class TemplateManager {
 			try {
 				CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 						am.getRequestTimeout());
-				HttpPut put = new HttpPut(
-						am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + template.getTemplateId());
-				if(am.isEnableAuth()) {
+				HttpPut put = new HttpPut(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL + "/"
+						+ template.getTemplateId());
+				if (am.isEnableAuth()) {
 					put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 					put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 				}
@@ -144,8 +146,9 @@ public class TemplateManager {
 
 	public AlertTemplate getTemplate(UserBean ub, String tenantId, short templateId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId + "/" + templateId);
-		if(am.isEnableAuth()) {
+		HttpGet get = new HttpGet(
+				am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL + "/" + templateId);
+		if (am.isEnableAuth()) {
 			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 		}
@@ -161,8 +164,8 @@ public class TemplateManager {
 
 	public List<AlertTemplate> getTemplates(UserBean ub, String tenantId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + TEMPLATE_URL + "/" + tenantId);
-		if(am.isEnableAuth()) {
+		HttpGet get = new HttpGet(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL);
+		if (am.isEnableAuth()) {
 			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 		}

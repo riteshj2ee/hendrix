@@ -61,35 +61,17 @@ import io.symcpe.wraith.rules.validator.ValidationException;
  * 
  * @author ambud_sharma
  */
-@Path("/rules")
+@Path("/tenants/{" + TenantEndpoint.TENANT_ID + "}/rules")
 @Api
 public class RulesEndpoint {
 
 	private static final String RULE_ID = "ruleId";
-	private static String BUILD_NUMBER;
-	private static String VERSION;
 	private ApplicationManager am;
 
 	public RulesEndpoint(ApplicationManager am) {
 		this.am = am;
 	}
 
-	@GET
-	@Produces({ MediaType.APPLICATION_JSON })
-	public String getVersion() {
-		// try {
-		// if (BUILD_NUMBER == null) {
-		// BUILD_NUMBER = Manifests.read("buildNumber");
-		// }
-		// if (VERSION == null) {
-		// VERSION = Manifests.read("version");
-		// }
-		// } catch (Exception e) {
-		// }
-		return "Version:" + VERSION + " Build:" + BUILD_NUMBER;
-	}
-
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@GET
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
@@ -112,7 +94,6 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -137,7 +118,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}")
+	@Path("/{" + RULE_ID + "}")
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.APPLICATION_JSON })
@@ -221,7 +202,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}/enable")
+	@Path("/{" + RULE_ID + "}/enable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -242,7 +223,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}/disable")
+	@Path("/{" + RULE_ID + "}/disable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -262,7 +243,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}")
+	@Path("/{" + RULE_ID + "}")
 	@GET
 	@Produces({ MediaType.TEXT_HTML })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
@@ -296,7 +277,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/{" + RULE_ID + "}")
+	@Path("/{" + RULE_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
@@ -317,7 +298,6 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}")
 	@DELETE
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })
@@ -338,7 +318,7 @@ public class RulesEndpoint {
 		}
 	}
 
-	@Path("/{" + TenantEndpoint.TENANT_ID + "}/disable")
+	@Path("/disable")
 	@PUT
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE })

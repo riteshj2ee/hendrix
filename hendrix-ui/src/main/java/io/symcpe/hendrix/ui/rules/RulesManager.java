@@ -35,7 +35,6 @@ import io.symcpe.hendrix.ui.ApplicationManager;
 import io.symcpe.hendrix.ui.BapiLoginDAO;
 import io.symcpe.hendrix.ui.UserBean;
 import io.symcpe.hendrix.ui.Utils;
-import io.symcpe.hendrix.ui.storage.Tenant;
 import io.symcpe.wraith.rules.Rule;
 import io.symcpe.wraith.rules.RuleSerializer;
 import io.symcpe.wraith.rules.validator.RuleValidator;
@@ -64,10 +63,11 @@ public class RulesManager {
 		this.am = am;
 	}
 
-	public short createNewRule(UserBean ub, Tenant tenant) throws Exception {
+	public short createNewRule(UserBean ub, String tenantId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpPost post = new HttpPost(am.getBaseUrl() + RULES_URL + "/" + tenant.getTenantId());
-		if(am.isEnableAuth()) {
+		HttpPost post = new HttpPost(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL);
+		System.out.println("URL:"+am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL);
+		if (am.isEnableAuth()) {
 			post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 			post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 		}
@@ -76,17 +76,17 @@ public class RulesManager {
 		return Short.parseShort(result);
 	}
 
-	public short saveRule(UserBean ub, Tenant tenant, Rule currRule) throws Exception {
-		if (currRule == null || tenant == null) {
+	public short saveRule(UserBean ub, String tenantId, Rule currRule) throws Exception {
+		if (currRule == null || tenantId == null) {
 			logger.info("Rule was null can't save");
 			return -1;
 		}
 		RuleValidator.getInstance().validate(currRule);
 		logger.info("Rule is valid attempting to save");
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpPut put = new HttpPut(
-				am.getBaseUrl() + RULES_URL + "/" + tenant.getTenantId() + "/" + currRule.getRuleId());
-		if(am.isEnableAuth()) {
+		HttpPut put = new HttpPut(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL + "/"
+				+ currRule.getRuleId());
+		if (am.isEnableAuth()) {
 			put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 			put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 		}
@@ -100,8 +100,8 @@ public class RulesManager {
 
 	public Rule getRule(UserBean ub, String tenantId, short ruleId) throws Exception {
 		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId);
-		if(am.isEnableAuth()) {
+		HttpGet get = new HttpGet(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL + "/" + ruleId);
+		if (am.isEnableAuth()) {
 			get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 			get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 		}
@@ -118,8 +118,9 @@ public class RulesManager {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpDelete delete = new HttpDelete(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId);
-			if(am.isEnableAuth()) {
+			HttpDelete delete = new HttpDelete(
+					am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL + "/" + ruleId);
+			if (am.isEnableAuth()) {
 				delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}
@@ -137,8 +138,8 @@ public class RulesManager {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpDelete delete = new HttpDelete(am.getBaseUrl() + RULES_URL + "/" + tenantId);
-			if(am.isEnableAuth()) {
+			HttpDelete delete = new HttpDelete(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL);
+			if (am.isEnableAuth()) {
 				delete.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				delete.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}
@@ -156,8 +157,8 @@ public class RulesManager {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpPut put = new HttpPut(am.getBaseUrl() + RULES_URL + "/" + tenantId + "/disable");
-			if(am.isEnableAuth()) {
+			HttpPut put = new HttpPut(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL + "/disable");
+			if (am.isEnableAuth()) {
 				put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}
@@ -176,8 +177,9 @@ public class RulesManager {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpGet get = new HttpGet(am.getBaseUrl() + RULES_URL + "/" + tenantId);
-			if(am.isEnableAuth()) {
+			HttpGet get = new HttpGet(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL);
+			System.out.println("URL:"+am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL);
+			if (am.isEnableAuth()) {
 				get.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				get.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}
@@ -200,10 +202,9 @@ public class RulesManager {
 		try {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
-			HttpPut put = new HttpPut(
-					am.getBaseUrl() + RULES_URL + "/" + tenantId + "/" + ruleId + "/" + (rule.isActive() ? "disable"
-							: "enable"));
-			if(am.isEnableAuth()) {
+			HttpPut put = new HttpPut(am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + RULES_URL + "/" + ruleId
+					+ "/" + (rule.isActive() ? "disable" : "enable"));
+			if (am.isEnableAuth()) {
 				put.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				put.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
 			}

@@ -82,7 +82,7 @@ public class RulesBean implements Serializable {
 
 	public void addRule() {
 		try {
-			short ruleId = RulesManager.getInstance().createNewRule(ub, ub.getTenant());
+			short ruleId = RulesManager.getInstance().createNewRule(ub, ub.getTenant().getTenantId());
 			if (ruleId > 0) {
 				changeCurrentRule(ruleId);
 			}
@@ -97,7 +97,7 @@ public class RulesBean implements Serializable {
 			return;
 		}
 		try {
-			short ruleId = RulesManager.getInstance().saveRule(ub, ub.getTenant(), currRule);
+			short ruleId = RulesManager.getInstance().saveRule(ub, ub.getTenant().getTenantId(), currRule);
 			if (ruleId > 0) {
 				FacesContext.getCurrentInstance().addMessage(null,
 						new FacesMessage("Rule " + currRule.getName() + " successfully saved"));
