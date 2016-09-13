@@ -52,6 +52,9 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 	@Override
 	public void filter(ContainerRequestContext requestContext) throws IOException {
 		String path = requestContext.getUriInfo().getPath();
+		if(path.endsWith("/")) {
+			path = path.substring(0, path.length()-1);
+		}
 		if(path.startsWith("swagger") || path.startsWith("perf")) {
 			return;
 		}
