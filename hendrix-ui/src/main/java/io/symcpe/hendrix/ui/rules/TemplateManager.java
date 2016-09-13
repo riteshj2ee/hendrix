@@ -73,7 +73,7 @@ public class TemplateManager {
 			CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(),
 					am.getRequestTimeout());
 			HttpPost post = new HttpPost(
-					am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL + "/" + tenantId);
+					am.getBaseUrl() + TenantManager.TENANT_URL + tenantId + TEMPLATE_URL );
 			if (am.isEnableAuth()) {
 				post.addHeader(BapiLoginDAO.X_SUBJECT_TOKEN, ub.getToken());
 				post.addHeader(BapiLoginDAO.HMAC, ub.getHmac());
