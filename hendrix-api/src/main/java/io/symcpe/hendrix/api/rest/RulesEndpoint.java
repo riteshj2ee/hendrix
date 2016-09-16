@@ -96,10 +96,13 @@ public class RulesEndpoint {
 
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID", response = Short.class)
 	public short createRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
+			@NotNull(message = "Rule JSON can't be empty") @Encoded String ruleJson) {
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -109,12 +112,64 @@ public class RulesEndpoint {
 			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
-		try {
-			return mgr.createNewRule(em, new Rules(), tenant);
-		} catch (Exception e) {
-			throw new InternalServerErrorException();
-		} finally {
-			em.close();
+		if (ruleJson == null || ruleJson.length() == 0) {
+			try {
+				return mgr.createNewRule(em, new Rules(), tenant);
+			} catch (Exception e) {
+				throw new InternalServerErrorException();
+			} finally {
+				em.close();
+			}
+		} else {
+			SimpleRule rule = null;
+			try {
+				rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
+				if (rule == null) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity("Unable to parse rule").build());
+				}
+			} catch (BadRequestException e) {
+				throw e;
+			} catch (JsonParseException | IllegalStateException | NumberFormatException e) {
+				em.close();
+				if (e.getMessage().contains("NumberFormat") || (e instanceof NumberFormatException)) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST)
+									.entity("Invalid number "
+											+ e.getLocalizedMessage().replace("java.lang.NumberFormatException", ""))
+									.build());
+				} else if (e.getMessage().contains("Malformed")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
+				} else if (e.getMessage().contains("IllegalStateException")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST)
+							.entity("Expecting a singel rule object not an array").build());
+				} else {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());
+				}
+			}
+			try {
+				Rules ruleContainer = new Rules();
+				if (rule.getRuleId() > 0) {
+					try {
+						Rules temp = mgr.getRule(em, tenant.getTenant_id(), rule.getRuleId());
+						if (temp != null) {
+							ruleContainer = temp;
+						}
+					} catch (NoResultException e) {
+						// rule doesn't exit, will save it as a new rule
+					}
+				}
+				return mgr.saveRule(em, ruleContainer, tenant, rule, am);
+			} catch (NoResultException e) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
+			} catch (ValidationException e) {
+				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build());
+			} catch (Exception e) {
+				throw new InternalServerErrorException(Response.serverError().entity(e.getMessage()).build());
+			} finally {
+				em.close();
+			}
 		}
 	}
 
