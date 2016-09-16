@@ -98,11 +98,10 @@ public class RulesEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
-	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID", response = Short.class)
+	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID if no payload is supplied", response = Short.class)
 	public short createRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
-			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
-			@NotNull(message = "Rule JSON can't be empty") @Encoded String ruleJson) {
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, @Encoded String ruleJson) {
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -150,6 +149,7 @@ public class RulesEndpoint {
 			}
 			try {
 				Rules ruleContainer = new Rules();
+				rule.setRuleId((short) 0);
 				if (rule.getRuleId() > 0) {
 					try {
 						Rules temp = mgr.getRule(em, tenant.getTenant_id(), rule.getRuleId());

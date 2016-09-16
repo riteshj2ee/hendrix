@@ -96,8 +96,7 @@ public class TemplateEndpoint {
 	@ApiOperation(value = "Create template", notes = "Create an empty for the supplied Tenant ID", response = Short.class)
 	public short createTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
-			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
-			String templateJson) {
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, String templateJson) {
 		TemplateManager mgr = TemplateManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -107,7 +106,7 @@ public class TemplateEndpoint {
 			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
-		if (templateJson == null || templateJson.length()==0) {
+		if (templateJson == null || templateJson.length() == 0) {
 			try {
 				return mgr.createNewTemplate(em, new AlertTemplates(), tenant);
 			} catch (Exception e) {
@@ -124,12 +123,6 @@ public class TemplateEndpoint {
 			if (!Utils.isCharsetMisInterpreted(templateJson, encoding)) {
 				throw new BadRequestException(
 						Response.status(Status.BAD_REQUEST).entity("Template JSON must be UTF-8 compliant").build());
-			}
-			try {
-				tenant = mgr.getTenant(em, tenantId);
-			} catch (Exception e) {
-				em.close();
-				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 			}
 			AlertTemplate template = null;
 			try {
@@ -160,6 +153,7 @@ public class TemplateEndpoint {
 			}
 			try {
 				AlertTemplates templateContainer = new AlertTemplates();
+				template.setTemplateId((short) 0);
 				if (template.getTemplateId() > 0) {
 					try {
 						AlertTemplates temp = mgr.getTemplate(em, tenant.getTenant_id(), template.getTemplateId());
