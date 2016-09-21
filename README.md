@@ -4,7 +4,7 @@
 ## Bulletin Board
 
 In Progress:
-- Kapa architecture integration
+- Kappa architecture integration
 
 Recently Added:
 - Fixed API compliance with REST
