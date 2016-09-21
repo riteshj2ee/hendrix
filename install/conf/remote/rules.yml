@@ -57,11 +57,11 @@ components:
       # brokerHosts
       - ref: "zkHosts"
       # topic
-      - "metricTopic"
+      - "${metric.topic}"
       # zkRoot
       - ""
       # id
-      - "metricTopic"
+      - "${metric.topic.consumerid}"
     properties:
       - name: "ignoreZkOffsets"
         value: false
@@ -80,11 +80,11 @@ components:
       # brokerHosts
       - ref: "zkHosts"
       # topic
-      - "logTopic"
+      - "${log.topic}"
       # zkRoot
       - ""
       # id
-      - "logTopic"
+      - "${log.topic.consumerid}"
     properties:
       - name: "ignoreZkOffsets"
         value: false
@@ -97,17 +97,40 @@ components:
       - name: "scheme"
         ref: stringMultiScheme
 
+  - id: "aggregationSpoutConfig"
+    className: "storm.kafka.SpoutConfig"
+    constructorArgs:
+      # brokerHosts
+      - ref: "zkHosts"
+      # topic
+      - "${aggregation.topic}"
+      # zkRoot
+      - ""
+      # id
+      - "${aggregation.topic.consumerid}"
+    properties:
+      - name: "ignoreZkOffsets"
+        value: false
+      - name: "bufferSizeBytes"
+        value: 1048576
+#      - name: "fetchMaxWait"
+#        value:
+      - name: "fetchSizeBytes"
+        value: 1048576
+      - name: "scheme"
+        ref: stringMultiScheme
+
   - id: "ruleSpoutConfig"
     className: "storm.kafka.SpoutConfig"
     constructorArgs:
       # brokerHosts
       - ref: "zkHosts"
       # topic
-      - "ruleTopic"
+      - "${rule.topic}"
       # zkRoot
       - ""
       # id
-      - "ruleTopic"
+      - "${rule.topic.consumerid}"
     properties:
       - name: "ignoreZkOffsets"
         value: false
@@ -126,11 +149,11 @@ components:
       # brokerHosts
       - ref: "zkHosts"
       # topic
-      - "templateTopic"
+      - "${template.topic}"
       # zkRoot
       - ""
       # id
-      - "templateTopic"
+      - "${template.topic.consumerid}"
     properties:
       - name: "ignoreZkOffsets"
         value: false
@@ -146,8 +169,15 @@ components:
   - id: "topicSelector"
     className: "storm.kafka.bolt.selector.DefaultTopicSelector"
     constructorArgs:
-      - "alertTopic"
+      - "${alert.output.topic}"
   - id: "kafkaMapper"
+    className: "io.symcpe.hendrix.storm.bolts.AlertTupleMapper"
+
+  - id: "aggregationTopicSelector"
+    className: "storm.kafka.bolt.selector.DefaultTopicSelector"
+    constructorArgs:
+      - "${aggregation.topic}"
+  - id: "aggregationKafkaMapper"
     className: "io.symcpe.hendrix.storm.bolts.AlertTupleMapper"
     
   - id: "kafkaProducerProps"
@@ -176,13 +206,19 @@ spouts:
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "logSpoutConfig"
-    parallelism: 5
+    parallelism: ${log.topic.parallelism}
 
   - id: "metricSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "metricSpoutConfig"
-    parallelism: 5
+    parallelism: ${metric.topic.parallelism}
+    
+  - id: "aggregationSpout"
+    className: "storm.kafka.KafkaSpout"
+    constructorArgs:
+      - ref: "aggregationSpoutConfig"
+    parallelism: ${aggregation.topic.parallelism}
 
   - id: "ruleSpout"
     className: "storm.kafka.KafkaSpout"
@@ -233,7 +269,22 @@ bolts:
   - id: "printerBolt"
     className: "io.symcpe.hendrix.storm.bolts.helpers.PrinterBolt"
     parallelism: 1
-    
+
+  - id: "aggregationSinkBolt"
+    className: "io.symcpe.hendrix.storm.bolts.KafkaBolt"
+    parallelism: 1
+    configMethods:
+      - name: "withTopicSelector"
+        args: [ref: "aggregationTopicSelector"]
+      - name: "withTupleToKafkaMapper"
+        args: [ref: "aggregationKafkaMapper"]
+      - name: "withProducerProperties"
+        args: [ref: "kafkaProducerProps"]
+   
+  - id: "aggregationSerializerBolt"
+    className: "io.symcpe.hendrix.storm.bolts.AggregationSerializerBolt"
+    parallelism: 1
+   
   - id: "alertSinkBolt"
     className: "io.symcpe.hendrix.storm.bolts.KafkaBolt"
     parallelism: 1
@@ -250,6 +301,10 @@ bolts:
     parallelism: 1
     
   - id: "stateTrackingBolt"
+    className: "io.symcpe.hendrix.storm.bolts.StateTrackingBolt"
+    parallelism: 1
+
+  - id: "aggregationClassifierBolt"
     className: "io.symcpe.hendrix.storm.bolts.StateTrackingBolt"
     parallelism: 1
 
@@ -340,13 +395,26 @@ streams:
       type: ALL
       streamId: "tickStream"
       
-  - name: "Rule Engine->State Tracking"
+  - name: "Rule Engine->AggregationSerializer"
     from: "ruleEngineBolt"
+    to: "aggregationSerializerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: stateStream
+      
+  - name: "AggregationSerializer->Kafka"
+    from: "aggregationSerializerBolt"
+    to: "aggregationSinkBolt"
+    grouping:
+      type: SHUFFLE
+
+  - name: "Aggregation Classifier->State Tracker"
+    from: "aggregationClassifierBolt"
     to: "stateTrackingBolt"
     grouping:
       type: FIELDS
       args: ["_ri", "_a"]
-      streamId: stateStream
+      streamId: "stateStream"
 
   - name: "State Tracker->Printer"
     from: "stateTrackingBolt"
