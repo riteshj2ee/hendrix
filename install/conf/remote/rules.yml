@@ -206,19 +206,19 @@ spouts:
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "logSpoutConfig"
-    parallelism: ${log.topic.parallelism}
+    parallelism: 5
 
   - id: "metricSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "metricSpoutConfig"
-    parallelism: ${metric.topic.parallelism}
+    parallelism: 5
     
   - id: "aggregationSpout"
     className: "storm.kafka.KafkaSpout"
     constructorArgs:
       - ref: "aggregationSpoutConfig"
-    parallelism: ${aggregation.topic.parallelism}
+    parallelism: 5
 
   - id: "ruleSpout"
     className: "storm.kafka.KafkaSpout"
@@ -407,6 +407,14 @@ streams:
     to: "aggregationSinkBolt"
     grouping:
       type: SHUFFLE
+
+  - name: "Aggregation Spout->Aggregation Classifier"
+    from: "aggregationSpout"
+    to: "aggregationClassifierBolt"
+    grouping:
+      type: FIELDS
+      args: ["_ri", "_a"]
+      streamId: "stateStream"
 
   - name: "Aggregation Classifier->State Tracker"
     from: "aggregationClassifierBolt"

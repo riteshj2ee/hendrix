@@ -37,6 +37,9 @@ public class AggregationSerializerBolt extends BaseRichBolt {
 	private transient Gson gson;
 	private transient OutputCollector collector;
 
+	public AggregationSerializerBolt() {
+	}
+
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
@@ -53,13 +56,15 @@ public class AggregationSerializerBolt extends BaseRichBolt {
 		obj.addProperty(Constants.FIELD_RULE_ACTION_ID, tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID));
 		obj.addProperty(Constants.FIELD_AGGREGATION_KEY, tuple.getStringByField(Constants.FIELD_AGGREGATION_KEY));
 
-		if (tuple.contains(Constants.FIELD_AGGREGATION_VALUE)) {
-			obj.addProperty(Constants.FIELD_RULE_ACTION_ID,
-					tuple.getValueByField(Constants.FIELD_AGGREGATION_VALUE).toString());
-		}
-		
-		if(tuple.contains(Constants.FIELD_STATE_TRACK)) {
+		if (tuple.contains(Constants.FIELD_STATE_TRACK)) {
 			obj.addProperty(Constants.FIELD_STATE_TRACK, tuple.getBooleanByField(Constants.FIELD_STATE_TRACK));
+		} else if (tuple.contains(Constants.FIELD_AGGREGATION_VALUE)) {
+			obj.addProperty(Constants.FIELD_AGGREGATION_VALUE,
+					tuple.getValueByField(Constants.FIELD_AGGREGATION_VALUE).toString());
+		} else {
+			// invalid event
+			collector.fail(tuple);
+			return;
 		}
 		collector.emit(tuple, new Values(tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID) + "_"
 				+ tuple.getStringByField(Constants.FIELD_AGGREGATION_KEY), gson.toJson(obj)));

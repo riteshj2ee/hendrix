@@ -17,28 +17,49 @@ package io.symcpe.hendrix.storm.bolts;
 
 import java.util.Map;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.Constants;
 
+/**
+ * @author ambud_sharma
+ */
 public class AggregationClassifierBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = 1L;
 	private transient OutputCollector collector;
+	private transient Gson gson;
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
+		this.gson = new Gson();
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
-		String string = tuple.getString(0);
+		String message = tuple.getString(0);
+		JsonObject obj = gson.fromJson(message, JsonObject.class);
+		if (obj.has(Constants.FIELD_STATE_TRACK)) {
+			// emit to state tracking stream
+			collector.emit(Constants.STATE_STREAM_ID, tuple,
+					new Values(obj.get(Constants.FIELD_STATE_TRACK).getAsBoolean(),
+							obj.get(Constants.FIELD_TIMESTAMP).getAsLong(),
+							obj.get(Constants.FIELD_AGGREGATION_WINDOW).getAsInt(),
+							obj.get(Constants.FIELD_RULE_ACTION_ID).getAsString(),
+							obj.get(Constants.FIELD_AGGREGATION_KEY).getAsString()));
+		} else if (obj.has(Constants.FIELD_AGGREGATION_VALUE)) {
+			obj.get(Constants.FIELD_AGGREGATION_VALUE).getAsString();
+		}
 		collector.ack(tuple);
 	}
 
