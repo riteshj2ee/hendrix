@@ -99,7 +99,7 @@ public class RulesEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID if no payload is supplied", response = Short.class)
-	public short createRule(
+	public String createRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, @Encoded String ruleJson) {
 		RulesManager mgr = RulesManager.getInstance();
@@ -113,7 +113,8 @@ public class RulesEndpoint {
 		}
 		if (ruleJson == null || ruleJson.length() == 0) {
 			try {
-				return mgr.createNewRule(em, new Rules(), tenant);
+				short id = mgr.createNewRule(em, new Rules(), tenant);
+				return RuleSerializer.serializeRuleToJSONString(new SimpleRule(id, "", false, null, new Action[]{}), false);
 			} catch (Exception e) {
 				throw new InternalServerErrorException();
 			} finally {
@@ -160,7 +161,8 @@ public class RulesEndpoint {
 						// rule doesn't exit, will save it as a new rule
 					}
 				}
-				return mgr.saveRule(em, ruleContainer, tenant, rule, am);
+				Rule ruleOut = mgr.saveRule(em, ruleContainer, tenant, rule, am);
+				return RuleSerializer.serializeRuleToJSONString(ruleOut, false);
 			} catch (NoResultException e) {
 				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 			} catch (ValidationException e) {
@@ -179,7 +181,7 @@ public class RulesEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Update rule", notes = "Will update rule logic for a given Tenant ID and Rule ID", response = Short.class)
-	public short putRule(
+	public String putRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
@@ -245,7 +247,7 @@ public class RulesEndpoint {
 					// rule doesn't exit, will save it as a new rule
 				}
 			}
-			return mgr.saveRule(em, ruleContainer, tenant, rule, am);
+			return RuleSerializer.serializeRuleToJSONString(mgr.saveRule(em, ruleContainer, tenant, rule, am), false);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (ValidationException e) {

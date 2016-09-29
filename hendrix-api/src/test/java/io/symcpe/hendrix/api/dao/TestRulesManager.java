@@ -243,8 +243,8 @@ public class TestRulesManager {
 
 		Rule rul = new SimpleRule(ruleId, "simple-rule1", true, new EqualsCondition("host", "symcpe"),
 				new Action[] { new TemplatedAlertAction((short) 0, templateId) });
-		short ruleId2 = RulesManager.getInstance().saveRule(em, rule, tenant, rul, am);
-		assertEquals(ruleId, ruleId2);
+		Rule saveRule = RulesManager.getInstance().saveRule(em, rule, tenant, rul, am);
+		assertEquals(ruleId, saveRule.getRuleId());
 		Rule ruleObj = RulesManager.getInstance().getRuleObject(em, ruleId);
 		assertEquals(ruleId, ruleObj.getRuleId());
 		assertEquals("simple-rule1", ruleObj.getName());
