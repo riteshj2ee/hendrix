@@ -58,7 +58,12 @@ public class AggregationClassifierBolt extends BaseRichBolt {
 							obj.get(Constants.FIELD_RULE_ACTION_ID).getAsString(),
 							obj.get(Constants.FIELD_AGGREGATION_KEY).getAsString()));
 		} else if (obj.has(Constants.FIELD_AGGREGATION_VALUE)) {
-			obj.get(Constants.FIELD_AGGREGATION_VALUE).getAsString();
+			collector.emit(Constants.AGGREGATION_STREAM_ID, tuple,
+					new Values(obj.get(Constants.FIELD_TIMESTAMP).getAsLong(),
+							obj.get(Constants.FIELD_AGGREGATION_WINDOW).getAsInt(),
+							obj.get(Constants.FIELD_RULE_ACTION_ID).getAsString(),
+							obj.get(Constants.FIELD_AGGREGATION_KEY).getAsString(),
+							obj.get(Constants.FIELD_AGGREGATION_VALUE).getAsString()));
 		}
 		collector.ack(tuple);
 	}
@@ -68,6 +73,24 @@ public class AggregationClassifierBolt extends BaseRichBolt {
 		declarer.declareStream(Constants.STATE_STREAM_ID,
 				new Fields(Constants.FIELD_STATE_TRACK, Constants.FIELD_TIMESTAMP, Constants.FIELD_AGGREGATION_WINDOW,
 						Constants.FIELD_RULE_ACTION_ID, Constants.FIELD_AGGREGATION_KEY));
+		declarer.declareStream(Constants.AGGREGATION_STREAM_ID,
+				new Fields(Constants.FIELD_TIMESTAMP, Constants.FIELD_AGGREGATION_WINDOW,
+						Constants.FIELD_RULE_ACTION_ID, Constants.FIELD_AGGREGATION_KEY,
+						Constants.FIELD_AGGREGATION_VALUE));
+	}
+	
+	/**
+	 * @return
+	 */
+	protected OutputCollector getCollector() {
+		return collector;
+	}
+	
+	/**
+	 * @return
+	 */
+	protected Gson getGson() {
+		return gson;
 	}
 
 }

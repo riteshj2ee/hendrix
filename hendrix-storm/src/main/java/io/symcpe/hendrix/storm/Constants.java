@@ -22,6 +22,8 @@ package io.symcpe.hendrix.storm;
  */
 public class Constants extends io.symcpe.wraith.Constants {
 
+	public static final String KEY = "key";
+	public static final String VALUE = "value";
 	private Constants() {
 	}
 
@@ -47,6 +49,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String LOOPBACK_STREAM_ID = "loopbackStream";
 	public static final String ALERT_STREAM_ID = "alertStream";
 	public static final String STATE_STREAM_ID = "stateStream";
+	public static final String AGGREGATION_STREAM_ID = "aggregationStream";
 
 	public static final String TOPOLOGY_RULES_BOLT = "ruleBolt";
 	public static final String TOPOLOGY_EVENT_BOLT = "eventBolt";
@@ -83,5 +86,7 @@ public class Constants extends io.symcpe.wraith.Constants {
 
 	public static final String TOPOLOGY_NAME = "topology.name";
 	public static final String TOPOLOGY_STATE_BOLT = "stateBolt";
+	public static final String FIELD_EVENT_TYPE = "_et";
+	public static final String EVENT_TYPE_STATE = "stateTrack";
 
 }

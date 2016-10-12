@@ -16,20 +16,24 @@
 package io.symcpe.hendrix.storm.bolts;
 
 import backtype.storm.tuple.Tuple;
+import io.symcpe.hendrix.storm.Constants;
 import storm.kafka.bolt.mapper.TupleToKafkaMapper;
 
+/**
+ * @author ambud_sharma
+ */
 public class AggregationTupleMapper implements TupleToKafkaMapper<String, String> {
 
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	public String getKeyFromTuple(Tuple tuple) {
-		return tuple.getStringByField(AggregationSerializerBolt.KEY);
+		return tuple.getStringByField(Constants.KEY);
 	}
 
 	@Override
 	public String getMessageFromTuple(Tuple tuple) {
-		return tuple.getStringByField(AggregationSerializerBolt.VALUE);
+		return tuple.getStringByField(Constants.VALUE);
 	}
 
 }

@@ -15,14 +15,17 @@
  */
 package io.symcpe.hendrix.storm.bolts;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -32,17 +35,22 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.Constants;
 import io.symcpe.hendrix.storm.MockTupleHelpers;
+import io.symcpe.hendrix.storm.UnifiedFactory;
+import io.symcpe.wraith.Event;
 
 /**
  * @author ambud_sharma
  */
 @RunWith(MockitoJUnitRunner.class)
-public class TestAggregationClassifierBolt {
+public class TestEventToLMMSerializerBolt{
 
 	@Mock
 	private OutputCollector collector;
@@ -51,7 +59,7 @@ public class TestAggregationClassifierBolt {
 
 	@Test
 	public void testPrepare() {
-		AggregationClassifierBolt bolt = new AggregationClassifierBolt();
+		EventToLMMSerializerBolt bolt = new EventToLMMSerializerBolt();
 		Map<String, String> conf = new HashMap<>();
 		bolt.prepare(conf, null, collector);
 		assertNotNull(bolt.getGson());
@@ -59,34 +67,43 @@ public class TestAggregationClassifierBolt {
 	}
 	
 	@Test
-	public void testStateEventDeserialization() {
-		String input = "{\"_t\":1476297512224,\"_agw\":10,\"_ri\":\"BNEAAA\\u003d\\u003d\",\"_a\":\"test11\",\"_st\":true}"; 
-		AggregationClassifierBolt bolt = new AggregationClassifierBolt();
+	public void testExecute() {
+		EventToLMMSerializerBolt bolt = new EventToLMMSerializerBolt();
+		
+		Event event = new UnifiedFactory().buildEvent();
+		
 		final AtomicReference<Values> outputTuple = new AtomicReference<Values>(null);
-		final AtomicReference<String> outputStream = new AtomicReference<String>(null);
 		OutputCollector mockCollector = MockTupleHelpers.mockCollector(new Answer<Object>() {
 
 			@Override
 			public Object answer(InvocationOnMock invocation) throws Throwable {
-				Object stream = invocation.getArguments()[0];
-				outputStream.set((String) stream);
-				Object newEvent = invocation.getArguments()[2];
+				Object newEvent = invocation.getArguments()[1];
 				outputTuple.set((Values) newEvent);
 				return new ArrayList<>();
 			}
 		});
+		
+		@SuppressWarnings("deprecation")
+		long ts = new Date(116, 10, 10).getTime();
+		String fakeTenant = UUID.randomUUID().toString().replace("-", ""); 
+		
+		event.getHeaders().put(Constants.FIELD_TIMESTAMP, ts);
+		event.getHeaders().put(Constants.FIELD_RULE_GROUP, fakeTenant);
+		when(tuple.getValueByField(Constants.FIELD_EVENT)).thenReturn(event);
+		
 		Map<String, String> conf = new HashMap<>();
 		bolt.prepare(conf, null, mockCollector);
-		when(tuple.getString(0)).thenReturn(input);
 		bolt.execute(tuple);
+		
 		verify(mockCollector, times(1)).ack(tuple);
-		assertEquals(Constants.STATE_STREAM_ID, outputStream.get());
 		Values values = outputTuple.get();
-		assertEquals(true, values.get(0));
-		assertEquals(1476297512224L, values.get(1));
-		assertEquals(10, values.get(2));
-		assertEquals("BNEAAA\u003d\u003d", values.get(3));
-		assertEquals("test11", values.get(4));
+		
+		assertEquals(fakeTenant, values.get(0));
+		JsonObject json = new Gson().fromJson((String) values.get(1), JsonObject.class);
+		
+		assertEquals("2016-11-10T00:00:00.000Z", json.get(EventToLMMSerializerBolt.TIMESTAMP).getAsString());
+		assertEquals(fakeTenant, json.get(EventToLMMSerializerBolt.TENANT_ID).getAsString());
+		
 	}
 
 }

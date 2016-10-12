@@ -15,10 +15,11 @@
  */
 package io.symcpe.hendrix.storm.bolts;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -28,55 +29,66 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import io.symcpe.hendrix.storm.Constants;
+import io.symcpe.hendrix.storm.HendrixEvent;
+import io.symcpe.wraith.Event;
 
 /**
- * Serializes aggregation action emits from RulesEngine 
+ * Converts {@link HendrixEvent} to LMM event
  * 
  * @author ambud_sharma
  */
-public class AggregationSerializerBolt extends BaseRichBolt {
+public class EventToLMMSerializerBolt extends BaseRichBolt {
 
 	private static final long serialVersionUID = 1L;
+	public static final String TIMESTAMP = "@timestamp";
+	public static final String TENANT_ID = "tenant_id";
 	private transient Gson gson;
+	private transient SimpleDateFormat formatter;
 	private transient OutputCollector collector;
-
-	public AggregationSerializerBolt() {
-	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
 	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
 		this.collector = collector;
-		gson = new Gson();
+		this.gson = new Gson();
+		this.formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");// 2016-10-13T03:58:59.612Z
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
-		JsonObject obj = new JsonObject();
-		obj.addProperty(Constants.FIELD_TIMESTAMP, tuple.getLongByField(Constants.FIELD_TIMESTAMP));
-		obj.addProperty(Constants.FIELD_AGGREGATION_WINDOW,
-				tuple.getIntegerByField(Constants.FIELD_AGGREGATION_WINDOW));
-		obj.addProperty(Constants.FIELD_RULE_ACTION_ID, tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID));
-		obj.addProperty(Constants.FIELD_AGGREGATION_KEY, tuple.getStringByField(Constants.FIELD_AGGREGATION_KEY));
-
-		if (tuple.contains(Constants.FIELD_STATE_TRACK)) {
-			obj.addProperty(Constants.FIELD_STATE_TRACK, tuple.getBooleanByField(Constants.FIELD_STATE_TRACK));
-		} else if (tuple.contains(Constants.FIELD_AGGREGATION_VALUE)) {
-			obj.addProperty(Constants.FIELD_AGGREGATION_VALUE,
-					tuple.getValueByField(Constants.FIELD_AGGREGATION_VALUE).toString());
-		} else {
-			// invalid event
-			collector.fail(tuple);
-			return;
-		}
-		collector.emit(tuple, new Values(tuple.getStringByField(Constants.FIELD_RULE_ACTION_ID) + "_"
-				+ tuple.getStringByField(Constants.FIELD_AGGREGATION_KEY), gson.toJson(obj)));
+		Event event = (Event) tuple.getValueByField(Constants.FIELD_EVENT);
+		event.getHeaders().put(TIMESTAMP,
+				formatter.format(new Date((Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP))));
+		event.getHeaders().put(TENANT_ID, event.getHeaders().get(Constants.FIELD_RULE_GROUP));
+		String eventJson = gson.toJson(event.getHeaders());
+		collector.emit(tuple, new Values(event.getHeaders().get(TENANT_ID), eventJson));
 		collector.ack(tuple);
 	}
 
 	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields(Constants.KEY, Constants.VALUE));
+	}
+
+	/**
+	 * @return the gson
+	 */
+	protected Gson getGson() {
+		return gson;
+	}
+
+	/**
+	 * @return the formatter
+	 */
+	protected SimpleDateFormat getFormatter() {
+		return formatter;
+	}
+
+	/**
+	 * @return the collector
+	 */
+	protected OutputCollector getCollector() {
+		return collector;
 	}
 
 }
