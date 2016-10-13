@@ -231,7 +231,7 @@ public class TestRulesManager {
 		tenant = TenantManager.getInstance().getTenant(em, TENANT_ID_4);
 		AlertTemplates templates = new AlertTemplates();
 		templateId = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
-				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am).getTemplateId();
 		System.err.println("Saving template:" + templateId);
 	}
 
@@ -317,13 +317,13 @@ public class TestRulesManager {
 		Tenant tenant = RulesManager.getInstance().getTenant(em, TENANT_ID_5);
 		AlertTemplates templates = new AlertTemplates();
 		short templateId = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
-				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am).getTemplateId();
 		Rule rul = new SimpleRule(ruleId, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
 				new Action[] { new TemplatedAlertAction((short) 0, templateId) });
 		RulesManager.getInstance().saveRule(em, new Rules(), tenant, rul, am);
 		templates = new AlertTemplates();
 		short tmp = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
-				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am);
+				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am).getTemplateId();
 		rul = new SimpleRule(ruleId, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
 				new Action[] { new TemplatedAlertAction((short) 0, tmp) });
 		List<Short> result = RulesManager.getInstance().getRuleByTemplateId(em, TENANT_ID_5, templateId);

@@ -94,7 +94,7 @@ public class TemplateEndpoint {
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Create template", notes = "Create an empty for the supplied Tenant ID", response = Short.class)
-	public short createTemplate(
+	public String createTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, String templateJson) {
 		TemplateManager mgr = TemplateManager.getInstance();
@@ -108,7 +108,7 @@ public class TemplateEndpoint {
 		}
 		if (templateJson == null || templateJson.length() == 0) {
 			try {
-				return mgr.createNewTemplate(em, new AlertTemplates(), tenant);
+				return AlertTemplateSerializer.serialize(mgr.createNewTemplate(em, new AlertTemplates(), tenant), false);
 			} catch (Exception e) {
 				throw new InternalServerErrorException();
 			} finally {
@@ -164,7 +164,7 @@ public class TemplateEndpoint {
 						// template doesn't exit, will save it as a new template
 					}
 				}
-				return mgr.saveTemplate(em, templateContainer, tenant, template, am);
+				return AlertTemplateSerializer.serialize(mgr.saveTemplate(em, templateContainer, tenant, template, am), false);
 			} catch (NoResultException e) {
 				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 			} catch (ValidationException e) {
@@ -183,7 +183,7 @@ public class TemplateEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Update template", notes = "Update template for the supplied Tenant ID and Template ID", response = Short.class)
-	public short putTemplate(
+	public String putTemplate(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Template ID can't be empty") @PathParam(TEMPLATE_ID) short templateId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
@@ -249,7 +249,7 @@ public class TemplateEndpoint {
 					// template doesn't exit, will save it as a new template
 				}
 			}
-			return mgr.saveTemplate(em, templateContainer, tenant, template, am);
+			return AlertTemplateSerializer.serialize(mgr.saveTemplate(em, templateContainer, tenant, template, am), false);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (ValidationException e) {

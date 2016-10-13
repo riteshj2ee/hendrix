@@ -129,7 +129,7 @@ public class TestTemplateManager {
 	public void testGetTemplate() throws Exception {
 		AlertTemplates templates = new AlertTemplates();
 		tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
-		id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
+		id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant).getTemplateId();
 		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 		assertEquals(id, template.getTemplateId());
 	}
@@ -146,7 +146,7 @@ public class TestTemplateManager {
 		tpl.setTemplateName("Test");
 		tpl.setThrottleDuration(2);
 		tpl.setThrottleLimit(2);
-		short id = TemplateManager.getInstance().saveTemplate(em, template, template.getTenant(), tpl, am);
+		short id = TemplateManager.getInstance().saveTemplate(em, template, template.getTenant(), tpl, am).getTemplateId();
 		assertEquals(id, template.getTemplateId());
 	}
 
@@ -165,7 +165,7 @@ public class TestTemplateManager {
 	public void testBadTemplate() throws Exception {
 		AlertTemplate tpl = new AlertTemplate();
 		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
-		short id = TemplateManager.getInstance().createNewTemplate(em, new AlertTemplates(), tenant);
+		short id = TemplateManager.getInstance().createNewTemplate(em, new AlertTemplates(), tenant).getTemplateId();
 		AlertTemplates template = TemplateManager.getInstance().getTemplate(em, tenant.getTenant_id(), id);
 		tpl.setTemplateId(template.getTemplateId());
 		tpl.setBody("test");
@@ -175,7 +175,7 @@ public class TestTemplateManager {
 		tpl.setThrottleDuration(2);
 		tpl.setThrottleLimit(2);
 		try {
-			id = TemplateManager.getInstance().saveTemplate(em, template, template.getTenant(), tpl, am);
+			id = TemplateManager.getInstance().saveTemplate(em, template, template.getTenant(), tpl, am).getTemplateId();
 			fail("Not reachable, bad template must be validated");
 		} catch (ValidationException e) {
 		}
@@ -186,7 +186,7 @@ public class TestTemplateManager {
 		AlertTemplate tpl = new AlertTemplate();
 		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
 		AlertTemplates templates = new AlertTemplates();
-		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
+		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant).getTemplateId();
 		tpl.setTemplateId(id);
 		tpl.setBody("test");
 		tpl.setDestination("test@xyz.com");
@@ -194,7 +194,7 @@ public class TestTemplateManager {
 		tpl.setTemplateName("Test");
 		tpl.setThrottleDuration(2);
 		tpl.setThrottleLimit(2);
-		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am);
+		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am).getTemplateId();
 		assertEquals(id, templates.getTemplateId());
 		Rule rul = new SimpleRule((short)0, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
 				new Action[] { new TemplatedAlertAction((short) 0, id) });
@@ -212,7 +212,7 @@ public class TestTemplateManager {
 		AlertTemplate tpl = new AlertTemplate();
 		Tenant tenant = TemplateManager.getInstance().getTenant(em, TENANT_ID_1);
 		AlertTemplates templates = new AlertTemplates();
-		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant);
+		short id = TemplateManager.getInstance().createNewTemplate(em, templates, tenant).getTemplateId();
 		tpl.setTemplateId(id);
 		tpl.setBody("test");
 		tpl.setDestination("test@xyz.com");
@@ -220,7 +220,7 @@ public class TestTemplateManager {
 		tpl.setTemplateName("Test");
 		tpl.setThrottleDuration(2);
 		tpl.setThrottleLimit(2);
-		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am);
+		id = TemplateManager.getInstance().saveTemplate(em, templates, templates.getTenant(), tpl, am).getTemplateId();
 		assertEquals(id, templates.getTemplateId());
 		TemplateManager.getInstance().deleteTemplates(em, templates.getTenant(), am);
 		try {

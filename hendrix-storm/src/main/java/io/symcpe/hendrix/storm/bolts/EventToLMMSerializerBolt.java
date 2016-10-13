@@ -16,8 +16,9 @@
 package io.symcpe.hendrix.storm.bolts;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.google.gson.Gson;
 
@@ -45,6 +46,7 @@ public class EventToLMMSerializerBolt extends BaseRichBolt {
 	private transient Gson gson;
 	private transient SimpleDateFormat formatter;
 	private transient OutputCollector collector;
+	private transient Calendar calendar;
 
 	@SuppressWarnings("rawtypes")
 	@Override
@@ -52,13 +54,16 @@ public class EventToLMMSerializerBolt extends BaseRichBolt {
 		this.collector = collector;
 		this.gson = new Gson();
 		this.formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");// 2016-10-13T03:58:59.612Z
+		this.formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+		this.calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 	}
 
 	@Override
 	public void execute(Tuple tuple) {
 		Event event = (Event) tuple.getValueByField(Constants.FIELD_EVENT);
-		event.getHeaders().put(TIMESTAMP,
-				formatter.format(new Date((Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP))));
+		Long ts = (Long) event.getHeaders().get(Constants.FIELD_TIMESTAMP);
+		calendar.setTimeInMillis(ts);
+		event.getHeaders().put(TIMESTAMP, formatter.format(calendar.getTime()));
 		event.getHeaders().put(TENANT_ID, event.getHeaders().get(Constants.FIELD_RULE_GROUP));
 		String eventJson = gson.toJson(event.getHeaders());
 		collector.emit(tuple, new Values(event.getHeaders().get(TENANT_ID), eventJson));
