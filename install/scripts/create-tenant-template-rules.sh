@@ -25,3 +25,10 @@ RULE_ID=`echo $RULE | jq '.ruleId'`
 echo "Created rule id: $RULE_ID"
 
 curl -H 'Content-Type: application/json' -XPUT localhost:9000/api/tenants/test/rules/$RULE_ID -d '{"condition":{"type":"EQUALS","props":{"value":'$STATE_RULE_ID',"key":"_r"}},"actions":[{"type":"ALERT","props":{"actionId":0,"templateId":'$TEMPLATE_ID'}}], "ruleId": "'$RULE_ID'", "name": "State alerting rule", "active": true, "description": "test"}'
+
+RULE=`curl -XPOST localhost:9000/api/tenants/test/rules/`
+RULE_ID=`echo $RULE | jq '.ruleId'`
+
+echo "Created rule id: $RULE_ID"
+
+curl -H 'Content-Type: application/json' -XPUT localhost:9000/api/tenants/test/rules/$RULE_ID -d '{"condition":{"type":"EQUALS","props":{"value":"app2.symcpe.io","key":"host"}},"actions":[{"type":"ALERT","props":{"actionId":0,"templateId":'$TEMPLATE_ID'}}], "ruleId": "'$RULE_ID'", "name": "Simple alerting rule", "active": true, "description": "test"}'

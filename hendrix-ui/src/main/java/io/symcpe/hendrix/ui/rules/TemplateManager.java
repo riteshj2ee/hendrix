@@ -82,8 +82,9 @@ public class TemplateManager {
 			if (!Utils.validateStatus(resp)) {
 				throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
 			}
-			AlertTemplate template = AlertTemplateSerializer.deserialize(EntityUtils.toString(resp.getEntity()));
-			return template.getTemplateId();
+//			AlertTemplate template = AlertTemplateSerializer.deserialize(EntityUtils.toString(resp.getEntity()));
+//			return template.getTemplateId();
+			return Short.parseShort(EntityUtils.toString(resp.getEntity()));
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Failed to create template:" + tenantId + "\t" + e.getMessage());
 			throw e;
@@ -134,8 +135,8 @@ public class TemplateManager {
 				if (!Utils.validateStatus(resp)) {
 					throw new Exception("status code:" + resp.getStatusLine().getStatusCode());
 				}
-				AlertTemplate temp = AlertTemplateSerializer.deserialize(EntityUtils.toString(resp.getEntity()));
-				return temp;
+//				AlertTemplate temp = AlertTemplateSerializer.deserialize(EntityUtils.toString(resp.getEntity()));
+				return template;
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "Failed to update tenant:" + template, e);
 				throw e;

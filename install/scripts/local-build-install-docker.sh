@@ -29,7 +29,7 @@ export DOCKER_REGISTRY=localhost:5000
 
 cd ../..
 # Build the code and copy artifacts
-# mvn -DskipTests clean package
+# mvn clean package
 
 export HVERSION=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
 

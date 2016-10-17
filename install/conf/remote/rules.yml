@@ -27,7 +27,7 @@ config:
     topology.metrics.consumer.register:
       - class: "io.symcpe.hendrix.storm.metrics.HendrixMetricsCollector"
         parallelism.hint: 1
-#    ui.endpoint: "http://${ui.host.port}/api/receive/"
+    ui.endpoint.av: "http://${api.host}:${api.port}/api/receive/"
     metrics.syslog.destination: "${api.host}"
     metrics.syslog.port: "5140"
      
@@ -345,7 +345,14 @@ streams:
     grouping:
       type: SHUFFLE
       streamId: "alertStream"
-      
+
+  - name: "Rule Engine->Alert Viewer"
+    from: "ruleEngineBolt"
+    to: "alertViewerBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "alertStream"
+
   - name: "Templated Alert Engine->Alert Sink"
     from: "templatedAlertEngineBolt"
     to: "alertSinkBolt"
@@ -458,6 +465,13 @@ streams:
       
   - name: "Templated Alert Engine->Error"
     from: "templatedAlertEngineBolt"
+    to: "errorBolt"
+    grouping:
+      type: SHUFFLE
+      streamId: "errorStream"
+
+  - name: "Alert Viewer->Error"
+    from: "alertViewerBolt"
     to: "errorBolt"
     grouping:
       type: SHUFFLE
