@@ -29,7 +29,7 @@ export DOCKER_REGISTRY=localhost:5000
 
 cd ../..
 # Build the code and copy artifacts
-# mvn -DskipTests clean package
+# mvn clean package
 
 export HVERSION=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
 
@@ -53,8 +53,8 @@ tar xf kafka.tar.gz
 mv apache-storm-0.10.1 storm
 mv kafka_2.9.1-0.8.2.1 kafka
 
-docker-compose -f ../conf/local/docker-compose-backup.yml scale kafka=5
-docker-compose -f ../conf/local/docker-compose-backup.yml scale supervisor=4
+docker-compose -f ../conf/local/docker-compose-backup.yml scale kafka=3
+docker-compose -f ../conf/local/docker-compose-backup.yml scale supervisor=1
 
 while ! nc -z localhost 49627;do echo "Checking nimbus availability";sleep 1;done
 
@@ -64,8 +64,9 @@ kafka/bin/kafka-topics.sh --describe --zookeeper localhost:2181
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic ruleTopic --replication-factor 3 --partitions 1
 kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic templateTopic --replication-factor 3 --partitions 1
 
-kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic logTopic --replication-factor 2 --partitions 5
-kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic metricTopic --replication-factor 2 --partitions 5
+kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic alertTopic --replication-factor 2 --partitions 3
+kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic aggregationTopic --replication-factor 2 --partitions 3
+kafka/bin/kafka-topics.sh --create --zookeeper localhost:2181 --topic alertOutputTopic --replication-factor 2 --partitions 3
 
 ./storm/bin/storm jar -c nimbus.host=localhost -c nimbus.thrift.port=49627 ../../hendrix-storm/target/hendrix-storm-$HVERSION-jar-with-dependencies.jar org.apache.storm.flux.Flux --remote ../conf/remote/rules.yml --filter ../conf/remote/config.properties
 

@@ -171,7 +171,6 @@ public class RulesEngineBolt extends BaseRichBolt implements RulesEngineCaller<T
 	@Override
 	public void handleRuleNoMatch(OutputCollector eventCollector, Tuple eventContainer, Event inputEvent, Rule rule) {
 		ruleNoHitCount.scope(String.valueOf(rule.getRuleId())).incr();
-		System.out.println("Rule:" + rule.getRuleId() + " didn't match:" + inputEvent);
 	}
 
 	@Override

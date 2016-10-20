@@ -116,16 +116,16 @@ public class TemplateManager {
 	 * @return
 	 * @throws Exception
 	 */
-	public short createNewTemplate(EntityManager em, AlertTemplates templates, Tenant tenant) throws Exception {
+	public AlertTemplate createNewTemplate(EntityManager em, AlertTemplates templates, Tenant tenant) throws Exception {
 		if (templates == null) {
-			return -1;
+			throw new IllegalArgumentException("Templates can't be null");
 		}
 		EntityTransaction t = em.getTransaction();
 		try {
 			t.begin();
 			if (tenant == null) {
 				logger.severe("Template group is null");
-				return -1;
+				throw new IllegalArgumentException("Tenant can't be null");
 			} else {
 				templates.setTenant(tenant);
 			}
@@ -133,7 +133,7 @@ public class TemplateManager {
 			em.flush();
 			t.commit();
 			logger.info("Created new template with template id:" + templates.getTemplateId());
-			return templates.getTemplateId();
+			return new AlertTemplate(templates.getTemplateId());
 		} catch (Exception e) {
 			if (t.isActive()) {
 				t.rollback();
@@ -151,11 +151,11 @@ public class TemplateManager {
 	 * @return
 	 * @throws Exception
 	 */
-	public short saveTemplate(EntityManager em, AlertTemplates templates, Tenant tenant, AlertTemplate currTemplate,
+	public AlertTemplate saveTemplate(EntityManager em, AlertTemplates templates, Tenant tenant, AlertTemplate currTemplate,
 			ApplicationManager am) throws Exception {
 		if (currTemplate == null || templates == null || tenant == null) {
 			logger.info("Template was null can't save");
-			return -1;
+			throw new IllegalArgumentException("Templates can't be null");
 		}
 		AlertTemplateValidator validator = new AlertTemplateValidator();
 		validator.validate(currTemplate);
@@ -182,7 +182,7 @@ public class TemplateManager {
 			em.getTransaction().commit();
 			logger.info("Completed Transaction for template " + templates.getTemplateId() + ":"
 					+ templates.getTemplateContent() + "");
-			return templates.getTemplateId();
+			return currTemplate;
 		} catch (Exception e) {
 			e.printStackTrace();
 			if (em.getTransaction().isActive()) {

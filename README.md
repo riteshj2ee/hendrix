@@ -1,6 +1,16 @@
 # Hendrix
 [![Build Status](https://travis-ci.org/Symantec/hendrix.svg?branch=master)](https://travis-ci.org/Symantec/hendrix)
 
+## Bulletin Board
+
+In Progress:
+- Kappa architecture integration
+
+Recently Added:
+- Fixed API compliance with REST
+- Travis CI - Maven Central Release integration
+- Input format for AWS VPC Flow Logs
+
 ## Project Description
 Hendrix is a Real-time alert generation system for the Cloud. We currently support Rule based definition of alerts and provide a platform / design pattern for high performance
 execution of rule based event matching.

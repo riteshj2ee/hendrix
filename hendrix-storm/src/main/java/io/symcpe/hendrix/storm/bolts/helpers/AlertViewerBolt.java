@@ -62,7 +62,7 @@ public class AlertViewerBolt extends BaseRichBolt {
 		if(stormConf.get(UI_ENDPOINT)!=null) {
 			this.uiEndpoint = stormConf.get(UI_ENDPOINT).toString();
 		}else {
-			this.uiEndpoint = "http://localhost:8080/ROOT/api/receive/";
+			this.uiEndpoint = "http://localhost:9000/api/receive/";
 		}
 		try {
 			client = Utils.buildClient(this.uiEndpoint, 3000, 3000);
