@@ -146,6 +146,7 @@ public class StateTrackingBolt extends BaseRichBolt {
 					event.getHeaders().put(Constants.FIELD_RULE_GROUP, ruleGroup);
 					event.getHeaders().put(Constants.FIELD_RULE_ID, ruleActionIdSeparates.getKey());
 					event.getHeaders().put(Constants.FIELD_ACTION_ID, ruleActionIdSeparates.getValue());
+					event.getHeaders().put(Constants.FIELD_EVENT_TYPE, Constants.EVENT_TYPE_STATE);
 					collector.emit(Constants.AGGREGATION_OUTPUT_STREAM, tuple, new Values(event));
 				}
 			} else {

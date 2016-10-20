@@ -96,11 +96,11 @@ public class RulesManager {
 		}
 	}
 
-	public short saveRule(EntityManager em, Rules dbRule, Tenant tenant, Rule currRule, ApplicationManager am)
+	public Rule saveRule(EntityManager em, Rules dbRule, Tenant tenant, Rule currRule, ApplicationManager am)
 			throws Exception {
 		if (currRule == null || dbRule == null || tenant == null) {
 			logger.info("Rule was null can't save");
-			return -1;
+			return null;
 		}
 		RuleValidator.getInstance().validate(currRule);
 		for (Action action : currRule.getActions()) {
@@ -131,7 +131,7 @@ public class RulesManager {
 			sendRuleToKafka(false, tenant.getTenant_id(), dbRule.getRuleContent(), am);
 			em.getTransaction().commit();
 			logger.info("Completed Transaction for rule " + dbRule.getRuleId() + ":" + dbRule.getRuleContent() + "");
-			return dbRule.getRuleId();
+			return currRule;
 		} catch (Exception e) {
 			if (em.getTransaction().isActive()) {
 				em.getTransaction().rollback();

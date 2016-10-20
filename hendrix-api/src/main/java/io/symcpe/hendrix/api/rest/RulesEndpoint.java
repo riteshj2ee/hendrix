@@ -96,10 +96,12 @@ public class RulesEndpoint {
 
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
-	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID", response = Short.class)
-	public short createRule(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+	@ApiOperation(value = "Create rule", notes = "Will create an empty rule for a given Tenant ID if no payload is supplied", response = Short.class)
+	public String createRule(
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, @Encoded String ruleJson) {
 		RulesManager mgr = RulesManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -109,12 +111,67 @@ public class RulesEndpoint {
 			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
-		try {
-			return mgr.createNewRule(em, new Rules(), tenant);
-		} catch (Exception e) {
-			throw new InternalServerErrorException();
-		} finally {
-			em.close();
+		if (ruleJson == null || ruleJson.length() == 0) {
+			try {
+				short id = mgr.createNewRule(em, new Rules(), tenant);
+				return RuleSerializer.serializeRuleToJSONString(new SimpleRule(id, "", false, null, new Action[]{}), false);
+			} catch (Exception e) {
+				throw new InternalServerErrorException();
+			} finally {
+				em.close();
+			}
+		} else {
+			SimpleRule rule = null;
+			try {
+				rule = RuleSerializer.deserializeJSONStringToRule(ruleJson);
+				if (rule == null) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity("Unable to parse rule").build());
+				}
+			} catch (BadRequestException e) {
+				throw e;
+			} catch (JsonParseException | IllegalStateException | NumberFormatException e) {
+				em.close();
+				if (e.getMessage().contains("NumberFormat") || (e instanceof NumberFormatException)) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST)
+									.entity("Invalid number "
+											+ e.getLocalizedMessage().replace("java.lang.NumberFormatException", ""))
+									.build());
+				} else if (e.getMessage().contains("Malformed")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
+				} else if (e.getMessage().contains("IllegalStateException")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST)
+							.entity("Expecting a singel rule object not an array").build());
+				} else {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());
+				}
+			}
+			try {
+				Rules ruleContainer = new Rules();
+				rule.setRuleId((short) 0);
+				if (rule.getRuleId() > 0) {
+					try {
+						Rules temp = mgr.getRule(em, tenant.getTenant_id(), rule.getRuleId());
+						if (temp != null) {
+							ruleContainer = temp;
+						}
+					} catch (NoResultException e) {
+						// rule doesn't exit, will save it as a new rule
+					}
+				}
+				Rule ruleOut = mgr.saveRule(em, ruleContainer, tenant, rule, am);
+				return RuleSerializer.serializeRuleToJSONString(ruleOut, false);
+			} catch (NoResultException e) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
+			} catch (ValidationException e) {
+				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build());
+			} catch (Exception e) {
+				throw new InternalServerErrorException(Response.serverError().entity(e.getMessage()).build());
+			} finally {
+				em.close();
+			}
 		}
 	}
 
@@ -124,7 +181,7 @@ public class RulesEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Update rule", notes = "Will update rule logic for a given Tenant ID and Rule ID", response = Short.class)
-	public short putRule(
+	public String putRule(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE, message = "Tenant ID must be under 100 characters") String tenantId,
 			@NotNull(message = "Rule ID can't be empty") @PathParam(RULE_ID) short ruleId,
 			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding,
@@ -190,7 +247,7 @@ public class RulesEndpoint {
 					// rule doesn't exit, will save it as a new rule
 				}
 			}
-			return mgr.saveRule(em, ruleContainer, tenant, rule, am);
+			return RuleSerializer.serializeRuleToJSONString(mgr.saveRule(em, ruleContainer, tenant, rule, am), false);
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (ValidationException e) {

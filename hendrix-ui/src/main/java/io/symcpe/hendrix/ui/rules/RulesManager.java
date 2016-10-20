@@ -73,7 +73,7 @@ public class RulesManager {
 		}
 		CloseableHttpResponse resp = client.execute(post);
 		String result = EntityUtils.toString(resp.getEntity());
-		return Short.parseShort(result);
+		return RuleSerializer.deserializeJSONStringToRule(result).getRuleId();
 	}
 
 	public short saveRule(UserBean ub, String tenantId, Rule currRule) throws Exception {
@@ -95,7 +95,7 @@ public class RulesManager {
 		put.setEntity(entity);
 		CloseableHttpResponse resp = client.execute(put);
 		String result = EntityUtils.toString(resp.getEntity());
-		return Short.parseShort(result);
+		return RuleSerializer.deserializeJSONStringToRule(result).getRuleId();
 	}
 
 	public Rule getRule(UserBean ub, String tenantId, short ruleId) throws Exception {

@@ -55,7 +55,7 @@ public class BapiAuthorizationFilter implements ContainerRequestFilter {
 		if(path.endsWith("/")) {
 			path = path.substring(0, path.length()-1);
 		}
-		if(path.startsWith("swagger") || path.startsWith("perf")) {
+		if(path.startsWith("swagger") || path.startsWith("perf") || path.startsWith("receive")) {
 			return;
 		}
 		MultivaluedMap<String, String> headers = requestContext.getHeaders();

@@ -43,6 +43,7 @@ import io.symcpe.wraith.rules.validator.Validator;
 @ApplicationScoped
 public class ApplicationManager implements Serializable {
 
+	private static final String AV_URL = "av.url";
 	private static final String AUTH_ENABLE = "auth.enable";
 	private static final String AUTH_URL = "auth.url";
 	private static final String API_URL = "api.url";
@@ -51,6 +52,7 @@ public class ApplicationManager implements Serializable {
 	private Properties config;
 	private String ruleTopicName;
 	private String baseUrl;
+	private String avUrl;
 	private String authUrl;
 	private boolean enableAuth;
 	private int connectTimeout;
@@ -77,6 +79,7 @@ public class ApplicationManager implements Serializable {
 		}
 		baseUrl = config.getProperty(API_URL, "http://localhost:9000/api");
 		authUrl = config.getProperty(AUTH_URL, "http://localhost:8085/token");
+		avUrl = config.getProperty(AV_URL, "http://localhost:9000/api/");
 		enableAuth = Boolean.parseBoolean(config.getProperty(AUTH_ENABLE, "false"));
 		AlertReceiver.getInstance().setAm(this);
 		RulesManager.getInstance().init(this);
@@ -129,5 +132,12 @@ public class ApplicationManager implements Serializable {
 	 */
 	public boolean isEnableAuth() {
 		return enableAuth;
+	}
+	
+	/**
+	 * @return
+	 */
+	public String getAvUrl() {
+		return avUrl;
 	}
 }

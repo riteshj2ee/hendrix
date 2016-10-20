@@ -72,7 +72,7 @@ public class TemplateEndpoint {
 	@Produces({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE,
 			ACLConstants.READER_ROLE })
-	@ApiOperation(value = "List templates", notes = "List templates for the supplied Tenant ID", response = AlertTemplate.class, responseContainer="List")
+	@ApiOperation(value = "List templates", notes = "List templates for the supplied Tenant ID", response = AlertTemplate.class, responseContainer = "List")
 	public String listTemplates(
 			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
 			@DefaultValue("false") @QueryParam("pretty") boolean pretty) {
@@ -91,10 +91,12 @@ public class TemplateEndpoint {
 
 	@POST
 	@Produces({ MediaType.APPLICATION_JSON })
+	@Consumes({ MediaType.APPLICATION_JSON })
 	@RolesAllowed({ ACLConstants.SUPER_ADMIN_ROLE, ACLConstants.ADMIN_ROLE, ACLConstants.OPERATOR_ROLE })
 	@ApiOperation(value = "Create template", notes = "Create an empty for the supplied Tenant ID", response = Short.class)
 	public short createTemplate(
-			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId) {
+			@NotNull @PathParam(TenantEndpoint.TENANT_ID) @Size(min = 1, max = Tenant.TENANT_ID_MAX_SIZE) String tenantId,
+			@HeaderParam("Accept-Charset") @DefaultValue("utf-8") String encoding, String templateJson) {
 		TemplateManager mgr = TemplateManager.getInstance();
 		Tenant tenant;
 		EntityManager em = am.getEM();
@@ -104,12 +106,78 @@ public class TemplateEndpoint {
 			em.close();
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Tenant not found").build());
 		}
-		try {
-			return mgr.createNewTemplate(em, new AlertTemplates(), tenant);
-		} catch (Exception e) {
-			throw new InternalServerErrorException();
-		} finally {
-			em.close();
+		if (templateJson == null || templateJson.length() == 0) {
+			try {
+				AlertTemplate template = mgr.createNewTemplate(em, new AlertTemplates(), tenant);
+//				return AlertTemplateSerializer.serialize(template, false);
+				return template.getTemplateId();
+			} catch (Exception e) {
+				throw new InternalServerErrorException();
+			} finally {
+				em.close();
+			}
+		} else {
+			if (templateJson != null && templateJson.length() > AlertTemplates.MAX_TEMPLATE_LENGTH) {
+				throw new BadRequestException(
+						Response.status(Status.BAD_REQUEST).entity("Template is too big").build());
+			}
+
+			if (!Utils.isCharsetMisInterpreted(templateJson, encoding)) {
+				throw new BadRequestException(
+						Response.status(Status.BAD_REQUEST).entity("Template JSON must be UTF-8 compliant").build());
+			}
+			AlertTemplate template = null;
+			try {
+				template = AlertTemplateSerializer.deserialize(templateJson);
+				if (template == null) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity("Unable to parse template").build());
+				}
+			} catch (BadRequestException e) {
+				throw e;
+			} catch (JsonParseException | IllegalStateException | NumberFormatException e) {
+				em.close();
+				if (e.getMessage().contains("NumberFormat") || (e instanceof NumberFormatException)) {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST)
+									.entity("Invalid number "
+											+ e.getLocalizedMessage().replace("java.lang.NumberFormatException", ""))
+									.build());
+				} else if (e.getMessage().contains("Malformed")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity("Invalid JSON").build());
+				} else if (e.getMessage().contains("IllegalStateException")) {
+					throw new BadRequestException(Response.status(Status.BAD_REQUEST)
+							.entity("Expecting a singel template object not an array").build());
+				} else {
+					throw new BadRequestException(
+							Response.status(Status.BAD_REQUEST).entity(e.getLocalizedMessage()).build());
+				}
+			}
+			try {
+				AlertTemplates templateContainer = new AlertTemplates();
+				template.setTemplateId((short) 0);
+				if (template.getTemplateId() > 0) {
+					try {
+						AlertTemplates temp = mgr.getTemplate(em, tenant.getTenant_id(), template.getTemplateId());
+						if (temp != null) {
+							templateContainer = temp;
+						}
+					} catch (NoResultException e) {
+						// template doesn't exit, will save it as a new template
+					}
+				}
+				AlertTemplate alertTemplate = mgr.saveTemplate(em, templateContainer, tenant, template, am);
+//				return AlertTemplateSerializer.serialize(alertTemplate, false);
+				return alertTemplate.getTemplateId();
+			} catch (NoResultException e) {
+				throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
+			} catch (ValidationException e) {
+				throw new BadRequestException(Response.status(Status.BAD_REQUEST).entity(e.getMessage()).build());
+			} catch (Exception e) {
+				throw new InternalServerErrorException(Response.serverError().entity(e.getMessage()).build());
+			} finally {
+				em.close();
+			}
 		}
 	}
 
@@ -185,7 +253,9 @@ public class TemplateEndpoint {
 					// template doesn't exit, will save it as a new template
 				}
 			}
-			return mgr.saveTemplate(em, templateContainer, tenant, template, am);
+			AlertTemplate alertTemplate = mgr.saveTemplate(em, templateContainer, tenant, template, am);
+//			return AlertTemplateSerializer.serialize(alertTemplate, false);
+			return alertTemplate.getTemplateId();
 		} catch (NoResultException e) {
 			throw new NotFoundException(Response.status(Status.NOT_FOUND).entity("Entity not found").build());
 		} catch (ValidationException e) {

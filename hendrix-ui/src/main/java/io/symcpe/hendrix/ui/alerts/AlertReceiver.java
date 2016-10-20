@@ -52,8 +52,8 @@ public class AlertReceiver implements Serializable {
 	}
 
 	public void addChannel(short ruleId) throws Exception {
-		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpPost post = new HttpPost(am.getBaseUrl() + "/receive/open/" + ruleId);
+		CloseableHttpClient client = Utils.buildClient(am.getAvUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		HttpPost post = new HttpPost(am.getAvUrl() + "/receive/open/" + ruleId);
 		client.execute(post);
 		logger.info("Requested channel open");
 	}
@@ -64,8 +64,8 @@ public class AlertReceiver implements Serializable {
 	 */
 	@SuppressWarnings("unchecked")
 	public Queue<Map<String, Object>> getChannel(short ruleId) throws Exception {
-		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpGet get = new HttpGet(am.getBaseUrl() + "/receive/events/" + ruleId);
+		CloseableHttpClient client = Utils.buildClient(am.getAvUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		HttpGet get = new HttpGet(am.getAvUrl() + "/receive/events/" + ruleId);
 		CloseableHttpResponse response = client.execute(get);
 		if (response.getStatusLine().getStatusCode() < 300) {
 			String result = EntityUtils.toString(response.getEntity());
@@ -80,8 +80,8 @@ public class AlertReceiver implements Serializable {
 	 * @param ruleId
 	 */
 	public void closeChannel(short ruleId) throws Exception {
-		CloseableHttpClient client = Utils.buildClient(am.getBaseUrl(), am.getConnectTimeout(), am.getRequestTimeout());
-		HttpPost post = new HttpPost(am.getBaseUrl() + "/receive/close/" + ruleId);
+		CloseableHttpClient client = Utils.buildClient(am.getAvUrl(), am.getConnectTimeout(), am.getRequestTimeout());
+		HttpPost post = new HttpPost(am.getAvUrl() + "/receive/close/" + ruleId);
 		client.execute(post);
 		logger.info("Requested channel closed");
 	}

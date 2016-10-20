@@ -15,6 +15,9 @@
  */
 package io.symcpe.hendrix.api.dao;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -46,6 +49,7 @@ public class TenantManager {
 	public static final String DELETED_APIKEY = "deleted_apiKey";
 	private static final Logger logger = Logger.getLogger(TenantManager.class.getCanonicalName());
 	private static final TenantManager TENANT_MANAGER = new TenantManager();
+	private static final String HENDRIX_APIKEY_UPDATES_TXT = "apikeyupdates.txt";
 
 	private TenantManager() {
 	}
@@ -253,10 +257,20 @@ public class TenantManager {
 	 * @param operation
 	 * @param tenantId
 	 * @param apiKey
+	 * @throws IOException 
 	 */
-	public void sendApikeyToKafka(ApplicationManager am, String operation, String tenantId, String apiKey) {
-		am.getKafkaProducer().send(new ProducerRecord<String, String>(am.getApiKeyTopic(),
-				Utils.buildEvent(operation, tenantId, apiKey).toString()));
+	public void sendApikeyToKafka(ApplicationManager am, String operation, String tenantId, String apiKey) throws IOException {
+		if (!ApplicationManager.LOCAL) {
+			am.getKafkaProducer().send(new ProducerRecord<String, String>(am.getApiKeyTopic(),
+					Utils.buildEvent(operation, tenantId, apiKey).toString()));
+			logger.info("Wrote rule update to Kafka");
+		} else {
+			PrintWriter pr = new PrintWriter(
+					new FileWriter(HENDRIX_APIKEY_UPDATES_TXT.replaceFirst("^~", System.getProperty("user.home")), true));
+			pr.println(Utils.buildEvent(operation, tenantId, apiKey).toString());
+			pr.close();
+		}
+		
 	}
 
 	/**
