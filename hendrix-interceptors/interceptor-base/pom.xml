@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>io.symcpe.hendrix</groupId>
 		<artifactId>hendrix-interceptors</artifactId>
-		<version>0.0.33</version>
+		<version>0.0.34-SNAPSHOT</version>
 	</parent>
 	<artifactId>interceptor-base</artifactId>
 	<name>interceptor-base</name>
