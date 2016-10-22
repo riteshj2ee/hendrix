@@ -18,6 +18,8 @@ package io.symcpe.hendrix.api.storage;
 import java.io.Serializable;
 import javax.persistence.*;
 
+import org.hibernate.annotations.GenericGenerator;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.symcpe.hendrix.api.Queries;
@@ -46,7 +48,9 @@ public class Rules implements Serializable {
 
 	@Id
 	@Column(name = "rule_id")
-	@GeneratedValue(strategy = GenerationType.AUTO)
+//	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GenericGenerator(name = "sequence_rule_id", strategy = "io.symcpe.hendrix.api.dao.RuleIdGenerator")
+	@GeneratedValue(generator = "sequence_rule_id") 
 	private short ruleId;
 
 	@Column(name = "rule_content", length = Rules.MAX_RULE_LENGTH)
