@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>io.symcpe.hendrix</groupId>
 		<artifactId>hendrix-parent</artifactId>
-		<version>0.0.32-SNAPSHOT</version>
+		<version>0.0.35-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<artifactId>hendrix-api</artifactId>
@@ -19,6 +19,11 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>2.2.8</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mockito</groupId>
@@ -109,10 +114,10 @@
 			<version>${hibernate.version}</version>
 		</dependency>
 		<dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-c3p0</artifactId>
-            <version>${hibernate.version}</version>
-        </dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-c3p0</artifactId>
+			<version>${hibernate.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>javax.transaction</groupId>
 			<artifactId>jta</artifactId>
@@ -267,56 +272,56 @@
 					</execution>
 				</executions>
 			</plugin>
-<!-- 			<plugin> -->
-<!-- 				<groupId>org.codehaus.mojo</groupId> -->
-<!-- 				<artifactId>rpm-maven-plugin</artifactId> -->
-<!-- 				<version>2.1.4</version> -->
-<!-- 				<executions> -->
-<!-- 					<execution> -->
-<!-- 						<id>build-rpm</id> -->
-<!-- 						<goals> -->
-<!-- 							<goal>attached-rpm</goal> -->
-<!-- 						</goals> -->
-<!-- 					</execution> -->
-<!-- 				</executions> -->
-<!-- 				<configuration> -->
-<!-- 					<name>${project.artifactId}</name> -->
-<!-- 					<version>${project.version}</version> -->
-<!-- 					<targetOS>linux</targetOS> -->
-<!-- 					<license>Apache 2.0</license> -->
-<!-- 					<distribution>${distributor.name}</distribution> -->
-<!-- 					<group>Application/Collectors</group> -->
-<!-- 					<packager>${distributor.name}</packager> -->
-<!-- 					<defaultUsername>root</defaultUsername> -->
-<!-- 					<defaultGroupname>root</defaultGroupname> -->
-<!-- 					<defineStatements> -->
-<!-- 						<defineStatement>_unpackaged_files_terminate_build 0</defineStatement> -->
-<!-- 					</defineStatements> -->
-<!-- 					<mappings> -->
-<!-- 						<mapping> -->
-<!-- 							<directory>/opt/hendrix/api</directory> -->
-<!-- 							<filemode>755</filemode> -->
-<!-- 							<sources> -->
-<!-- 								<source> -->
-<!-- 									<location>target/api.jar</location> -->
-<!-- 								</source> -->
-<!-- 							</sources> -->
-<!-- 						</mapping> -->
-<!-- 						<mapping> -->
-<!-- 							<directory>/opt/hendrix/api</directory> -->
-<!-- 							<filemode>755</filemode> -->
-<!-- 							<sources> -->
-<!-- 								<source> -->
-<!-- 									<location>src/main/resources/configs</location> -->
-<!-- 								</source> -->
-<!-- 							</sources> -->
-<!-- 						</mapping> -->
-<!-- 					</mappings> -->
-<!-- 					<preinstallScriptlet> -->
-<!-- 						<script>mkdir -p /opt/hendrix/api</script> -->
-<!-- 					</preinstallScriptlet> -->
-<!-- 				</configuration> -->
-<!-- 			</plugin> -->
+			<!-- <plugin> -->
+			<!-- <groupId>org.codehaus.mojo</groupId> -->
+			<!-- <artifactId>rpm-maven-plugin</artifactId> -->
+			<!-- <version>2.1.4</version> -->
+			<!-- <executions> -->
+			<!-- <execution> -->
+			<!-- <id>build-rpm</id> -->
+			<!-- <goals> -->
+			<!-- <goal>attached-rpm</goal> -->
+			<!-- </goals> -->
+			<!-- </execution> -->
+			<!-- </executions> -->
+			<!-- <configuration> -->
+			<!-- <name>${project.artifactId}</name> -->
+			<!-- <version>${project.version}</version> -->
+			<!-- <targetOS>linux</targetOS> -->
+			<!-- <license>Apache 2.0</license> -->
+			<!-- <distribution>${distributor.name}</distribution> -->
+			<!-- <group>Application/Collectors</group> -->
+			<!-- <packager>${distributor.name}</packager> -->
+			<!-- <defaultUsername>root</defaultUsername> -->
+			<!-- <defaultGroupname>root</defaultGroupname> -->
+			<!-- <defineStatements> -->
+			<!-- <defineStatement>_unpackaged_files_terminate_build 0</defineStatement> -->
+			<!-- </defineStatements> -->
+			<!-- <mappings> -->
+			<!-- <mapping> -->
+			<!-- <directory>/opt/hendrix/api</directory> -->
+			<!-- <filemode>755</filemode> -->
+			<!-- <sources> -->
+			<!-- <source> -->
+			<!-- <location>target/api.jar</location> -->
+			<!-- </source> -->
+			<!-- </sources> -->
+			<!-- </mapping> -->
+			<!-- <mapping> -->
+			<!-- <directory>/opt/hendrix/api</directory> -->
+			<!-- <filemode>755</filemode> -->
+			<!-- <sources> -->
+			<!-- <source> -->
+			<!-- <location>src/main/resources/configs</location> -->
+			<!-- </source> -->
+			<!-- </sources> -->
+			<!-- </mapping> -->
+			<!-- </mappings> -->
+			<!-- <preinstallScriptlet> -->
+			<!-- <script>mkdir -p /opt/hendrix/api</script> -->
+			<!-- </preinstallScriptlet> -->
+			<!-- </configuration> -->
+			<!-- </plugin> -->
 		</plugins>
 	</build>
 	<description>Hendrix REST API to support rule and template crud operations</description>

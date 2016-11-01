@@ -76,7 +76,8 @@ public class TestRulesManager {
 	private static final String TENANT_ID_3 = "d341mmd3ifaasdjm23midijjiro";
 	private static final String TENANT_ID_4 = "e341mmd3ifaasdjm23midijjiro";
 	private static final String TENANT_ID_5 = "f341mmd3ifaasdjm23midijjiro";
-	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+//	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+	private static final String CONNECTION_STRING = "jdbc:hsqldb:mem:target/rules.db";
 	// private static final String CONNECTION_NC_STRING =
 	// "jdbc:derby:target/rules.db;";
 	private static final String TARGET_RULES_DB = "target/rules.db";
@@ -103,6 +104,10 @@ public class TestRulesManager {
 		java.util.logging.Logger.getLogger("org.hibernate").setLevel(Level.OFF);
 		Properties config = new Properties(System.getProperties());
 		File db = new File(TARGET_RULES_DB);
+		if (db.exists()) {
+			FileUtils.deleteDirectory(db);
+		}
+		db = new File(TARGET_RULES_DB+".tmp");
 		if (db.exists()) {
 			FileUtils.deleteDirectory(db);
 		}
@@ -320,7 +325,10 @@ public class TestRulesManager {
 				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am).getTemplateId();
 		Rule rul = new SimpleRule(ruleId, "simple-rule2", true, new EqualsCondition("host", "symcpe2"),
 				new Action[] { new TemplatedAlertAction((short) 0, templateId) });
-		RulesManager.getInstance().saveRule(em, new Rules(), tenant, rul, am);
+		Rule savedRule = RulesManager.getInstance().saveRule(em, new Rules(), tenant, rul, am);
+		System.out.println("Rule id:"+savedRule);
+		short ruleId = RulesManager.getInstance().createNewRule(em, new Rules(), tenant);
+		assertEquals(6, ruleId);
 		templates = new AlertTemplates();
 		short tmp = TemplateManager.getInstance().saveTemplate(em, templates, tenant,
 				new AlertTemplate((short) 0, "test", "test@xyz.com", "mail", "test", "test", 2, 2), am).getTemplateId();
