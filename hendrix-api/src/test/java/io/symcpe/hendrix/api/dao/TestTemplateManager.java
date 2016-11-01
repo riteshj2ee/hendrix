@@ -64,7 +64,8 @@ public class TestTemplateManager {
 
 	private static final String TEST_TENANT = "test-tenant";
 	private static final String TENANT_ID_1 = "z341mmd3ifaasdjm23midijjiro";
-	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+//	private static final String CONNECTION_STRING = "jdbc:derby:target/rules.db;create=true";
+	private static final String CONNECTION_STRING = "jdbc:hsqldb:mem:target/rules.db";
 	// private static final String CONNECTION_NC_STRING =
 	// "jdbc:derby:target/rules.db;";
 	private static final String TARGET_RULES_DB = "target/rules.db";
@@ -87,6 +88,10 @@ public class TestTemplateManager {
 	public static void beforeClass() throws Exception {
 		Properties config = new Properties(System.getProperties());
 		File db = new File(TARGET_RULES_DB);
+		if (db.exists()) {
+			FileUtils.deleteDirectory(db);
+		}
+		db = new File(TARGET_RULES_DB+".tmp");
 		if (db.exists()) {
 			FileUtils.deleteDirectory(db);
 		}

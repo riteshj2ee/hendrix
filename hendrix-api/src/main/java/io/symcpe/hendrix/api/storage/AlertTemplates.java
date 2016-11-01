@@ -20,13 +20,14 @@ import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+
+import org.hibernate.annotations.GenericGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -53,7 +54,8 @@ public class AlertTemplates implements Serializable {
 
 	@Id
 	@Column(name = "template_id")
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GenericGenerator(name = "sequence_rule_id", strategy = "io.symcpe.hendrix.api.dao.TemplateIdGenerator")
+	@GeneratedValue(generator = "sequence_rule_id")
 	private short templateId;
 
 	@Column(name = "template_content", length = AlertTemplates.MAX_TEMPLATE_LENGTH)
