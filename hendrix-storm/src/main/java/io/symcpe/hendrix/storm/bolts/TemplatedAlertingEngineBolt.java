@@ -181,11 +181,14 @@ public class TemplatedAlertingEngineBolt extends BaseRichBolt implements Templat
 			for (Entry<String, Object> entry : event.getHeaders().entrySet()) {
 				ctx.put(entry.getKey(), entry.getValue());
 			}
+			ctx.put(Constants.TEMPLATE_RULE_ID, ruleId);
+			ctx.put(Constants.TEMPLATE_ACTION_ID, actionId);
+			ctx.put(Constants.TEMPLATE_RULE_NAME, ruleName);
 			ctx.put(VELOCITY_VAR_DATE, new DateTool());
 			StringWriter writer = new StringWriter(1000);
 			template.getVelocityBodyTemplate().merge(ctx, writer);
 			alert.setBody(writer.toString());
-			if (template.getSubject() == null) {
+			if (template.getSubject() == null || template.getSubject().isEmpty()) {
 				alert.setSubject(ruleName);
 			} else {
 				writer = new StringWriter(1000);
