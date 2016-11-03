@@ -50,6 +50,10 @@ public class Constants extends io.symcpe.wraith.Constants {
 	public static final String ALERT_STREAM_ID = "alertStream";
 	public static final String STATE_STREAM_ID = "stateStream";
 	public static final String AGGREGATION_STREAM_ID = "aggregationStream";
+	
+	public static final String TEMPLATE_RULE_ID = "ruleId";
+	public static final String TEMPLATE_RULE_NAME = "ruleName";
+	public static final String TEMPLATE_ACTION_ID = "actionId";
 
 	public static final String TOPOLOGY_RULES_BOLT = "ruleBolt";
 	public static final String TOPOLOGY_EVENT_BOLT = "eventBolt";
